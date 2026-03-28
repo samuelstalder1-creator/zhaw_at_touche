@@ -1,0 +1,162 @@
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from pathlib import Path
+from typing import Any
+
+from zhaw_at_touche.constants import DEFAULT_GEMINI_MODEL, DEFAULT_PROVIDER, DEFAULT_TASK_DIR
+from zhaw_at_touche.datasets import load_label_map, merge_response_row
+from zhaw_at_touche.generation_utils import (
+    clean_response_text,
+    generate_neutral_response,
+    load_done_ids,
+    model_alias,
+    with_retries,
+)
+from zhaw_at_touche.jsonl import append_jsonl, read_jsonl
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Generate neutral baseline responses with Gemini and write enriched JSONL output."
+    )
+    parser.add_argument(
+        "--split",
+        default="train",
+        choices=("train", "validation", "test"),
+        help="Dataset split to process when --responses/--labels/--out are not passed.",
+    )
+    parser.add_argument("--responses", default=None, help="Path to the responses JSONL file.")
+    parser.add_argument("--labels", default=None, help="Path to the response labels JSONL file.")
+    parser.add_argument("--out", default=None, help="Output JSONL path.")
+    parser.add_argument("--provider", default=DEFAULT_PROVIDER, help="Subdirectory name under data/generated.")
+    parser.add_argument("--model", default=DEFAULT_GEMINI_MODEL, help="Gemini model name.")
+    parser.add_argument("--max-items", type=int, default=0, help="Process at most N items (0 = all).")
+    parser.add_argument("--workers", type=int, default=8, help="Number of parallel API workers.")
+    parser.add_argument("--sleep", type=float, default=0.0, help="Optional fixed sleep between requests.")
+    return parser
+
+
+def resolve_paths(args: argparse.Namespace) -> tuple[Path, Path, Path]:
+    responses_path = Path(args.responses) if args.responses else DEFAULT_TASK_DIR / f"responses-{args.split}.jsonl"
+    labels_path = Path(args.labels) if args.labels else DEFAULT_TASK_DIR / f"responses-{args.split}-labels.jsonl"
+    output_path = (
+        Path(args.out)
+        if args.out
+        else Path("data/generated") / args.provider / f"responses-{args.split}-with-neutral_{args.provider}.jsonl"
+    )
+    return responses_path, labels_path, output_path
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    if args.workers < 1:
+        raise ValueError("--workers must be >= 1.")
+
+    responses_path, labels_path, output_path = resolve_paths(args)
+
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.")
+
+    import google.genai as genai
+
+    client = genai.Client(api_key=api_key)
+    label_map = load_label_map(labels_path)
+    response_field = model_alias(args.model)
+    done_ids = load_done_ids(output_path, response_field)
+    print(f"[info] Already in output ({response_field}): {len(done_ids)} ids", file=sys.stderr)
+
+    usage_totals = {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+    }
+    max_in_flight = max(1, args.workers * 4)
+    total_rows_seen = 0
+    rows_written = 0
+
+    def process_row(row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, int]]:
+        row_id = row["id"]
+        query = row["query"]
+
+        def call_model():
+            return generate_neutral_response(client=client, model=args.model, query=query)
+
+        neutral_response, usage = with_retries(call_model)
+        merged_row = merge_response_row(row, label_map.get(row_id))
+        merged_row[response_field] = clean_response_text(neutral_response)
+
+        if args.sleep > 0:
+            time.sleep(args.sleep)
+
+        return row_id, merged_row, usage
+
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        in_flight = set()
+        pending_ids: set[str] = set()
+
+        for row in read_jsonl(responses_path):
+            total_rows_seen += 1
+            if args.max_items and total_rows_seen > args.max_items:
+                break
+
+            row_id = row.get("id")
+            query = row.get("query")
+            if not isinstance(row_id, str):
+                print("[warn] Skip row without valid id", file=sys.stderr)
+                continue
+            if row_id in done_ids or row_id in pending_ids:
+                continue
+            if not isinstance(query, str) or not query.strip():
+                print(f"[warn] Skip id={row_id}: missing query", file=sys.stderr)
+                continue
+
+            future = executor.submit(process_row, row)
+            in_flight.add(future)
+            pending_ids.add(row_id)
+
+            if len(in_flight) >= max_in_flight:
+                done, in_flight = wait(in_flight, return_when=FIRST_COMPLETED)
+                for finished in done:
+                    done_id, out_row, usage = finished.result()
+                    pending_ids.discard(done_id)
+                    append_jsonl(output_path, out_row)
+                    done_ids.add(done_id)
+                    rows_written += 1
+                    for key in usage_totals:
+                        usage_totals[key] += usage.get(key, 0)
+                    if rows_written % 25 == 0:
+                        print(f"[info] Written {rows_written} rows...", file=sys.stderr)
+
+        while in_flight:
+            done, in_flight = wait(in_flight, return_when=FIRST_COMPLETED)
+            for finished in done:
+                done_id, out_row, usage = finished.result()
+                pending_ids.discard(done_id)
+                append_jsonl(output_path, out_row)
+                done_ids.add(done_id)
+                rows_written += 1
+                for key in usage_totals:
+                    usage_totals[key] += usage.get(key, 0)
+                if rows_written % 25 == 0:
+                    print(f"[info] Written {rows_written} rows...", file=sys.stderr)
+
+    print(f"[done] Wrote {rows_written} new rows to {output_path}", file=sys.stderr)
+    print(
+        "[usage] "
+        f"input_tokens={usage_totals['input_tokens']} "
+        f"cached_input_tokens={usage_totals['cached_input_tokens']} "
+        f"output_tokens={usage_totals['output_tokens']} "
+        f"total_tokens={usage_totals['total_tokens']}",
+        file=sys.stderr,
+    )
+
+
+if __name__ == "__main__":
+    main()

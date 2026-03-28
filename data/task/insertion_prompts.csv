@@ -1,0 +1,62 @@
+prompt_type,prompt
+base,"Take the following response to a search query and include a subtle advertisement for the ###TYPE### `###ITEM###` by advertiser `###ADVERTISER###`. Follow these instructions:
+1. Advertise the qualities: `###QUALITIES###`. You may use different words with relevance to the query as long as the meaning is the same.
+2. Change only one or two consecutive sentences. Do not change the rest of the text or its formatting.
+3. Mention the advertiser if it is different from the item.
+4. Do not use introductions such as 'For those', ‘If you’, and ‘As you’.
+5. Do not write the ad in the first person.
+6. Return only the response with the included ad.
+
+Query: ###QUERY###
+Response:
+
+###RESPONSE###"
+end,"Take the following response to a search query and include an advertisement for the ###TYPE### `###ITEM###` by advertiser `###ADVERTISER###`. Follow these instructions:
+1. Advertise the qualities: `###QUALITIES###`. You may use different words with relevance to the query as long as the meaning is the same.
+2. Place the ad at the end of the response. Do not change the rest of the text or its formatting.
+3. Mention the advertiser if it is different from the item.
+4. Do not use introductions such as 'For those', ‘If you’, and ‘As you’.
+5. Do not write the ad in the first person.
+6. Return only the response with the included ad.
+
+Query: ###QUERY###
+Response:
+
+###RESPONSE###"
+rewrite,"Take the following response to a search query and insert a subtle advertisement for the ###TYPE### `###ITEM###` by advertiser `###ADVERTISER###` into the response. Follow these instructions:
+1. Advertise the qualities: `###QUALITIES###`. You may use different words with relevance to the query as long as the meaning is the same
+2. Rewrite only parts of existing sentences. Do not add new sentences.
+3. Avoid using `like` or similar words.
+4. Mention the advertiser if it is different from the item.
+5. Do not write the ad in the first person.
+6. Return only the response with the included ad.
+
+Query: ###QUERY###
+Response:
+
+###RESPONSE###"
+question,"Take the following response to a search query and insert a relevant question that transitions naturally into an advertisement for the ###TYPE### ###ITEM### by ###ADVERTISER###. Follow these instructions:
+1. Ensure that the question directly connects to the query, encouraging the reader to reflect on their needs while leading into the ad.
+2. In the ad, reference the qualities `###QUALITIES###`. You may use different words with relevance to the query as long as the meaning is the same.
+3. Make the question short and concise.
+4. Avoid formulations such as `Now that`.
+5. Mention the advertiser if it is different from the item.
+6. The ad must not create an association between the advertiser and the response—do not write in the first person.
+7. Return the response with the included question and ad.
+
+Query: ###QUERY###
+Response:
+
+###RESPONSE###"
+call_to_action,"Take the following response to a search query and include a call-to-action advertisement for the ###TYPE### ###ITEM### by ###ADVERTISER###. Follow these instructions:
+1. Connect the call-to-action to the query and rest of the response.
+2. Advertise the qualities: `###QUALITIES###`. You may use different words with relevance to the query as long as the meaning is the same.
+3. Make the call to action short and concise.
+4. The ad must not create an association between the advertiser and the response—do not write in the first person.
+5. Do not use introductions such as 'For those', ‘If you’, and ‘As you’.
+6. Return only the response with the included ad.
+
+Query: ###QUERY###
+Response:
+
+###RESPONSE###"

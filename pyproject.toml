@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zhaw-at-touche"
+version = "0.1.0"
+description = "Unified CLI tooling for the Touché ad-detection experiments."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=1.0.0",
+    "matplotlib>=3.10",
+    "scikit-learn>=1.6",
+    "torch>=2.7",
+    "tqdm>=4.67",
+    "transformers>=4.51",
+]
+
+[project.scripts]
+touche-preprocess = "zhaw_at_touche.cli.preprocess_data:main"
+touche-generate-neutral = "zhaw_at_touche.cli.generate_neutral:main"
+touche-train = "zhaw_at_touche.cli.train_model:main"
+touche-validate = "zhaw_at_touche.cli.validate_model:main"
+touche-predict = "zhaw_at_touche.cli.manual_inference:main"
+touche-stats-data = "zhaw_at_touche.cli.data_stats:main"
+touche-stats-generated = "zhaw_at_touche.cli.generated_stats:main"
+touche-check-overlap = "zhaw_at_touche.cli.check_overlap:main"
+touche-eval-matrix = "zhaw_at_touche.cli.evaluation_matrix:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
