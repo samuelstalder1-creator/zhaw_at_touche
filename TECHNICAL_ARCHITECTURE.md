@@ -110,6 +110,11 @@ The entire pipeline uses JSONL as the exchange format between steps. That keeps 
 - normalizing text and counting words
 - building the classifier prompt format
 
+Two input formats are currently supported:
+
+- the default `Query: ... Response: ... Answer:` prompt
+- a neutral-reference format used by `setup7`, where query, Gemini neutral reference, and target response are combined into one long context
+
 The classifier input is intentionally standardized as:
 
 ```text
@@ -153,6 +158,7 @@ Important implementation details:
 - training uses the full training file by default, but `max_train_rows` can restrict it to a subset.
 - trained model and tokenizer files are saved directly to `models/<setup-name>/`.
 - `load_model_reference` can load either a local bundle path or a remote Hugging Face model reference.
+- training can log step and epoch metrics to local files and to offline W&B storage.
 - predictions are returned as a small `Prediction` dataclass containing the binary label and the positive-class probability.
 
 The training code intentionally avoids a larger trainer abstraction. The advantage is that the execution path remains explicit and easy to adapt for this binary classification task.
@@ -248,6 +254,13 @@ That is a pragmatic alternative to a heavier configuration system.
 The command uses the full training split by default. For quicker experiments it
 also supports subset training through `--max-train-rows`.
 
+It also supports setup-specific prompt structures. `setup7`, for example, uses
+Longformer with a 1024-token context that includes the `gemini25flashlite`
+neutral response as a reference segment.
+
+For monitoring, the command writes `training_metrics.jsonl` locally and can log
+the same metrics to W&B in offline mode so files stay local to the workspace.
+
 ### `validate_model.py`
 
 [`src/zhaw_at_touche/cli/validate_model.py`](src/zhaw_at_touche/cli/validate_model.py) is the central evaluation entrypoint.
@@ -266,6 +279,10 @@ It performs the following:
 Its default evaluation scope is the `test` split. Validation can be added by
 passing `--eval-splits validation test`, or bypassed entirely with explicit
 `--input-files`.
+
+The same module also supports reference-aware validation, which matters for
+models like `setup7` whose prompt structure differs from the default
+query-response format.
 
 The validation step does more than print metrics. It also standardizes outputs into reusable artifact files:
 

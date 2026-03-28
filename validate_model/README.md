@@ -17,6 +17,10 @@ Supported JSON fields:
 - `eval_splits`
 - `input_files`
 - `text_field`
+- `input_format`
+- `reference_field`
+- `reference_label`
+- `pad_to_max_length`
 - `generated_field`
 - `max_length`
 - `batch_size`
@@ -27,6 +31,12 @@ Example:
 
 ```bash
 uv run touche-validate --setup-name teamCMU
+```
+
+Local validation preset for the Longformer training setup:
+
+```bash
+uv run touche-validate --setup-name setup7
 ```
 
 By default the validator evaluates only the `test` split. To evaluate both

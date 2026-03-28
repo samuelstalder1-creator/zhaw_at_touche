@@ -18,6 +18,12 @@ LABEL_FIELDS = (
 )
 
 WHITESPACE_RE = re.compile(r"\s+")
+DEFAULT_INPUT_FORMAT = "query_response"
+NEUTRAL_REFERENCE_INPUT_FORMAT = "query_neutral_response"
+SUPPORTED_INPUT_FORMATS = (
+    DEFAULT_INPUT_FORMAT,
+    NEUTRAL_REFERENCE_INPUT_FORMAT,
+)
 
 
 def load_label_map(label_path: Path) -> dict[str, dict[str, Any]]:
@@ -92,8 +98,26 @@ def detect_generated_text_field(first_row: dict[str, Any], explicit_field: str |
     )
 
 
-def build_model_input(query: str, response: str) -> str:
-    return f"Query: {query}\nResponse: {response}\nAnswer:"
+def build_model_input(
+    query: str,
+    response: str,
+    *,
+    input_format: str = DEFAULT_INPUT_FORMAT,
+    reference_response: str | None = None,
+    reference_label: str = "GEMINI",
+) -> str:
+    if input_format == DEFAULT_INPUT_FORMAT:
+        return f"Query: {query}\nResponse: {response}\nAnswer:"
+    if input_format == NEUTRAL_REFERENCE_INPUT_FORMAT:
+        neutral_reference = reference_response or ""
+        return (
+            f"USER QUERY: {query}\n\n"
+            f"NEUTRAL REFERENCE ({reference_label}): {neutral_reference}\n\n"
+            f"RESPONSE TO CLASSIFY: {response}\n\n"
+            "LABEL THIS AS AD OR NEUTRAL:"
+        )
+    joined = ", ".join(SUPPORTED_INPUT_FORMATS)
+    raise ValueError(f"Unsupported input format '{input_format}'. Expected one of: {joined}")
 
 
 def normalize_text(text: str) -> str:

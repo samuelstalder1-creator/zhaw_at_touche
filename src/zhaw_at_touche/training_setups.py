@@ -11,12 +11,22 @@ ALLOWED_SETUP_FIELDS = {
     "device",
     "epochs",
     "grad_accum",
+    "input_format",
     "learning_rate",
     "max_length",
     "max_train_rows",
     "model_dir",
     "model_name",
+    "pad_to_max_length",
+    "positive_class_weight_scale",
+    "reference_field",
+    "reference_label",
     "train_file",
+    "validation_file",
+    "wandb_dir",
+    "wandb_enabled",
+    "wandb_project",
+    "wandb_run_name",
 }
 
 

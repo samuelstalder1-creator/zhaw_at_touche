@@ -96,6 +96,20 @@ Merged Dagmar setup:
 uv run touche-train --setup-name setup6
 ```
 
+Longformer setup with Gemini neutral-reference context:
+
+```bash
+uv run touche-train --setup-name setup7
+```
+
+Training now also writes local monitoring artifacts next to the model bundle:
+
+- `training_summary.json`
+- `training_metrics.jsonl`
+- offline W&B files in `models/<setup-name>/wandb/` by default
+
+You can disable local W&B logging with `--no-wandb`.
+
 By default training uses the full training dataset. To train on a subset:
 
 ```bash
@@ -122,6 +136,12 @@ uv run touche-validate --setup-name teamCMU
 ```
 
 `teamCMU` is defined in `validate_model/teamCMU.json` and evaluates the published Hugging Face model `teknology/ad-classifier-v0.4` without using `train_model/`. It also defaults to test-only evaluation unless you pass `--eval-splits validation test`.
+
+The local Longformer training preset also has a matching validation preset:
+
+```bash
+uv run touche-validate --setup-name setup7
+```
 
 Default validation artifacts:
 

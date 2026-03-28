@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_SETUP_NAME
+from zhaw_at_touche.datasets import DEFAULT_INPUT_FORMAT, SUPPORTED_INPUT_FORMATS
 from zhaw_at_touche.training_setups import DEFAULT_TRAINING_SETUPS_DIR, load_setup_defaults
 
 
@@ -19,6 +20,17 @@ def resolve_default_train_path() -> Path:
     return candidates[0]
 
 
+def resolve_default_validation_path() -> Path | None:
+    candidates = [
+        Path("data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"),
+        Path("data/task/preprocessed/responses-validation-merged.jsonl"),
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def base_defaults() -> dict[str, object]:
     return {
         "train_file": str(resolve_default_train_path()),
@@ -31,6 +43,16 @@ def base_defaults() -> dict[str, object]:
         "learning_rate": 2e-5,
         "device": None,
         "max_train_rows": None,
+        "input_format": DEFAULT_INPUT_FORMAT,
+        "reference_field": None,
+        "reference_label": "GEMINI",
+        "pad_to_max_length": False,
+        "positive_class_weight_scale": 2.0,
+        "validation_file": str(resolve_default_validation_path()) if resolve_default_validation_path() else None,
+        "wandb_enabled": True,
+        "wandb_project": "zhaw-at-touche-training",
+        "wandb_dir": None,
+        "wandb_run_name": None,
     }
 
 
@@ -59,6 +81,55 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--grad-accum", type=int, default=defaults["grad_accum"])
     parser.add_argument("--learning-rate", type=float, default=defaults["learning_rate"])
     parser.add_argument("--device", choices=("cuda", "mps", "cpu"), default=defaults["device"])
+    parser.add_argument(
+        "--validation-file",
+        default=defaults["validation_file"],
+        help="Optional validation JSONL file used for epoch-end monitoring.",
+    )
+    parser.add_argument("--input-format", choices=SUPPORTED_INPUT_FORMATS, default=defaults["input_format"])
+    parser.add_argument(
+        "--reference-field",
+        default=defaults["reference_field"],
+        help="Optional reference text field used by non-default input formats.",
+    )
+    parser.add_argument(
+        "--reference-label",
+        default=defaults["reference_label"],
+        help="Label text rendered in reference-aware input formats.",
+    )
+    parser.add_argument(
+        "--pad-to-max-length",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["pad_to_max_length"],
+        help="Pad every batch item to max_length instead of dynamic padding.",
+    )
+    parser.add_argument(
+        "--positive-class-weight-scale",
+        type=float,
+        default=defaults["positive_class_weight_scale"],
+        help="Multiplier used when computing the positive-class loss weight.",
+    )
+    parser.add_argument(
+        "--wandb",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["wandb_enabled"],
+        help="Enable local offline Weights & Biases logging.",
+    )
+    parser.add_argument(
+        "--wandb-project",
+        default=defaults["wandb_project"],
+        help="Project name used for offline Weights & Biases runs.",
+    )
+    parser.add_argument(
+        "--wandb-dir",
+        default=defaults["wandb_dir"],
+        help="Directory for local offline Weights & Biases files. Defaults to <model-dir>/wandb.",
+    )
+    parser.add_argument(
+        "--wandb-run-name",
+        default=defaults["wandb_run_name"],
+        help="Optional offline Weights & Biases run name.",
+    )
     parser.add_argument(
         "--max-train-rows",
         type=int,
@@ -98,6 +169,16 @@ def main() -> None:
         learning_rate=args.learning_rate,
         device=resolve_device(args.device),
         max_train_rows=args.max_train_rows,
+        input_format=args.input_format,
+        reference_field=args.reference_field,
+        reference_label=args.reference_label,
+        pad_to_max_length=args.pad_to_max_length,
+        positive_class_weight_scale=args.positive_class_weight_scale,
+        validation_path=Path(args.validation_file) if args.validation_file else None,
+        wandb_enabled=args.wandb,
+        wandb_project=args.wandb_project,
+        wandb_dir=Path(args.wandb_dir) if args.wandb_dir else None,
+        wandb_run_name=args.wandb_run_name or args.setup_name,
     )
     summary = train_model(config)
     print(f"trained model saved to {model_dir}")

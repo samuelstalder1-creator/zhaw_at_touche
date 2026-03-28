@@ -10,7 +10,7 @@ from typing import Any
 from typing import Sequence
 
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
-from zhaw_at_touche.datasets import detect_generated_text_field
+from zhaw_at_touche.datasets import DEFAULT_INPUT_FORMAT, SUPPORTED_INPUT_FORMATS, detect_generated_text_field
 from zhaw_at_touche.evaluation_utils import (
     compute_metrics,
     counts_from_pairs,
@@ -98,6 +98,10 @@ def base_defaults() -> dict[str, object]:
         "max_length": 512,
         "threshold": 0.5,
         "device": None,
+        "input_format": DEFAULT_INPUT_FORMAT,
+        "reference_field": None,
+        "reference_label": "GEMINI",
+        "pad_to_max_length": False,
     }
 
 
@@ -132,6 +136,23 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     )
     parser.add_argument("--input-files", nargs="+", default=input_file_defaults)
     parser.add_argument("--text-field", default=defaults["text_field"], help="Text field used for the main prediction.")
+    parser.add_argument("--input-format", choices=SUPPORTED_INPUT_FORMATS, default=defaults["input_format"])
+    parser.add_argument(
+        "--reference-field",
+        default=defaults["reference_field"],
+        help="Optional reference text field used by non-default input formats.",
+    )
+    parser.add_argument(
+        "--reference-label",
+        default=defaults["reference_label"],
+        help="Label text rendered in reference-aware input formats.",
+    )
+    parser.add_argument(
+        "--pad-to-max-length",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["pad_to_max_length"],
+        help="Pad every batch item to max_length instead of dynamic padding.",
+    )
     parser.add_argument(
         "--generated-field",
         default=defaults["generated_field"],
@@ -213,6 +234,8 @@ def main() -> None:
             raise ValueError(f"Input file is empty: {path}")
 
         generated_field = maybe_detect_generated_field(records, args.generated_field)
+        if generated_field == args.reference_field:
+            generated_field = None
         response_predictions = predict_with_bundle(
             tokenizer=tokenizer,
             model=model,
@@ -222,6 +245,10 @@ def main() -> None:
             max_length=args.max_length,
             text_key=args.text_field,
             threshold=args.threshold,
+            input_format=args.input_format,
+            reference_field=args.reference_field,
+            reference_label=args.reference_label,
+            pad_to_max_length=args.pad_to_max_length,
         )
         generated_predictions = None
         if generated_field:
@@ -234,6 +261,10 @@ def main() -> None:
                 max_length=args.max_length,
                 text_key=generated_field,
                 threshold=args.threshold,
+                input_format=args.input_format,
+                reference_field=args.reference_field,
+                reference_label=args.reference_label,
+                pad_to_max_length=args.pad_to_max_length,
             )
 
         file_gold_labels: list[int] = []
@@ -287,6 +318,10 @@ def main() -> None:
         "results_dir": str(results_dir),
         "device": device,
         "text_field": args.text_field,
+        "input_format": args.input_format,
+        "reference_field": args.reference_field,
+        "reference_label": args.reference_label,
+        "pad_to_max_length": args.pad_to_max_length,
         "threshold": args.threshold,
         "files": file_summaries,
         "overall": overall_summary,

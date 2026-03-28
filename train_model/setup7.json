@@ -1,0 +1,15 @@
+{
+  "description": "Longformer training setup with a Gemini neutral reference included in the model input.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "model_name": "allenai/longformer-base-4096",
+  "max_length": 1024,
+  "epochs": 3,
+  "batch_size": 4,
+  "grad_accum": 8,
+  "learning_rate": 2e-05,
+  "input_format": "query_neutral_response",
+  "reference_field": "gemini25flashlite",
+  "reference_label": "GEMINI",
+  "pad_to_max_length": true,
+  "positive_class_weight_scale": 1.5
+}
