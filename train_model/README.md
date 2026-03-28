@@ -64,3 +64,7 @@ You can disable it:
 ```bash
 uv run touche-train --setup-name setup7 --no-wandb
 ```
+
+If a validation file is configured, `touche-train` evaluates that split at the
+end of every epoch and logs the validation metrics plus confusion-count
+monitoring to W&B.

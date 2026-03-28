@@ -257,3 +257,52 @@ def metrics_dict(
         "macro": macro,
         "weighted": weighted,
     }
+
+
+def validation_metrics_payload(
+    *,
+    loss: float,
+    summary: dict[str, Any],
+) -> dict[str, float | int | None]:
+    positive_label = summary.get("positive_label")
+    macro = summary.get("macro")
+    weighted = summary.get("weighted")
+    matrix = summary.get("matrix")
+    samples = int(summary["samples"])
+
+    negative_row = matrix.get("0", {}) if isinstance(matrix, dict) else {}
+    positive_row = matrix.get("1", {}) if isinstance(matrix, dict) else {}
+    true_negative = int(negative_row.get("0", 0))
+    false_positive = int(negative_row.get("1", 0))
+    false_negative = int(positive_row.get("0", 0))
+    true_positive = int(positive_row.get("1", 0))
+
+    predicted_positive = true_positive + false_positive
+    gold_positive = true_positive + false_negative
+
+    return {
+        "loss": loss,
+        "accuracy": float(summary["accuracy"]),
+        "positive_precision": (
+            float(positive_label["precision"]) if isinstance(positive_label, dict) else None
+        ),
+        "positive_recall": (
+            float(positive_label["recall"]) if isinstance(positive_label, dict) else None
+        ),
+        "positive_f1": float(positive_label["f1"]) if isinstance(positive_label, dict) else None,
+        "macro_precision": float(macro["precision"]) if isinstance(macro, dict) else None,
+        "macro_recall": float(macro["recall"]) if isinstance(macro, dict) else None,
+        "macro_f1": float(macro["f1"]) if isinstance(macro, dict) else None,
+        "weighted_precision": (
+            float(weighted["precision"]) if isinstance(weighted, dict) else None
+        ),
+        "weighted_recall": float(weighted["recall"]) if isinstance(weighted, dict) else None,
+        "weighted_f1": float(weighted["f1"]) if isinstance(weighted, dict) else None,
+        "true_negative": true_negative,
+        "false_positive": false_positive,
+        "false_negative": false_negative,
+        "true_positive": true_positive,
+        "predicted_positive_rate": safe_divide(predicted_positive, samples),
+        "gold_positive_rate": safe_divide(gold_positive, samples),
+        "samples": samples,
+    }

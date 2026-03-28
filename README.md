@@ -115,6 +115,7 @@ uv run wandb login
 ```
 
 Then train as usual and open the run in the configured W&B project.
+When a validation file is available, training evaluates it at the end of each epoch and logs validation loss, accuracy, precision, recall, F1, and confusion-count monitoring to W&B.
 You can disable W&B logging with `--no-wandb`.
 
 By default training uses the full training dataset. To train on a subset:

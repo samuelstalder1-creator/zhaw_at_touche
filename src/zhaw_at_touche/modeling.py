@@ -13,7 +13,7 @@ from tqdm.auto import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from .datasets import DEFAULT_INPUT_FORMAT, build_model_input
-from .evaluation_utils import metrics_dict
+from .evaluation_utils import metrics_dict, validation_metrics_payload
 from .jsonl import append_jsonl, read_jsonl
 
 
@@ -251,15 +251,10 @@ def evaluate_records(
             all_predictions.extend(predictions.detach().cpu().tolist())
 
     summary = metrics_dict(all_labels, all_predictions)
-    positive_label = summary.get("positive_label")
-    positive_f1 = positive_label["f1"] if isinstance(positive_label, dict) else None
-    return {
-        "loss": total_loss / max(batch_count, 1),
-        "accuracy": float(summary["accuracy"]),
-        "positive_f1": positive_f1,
-        "weighted_f1": float(summary["weighted"]["f1"]),
-        "samples": int(summary["samples"]),
-    }
+    return validation_metrics_payload(
+        loss=total_loss / max(batch_count, 1),
+        summary=summary,
+    )
 
 
 def maybe_init_wandb(config: TrainingConfig):
@@ -348,6 +343,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
     )
     epoch_losses: list[float] = []
     validation_history: list[dict[str, float | int | None]] = []
+    best_validation_metrics: dict[str, float | int | None] | None = None
     global_step = 0
     wandb_run = None
     try:
@@ -458,11 +454,54 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                         {
                             "val/loss": validation_metrics["loss"],
                             "val/acc": validation_metrics["accuracy"],
+                            "val/positive_f1": validation_metrics["positive_f1"],
+                            "val/positive_precision": validation_metrics["positive_precision"],
+                            "val/positive_recall": validation_metrics["positive_recall"],
                             "val/f1": validation_metrics["positive_f1"],
+                            "val/macro_precision": validation_metrics["macro_precision"],
+                            "val/macro_recall": validation_metrics["macro_recall"],
+                            "val/macro_f1": validation_metrics["macro_f1"],
+                            "val/weighted_precision": validation_metrics["weighted_precision"],
+                            "val/weighted_recall": validation_metrics["weighted_recall"],
                             "val/weighted_f1": validation_metrics["weighted_f1"],
+                            "val/tn": validation_metrics["true_negative"],
+                            "val/fp": validation_metrics["false_positive"],
+                            "val/fn": validation_metrics["false_negative"],
+                            "val/tp": validation_metrics["true_positive"],
+                            "val/predicted_positive_rate": validation_metrics["predicted_positive_rate"],
+                            "val/gold_positive_rate": validation_metrics["gold_positive_rate"],
+                            "val/samples": validation_metrics["samples"],
                             "epoch": epoch,
                         }
                     )
+
+                current_score = validation_metrics["positive_f1"]
+                if current_score is None:
+                    current_score = validation_metrics["weighted_f1"]
+                best_score = (
+                    best_validation_metrics["positive_f1"]
+                    if best_validation_metrics is not None
+                    else None
+                )
+                if best_score is None and best_validation_metrics is not None:
+                    best_score = best_validation_metrics["weighted_f1"]
+                if current_score is not None and (best_score is None or current_score > best_score):
+                    best_validation_metrics = {
+                        "epoch": epoch,
+                        **validation_metrics,
+                    }
+                    if wandb_run is not None:
+                        wandb_run.summary.update(
+                            {
+                                "best_val/epoch": epoch,
+                                "best_val/loss": validation_metrics["loss"],
+                                "best_val/acc": validation_metrics["accuracy"],
+                                "best_val/positive_f1": validation_metrics["positive_f1"],
+                                "best_val/positive_precision": validation_metrics["positive_precision"],
+                                "best_val/positive_recall": validation_metrics["positive_recall"],
+                                "best_val/weighted_f1": validation_metrics["weighted_f1"],
+                            }
+                        )
     finally:
         if wandb_run is not None:
             wandb_run.finish()
@@ -494,6 +533,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         "train_rows": len(train_dataset),
         "epoch_losses": epoch_losses,
         "validation_history": validation_history,
+        "best_validation_metrics": best_validation_metrics,
     }
     summary_path = config.output_dir / "training_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
