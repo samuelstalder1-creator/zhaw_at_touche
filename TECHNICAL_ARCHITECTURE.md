@@ -158,7 +158,7 @@ Important implementation details:
 - training uses the full training file by default, but `max_train_rows` can restrict it to a subset.
 - trained model and tokenizer files are saved directly to `models/<setup-name>/`.
 - `load_model_reference` can load either a local bundle path or a remote Hugging Face model reference.
-- training can log step and epoch metrics to local files, TensorBoard event files, and offline W&B storage.
+- training can log step and epoch metrics to local files and to W&B online.
 - predictions are returned as a small `Prediction` dataclass containing the binary label and the positive-class probability.
 
 The training code intentionally avoids a larger trainer abstraction. The advantage is that the execution path remains explicit and easy to adapt for this binary classification task.
@@ -258,9 +258,8 @@ It also supports setup-specific prompt structures. `setup7`, for example, uses
 Longformer with a 1024-token context that includes the `gemini25flashlite`
 neutral response as a reference segment.
 
-For monitoring, the command writes `training_metrics.jsonl` locally, emits
-TensorBoard event files under the model directory, and can log the same metrics
-to W&B in offline mode so files stay local to the workspace.
+For monitoring, the command writes `training_metrics.jsonl` locally and can log
+the same metrics to W&B online.
 
 ### `validate_model.py`
 

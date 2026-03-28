@@ -49,8 +49,6 @@ def base_defaults() -> dict[str, object]:
         "pad_to_max_length": False,
         "positive_class_weight_scale": 2.0,
         "validation_file": str(resolve_default_validation_path()) if resolve_default_validation_path() else None,
-        "tensorboard_enabled": True,
-        "tensorboard_dir": None,
         "wandb_enabled": True,
         "wandb_project": "zhaw-at-touche-training",
         "wandb_dir": None,
@@ -112,36 +110,25 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Multiplier used when computing the positive-class loss weight.",
     )
     parser.add_argument(
-        "--tensorboard",
-        action=argparse.BooleanOptionalAction,
-        default=defaults["tensorboard_enabled"],
-        help="Enable local TensorBoard logging.",
-    )
-    parser.add_argument(
-        "--tensorboard-dir",
-        default=defaults["tensorboard_dir"],
-        help="Directory for TensorBoard event files. Defaults to <model-dir>/tensorboard.",
-    )
-    parser.add_argument(
         "--wandb",
         action=argparse.BooleanOptionalAction,
         default=defaults["wandb_enabled"],
-        help="Enable local offline Weights & Biases logging.",
+        help="Enable Weights & Biases online logging.",
     )
     parser.add_argument(
         "--wandb-project",
         default=defaults["wandb_project"],
-        help="Project name used for offline Weights & Biases runs.",
+        help="Project name used for Weights & Biases runs.",
     )
     parser.add_argument(
         "--wandb-dir",
         default=defaults["wandb_dir"],
-        help="Directory for local offline Weights & Biases files. Defaults to <model-dir>/wandb.",
+        help="Directory for local Weights & Biases run files. Defaults to <model-dir>/wandb.",
     )
     parser.add_argument(
         "--wandb-run-name",
         default=defaults["wandb_run_name"],
-        help="Optional offline Weights & Biases run name.",
+        help="Optional Weights & Biases run name.",
     )
     parser.add_argument(
         "--max-train-rows",
@@ -188,8 +175,6 @@ def main() -> None:
         pad_to_max_length=args.pad_to_max_length,
         positive_class_weight_scale=args.positive_class_weight_scale,
         validation_path=Path(args.validation_file) if args.validation_file else None,
-        tensorboard_enabled=args.tensorboard,
-        tensorboard_dir=Path(args.tensorboard_dir) if args.tensorboard_dir else None,
         wandb_enabled=args.wandb,
         wandb_project=args.wandb_project,
         wandb_dir=Path(args.wandb_dir) if args.wandb_dir else None,

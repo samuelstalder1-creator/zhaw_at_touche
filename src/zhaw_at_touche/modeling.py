@@ -79,8 +79,6 @@ class TrainingConfig:
     pad_to_max_length: bool = False
     positive_class_weight_scale: float = 2.0
     validation_path: Path | None = None
-    tensorboard_enabled: bool = True
-    tensorboard_dir: Path | None = None
     wandb_enabled: bool = True
     wandb_project: str | None = "zhaw-at-touche-training"
     wandb_dir: Path | None = None
@@ -283,7 +281,7 @@ def maybe_init_wandb(config: TrainingConfig):
         project=config.wandb_project,
         name=config.wandb_run_name,
         dir=str(wandb_dir),
-        mode="offline",
+        mode="online",
     )
     run.config.update(
         {
@@ -306,60 +304,6 @@ def maybe_init_wandb(config: TrainingConfig):
         }
     )
     return run
-
-
-def maybe_init_tensorboard(config: TrainingConfig):
-    if not config.tensorboard_enabled:
-        return None
-
-    try:
-        from torch.utils.tensorboard import SummaryWriter
-    except ImportError as exc:
-        raise RuntimeError(
-            "tensorboard is not installed. Install the project dependencies or pass --no-tensorboard."
-        ) from exc
-
-    log_dir = config.tensorboard_dir or (config.output_dir / "tensorboard")
-    log_dir.mkdir(parents=True, exist_ok=True)
-    writer = SummaryWriter(log_dir=str(log_dir))
-    writer.add_text(
-        "run/config",
-        "```json\n"
-        + json.dumps(
-            {
-                "model_name": config.model_name,
-                "train_path": str(config.train_path),
-                "validation_path": str(config.validation_path) if config.validation_path else None,
-                "output_dir": str(config.output_dir),
-                "max_length": config.max_length,
-                "epochs": config.epochs,
-                "batch_size": config.batch_size,
-                "grad_accum": config.grad_accum,
-                "learning_rate": config.learning_rate,
-                "device": config.device,
-                "max_train_rows": config.max_train_rows,
-                "input_format": config.input_format,
-                "reference_field": config.reference_field,
-                "reference_label": config.reference_label,
-                "pad_to_max_length": config.pad_to_max_length,
-                "positive_class_weight_scale": config.positive_class_weight_scale,
-            },
-            indent=2,
-        )
-        + "\n```",
-        global_step=0,
-    )
-    return writer
-
-
-def log_tensorboard_scalars(writer, scalars: dict[str, float | int | None], step: int) -> None:
-    if writer is None:
-        return
-
-    for tag, value in scalars.items():
-        if value is None:
-            continue
-        writer.add_scalar(tag, float(value), step)
 
 
 def train_model(config: TrainingConfig) -> dict[str, Any]:
@@ -405,14 +349,11 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
     epoch_losses: list[float] = []
     validation_history: list[dict[str, float | int | None]] = []
     global_step = 0
-    tensorboard_writer = None
     wandb_run = None
     try:
-        tensorboard_writer = maybe_init_tensorboard(config)
         wandb_run = maybe_init_wandb(config)
-        if tensorboard_writer is not None:
-            log_tensorboard_scalars(
-                tensorboard_writer,
+        if wandb_run is not None:
+            wandb_run.log(
                 {
                     "dataset/train_rows": len(train_dataset),
                     "dataset/validation_rows": len(validation_records) if validation_records is not None else 0,
@@ -421,7 +362,6 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                 },
                 step=0,
             )
-            tensorboard_writer.flush()
 
         for epoch in range(config.epochs):
             model.train()
@@ -455,14 +395,6 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                     "lr": optimizer.param_groups[0]["lr"],
                 }
                 append_jsonl(metrics_log_path, step_metrics)
-                log_tensorboard_scalars(
-                    tensorboard_writer,
-                    {
-                        "train/loss_step": batch_loss,
-                        "train/lr": optimizer.param_groups[0]["lr"],
-                    },
-                    step=global_step,
-                )
                 if wandb_run is not None:
                     wandb_run.log(
                         {
@@ -489,14 +421,6 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                 "lr": optimizer.param_groups[0]["lr"],
             }
             append_jsonl(metrics_log_path, epoch_metrics)
-            log_tensorboard_scalars(
-                tensorboard_writer,
-                {
-                    "train/loss_epoch": epoch_loss,
-                    "train/lr_epoch": optimizer.param_groups[0]["lr"],
-                },
-                step=epoch + 1,
-            )
             if wandb_run is not None:
                 wandb_run.log(
                     {
@@ -529,17 +453,6 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                 }
                 validation_history.append(validation_entry)
                 append_jsonl(metrics_log_path, validation_entry)
-                log_tensorboard_scalars(
-                    tensorboard_writer,
-                    {
-                        "val/loss": validation_metrics["loss"],
-                        "val/accuracy": validation_metrics["accuracy"],
-                        "val/positive_f1": validation_metrics["positive_f1"],
-                        "val/weighted_f1": validation_metrics["weighted_f1"],
-                        "val/samples": validation_metrics["samples"],
-                    },
-                    step=epoch + 1,
-                )
                 if wandb_run is not None:
                     wandb_run.log(
                         {
@@ -550,11 +463,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                             "epoch": epoch,
                         }
                     )
-            if tensorboard_writer is not None:
-                tensorboard_writer.flush()
     finally:
-        if tensorboard_writer is not None:
-            tensorboard_writer.close()
         if wandb_run is not None:
             wandb_run.finish()
 
@@ -577,12 +486,6 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         "pad_to_max_length": config.pad_to_max_length,
         "positive_class_weight_scale": config.positive_class_weight_scale,
         "validation_path": str(config.validation_path) if config.validation_path else None,
-        "tensorboard_enabled": config.tensorboard_enabled,
-        "tensorboard_dir": (
-            str(config.tensorboard_dir or (config.output_dir / "tensorboard"))
-            if config.tensorboard_enabled
-            else None
-        ),
         "wandb_enabled": config.wandb_enabled,
         "wandb_project": config.wandb_project,
         "wandb_dir": str(config.wandb_dir or (config.output_dir / "wandb")) if config.wandb_enabled else None,

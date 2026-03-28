@@ -21,8 +21,6 @@ ALLOWED_SETUP_FIELDS = {
     "positive_class_weight_scale",
     "reference_field",
     "reference_label",
-    "tensorboard_dir",
-    "tensorboard_enabled",
     "train_file",
     "validation_file",
     "wandb_dir",

@@ -106,20 +106,16 @@ Training now also writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`
 - `training_metrics.jsonl`
-- TensorBoard event files in `models/<setup-name>/tensorboard/` by default
-- offline W&B files in `models/<setup-name>/wandb/` by default
+- W&B run files in `models/<setup-name>/wandb/` by default
 
-To inspect the run in TensorBoard:
+For online monitoring, log in to W&B first:
 
 ```bash
-uv run tensorboard --logdir models/setupX/tensorboard
+uv run wandb login
 ```
 
-Then open `http://localhost:6006/`.
-
-You can disable TensorBoard logging with `--no-tensorboard`.
-
-You can disable local W&B logging with `--no-wandb`.
+Then train as usual and open the run in the configured W&B project.
+You can disable W&B logging with `--no-wandb`.
 
 By default training uses the full training dataset. To train on a subset:
 
