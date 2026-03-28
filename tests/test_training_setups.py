@@ -42,6 +42,8 @@ class TrainingSetupsTests(unittest.TestCase):
                         "input_format": "query_neutral_response",
                         "reference_field": "gemini25flashlite",
                         "validation_file": "data/custom-validation.jsonl",
+                        "tensorboard_enabled": False,
+                        "tensorboard_dir": "runs/setup6",
                         "wandb_enabled": False,
                         "wandb_project": "local-test",
                     }
@@ -65,6 +67,8 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.input_format, "query_neutral_response")
             self.assertEqual(args.reference_field, "gemini25flashlite")
             self.assertEqual(args.validation_file, "data/custom-validation.jsonl")
+            self.assertFalse(args.tensorboard)
+            self.assertEqual(args.tensorboard_dir, "runs/setup6")
             self.assertFalse(args.wandb)
             self.assertEqual(args.wandb_project, "local-test")
 
@@ -94,6 +98,7 @@ class TrainingSetupsTests(unittest.TestCase):
         args = parse_args([])
 
         self.assertIsNone(args.max_train_rows)
+        self.assertTrue(args.tensorboard)
 
 
 if __name__ == "__main__":

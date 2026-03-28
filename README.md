@@ -106,7 +106,18 @@ Training now also writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`
 - `training_metrics.jsonl`
+- TensorBoard event files in `models/<setup-name>/tensorboard/` by default
 - offline W&B files in `models/<setup-name>/wandb/` by default
+
+To inspect the run in TensorBoard:
+
+```bash
+uv run tensorboard --logdir models/setupX/tensorboard
+```
+
+Then open `http://localhost:6006/`.
+
+You can disable TensorBoard logging with `--no-tensorboard`.
 
 You can disable local W&B logging with `--no-wandb`.
 

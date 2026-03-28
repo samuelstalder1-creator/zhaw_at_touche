@@ -66,7 +66,7 @@
 - Writes step/epoch monitoring events to `training_metrics.jsonl`.
 - Uses the full training split by default, with optional subset training through `--max-train-rows`.
 - Supports alternative input formats such as the `setup7` long-context neutral-reference prompt.
-- Supports offline local W&B logging plus optional epoch-end validation monitoring.
+- Supports local TensorBoard logging, offline local W&B logging, and optional epoch-end validation monitoring.
 
 ### `touche-validate`
 

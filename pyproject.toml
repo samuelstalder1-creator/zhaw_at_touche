@@ -12,6 +12,7 @@ dependencies = [
     "google-genai>=1.0.0",
     "matplotlib>=3.10",
     "scikit-learn>=1.6",
+    "tensorboard>=2.19",
     "torch>=2.7",
     "tqdm>=4.67",
     "transformers>=4.51",
