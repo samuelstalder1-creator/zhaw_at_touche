@@ -15,6 +15,11 @@ Supported JSON fields:
 - `batch_size`
 - `grad_accum`
 - `learning_rate`
+- `optimizer_eps`
+- `lr_scheduler`
+- `warmup_ratio`
+- `max_grad_norm`
+- `gradient_checkpointing`
 - `device`
 - `max_train_rows`
 - `input_format`
@@ -38,6 +43,12 @@ Longformer neutral-reference setup:
 
 ```bash
 uv run touche-train --setup-name setup7
+```
+
+DeBERTa-v3 setup with unbiased reference + RAG-response prompt:
+
+```bash
+uv run touche-train --setup-name setup4
 ```
 
 By default `touche-train` uses the full training file. To train on only a

@@ -38,8 +38,9 @@ class ValidationSetupsTests(unittest.TestCase):
                         "model_name": "teknology/ad-classifier-v0.4",
                         "results_dir": "results/teamCMU",
                         "batch_size": 32,
-                        "input_format": "query_neutral_response",
+                        "input_format": "query_reference_rag_response",
                         "reference_field": "gemini25flashlite",
+                        "reference_label": "Unbiased Reference",
                     }
                 ),
                 encoding="utf-8",
@@ -58,8 +59,9 @@ class ValidationSetupsTests(unittest.TestCase):
             self.assertEqual(args.results_dir, "results/teamCMU")
             self.assertEqual(args.batch_size, 32)
             self.assertEqual(args.eval_splits, ["test"])
-            self.assertEqual(args.input_format, "query_neutral_response")
+            self.assertEqual(args.input_format, "query_reference_rag_response")
             self.assertEqual(args.reference_field, "gemini25flashlite")
+            self.assertEqual(args.reference_label, "Unbiased Reference")
 
     def test_resolve_model_source_prefers_model_name(self) -> None:
         args = parse_args(

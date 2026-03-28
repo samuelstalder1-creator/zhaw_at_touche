@@ -13,7 +13,7 @@
 
 1. `touche-preprocess` merges response rows with label rows.
 2. `touche-generate-neutral` creates neutral responses with Gemini.
-3. `touche-train` trains a binary classifier on the full training split by default, supports optional subset training, can switch input formats for setups such as `setup7`, and writes local monitoring logs.
+3. `touche-train` trains a binary classifier on the full training split by default, supports optional subset training, can switch input formats for setups such as `setup7` and `setup4`, and writes local monitoring logs.
 4. `touche-validate` evaluates either a saved local model bundle or an evaluation-only remote model setup, using the test split by default and optionally validation plus test.
 5. `touche-predict` supports manual inference for custom text.
 6. `touche-stats-data` and `touche-stats-generated` provide dataset summaries, token analysis, and histograms.

@@ -1,0 +1,21 @@
+{
+  "description": "DeBERTa-v3 setup with unbiased reference context, cosine warmup scheduling, gradient clipping, and checkpointing.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "microsoft/deberta-v3-base",
+  "max_length": 512,
+  "epochs": 6,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "optimizer_eps": 1e-06,
+  "lr_scheduler": "cosine_with_warmup",
+  "warmup_ratio": 0.05,
+  "max_grad_norm": 1.0,
+  "gradient_checkpointing": true,
+  "device": "cuda",
+  "input_format": "query_reference_rag_response",
+  "reference_field": "gemini25flashlite",
+  "reference_label": "Unbiased Reference",
+  "positive_class_weight_scale": 1.0
+}

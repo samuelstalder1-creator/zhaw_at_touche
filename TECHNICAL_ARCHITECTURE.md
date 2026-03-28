@@ -110,10 +110,11 @@ The entire pipeline uses JSONL as the exchange format between steps. That keeps 
 - normalizing text and counting words
 - building the classifier prompt format
 
-Two input formats are currently supported:
+Three input formats are currently supported:
 
 - the default `Query: ... Response: ... Answer:` prompt
 - a neutral-reference format used by `setup7`, where query, Gemini neutral reference, and target response are combined into one long context
+- a reference-plus-RAG format used by `setup4`, where query, unbiased reference, and RAG response are rendered with an explicit advertisement-labeling instruction
 
 The classifier input is intentionally standardized as:
 
@@ -154,7 +155,7 @@ Important implementation details:
 - `resolve_device` chooses `cuda`, then `mps`, then `cpu`, unless the user explicitly forces a device.
 - `InstructionCollator` converts raw records into the standardized prompt format before tokenization.
 - `build_class_weights` compensates for class imbalance by up-weighting the positive class.
-- `train_model` runs a manual PyTorch training loop with `AdamW`, gradient accumulation, and optional autocast for supported CUDA hardware.
+- `train_model` runs a manual PyTorch training loop with `AdamW`, gradient accumulation, optional gradient checkpointing, optional gradient clipping, scheduler support, and optional autocast for supported CUDA hardware.
 - training uses the full training file by default, but `max_train_rows` can restrict it to a subset.
 - trained model and tokenizer files are saved directly to `models/<setup-name>/`.
 - `load_model_reference` can load either a local bundle path or a remote Hugging Face model reference.
