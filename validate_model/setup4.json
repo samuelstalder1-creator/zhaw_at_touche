@@ -1,0 +1,10 @@
+{
+  "description": "Validation preset for the DeBERTa-v3 setup4 model using the unbiased reference + RAG-response prompt.",
+  "model_dir": "models/setup4",
+  "results_dir": "results/setup4",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_reference_rag_response",
+  "reference_field": "gemini25flashlite",
+  "reference_label": "Unbiased Reference"
+}

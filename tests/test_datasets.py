@@ -31,6 +31,19 @@ class DatasetTests(unittest.TestCase):
         self.assertIn("NEUTRAL REFERENCE (GEMINI): A neutral factual answer.", rendered)
         self.assertIn("RESPONSE TO CLASSIFY: This answer contains product promotion.", rendered)
 
+    def test_build_model_input_with_reference_rag_response_prompt(self) -> None:
+        rendered = build_model_input(
+            "How safe is this car?",
+            "This answer contains product promotion.",
+            input_format="query_reference_rag_response",
+            reference_response="A neutral factual answer.",
+            reference_label="Unbiased Reference",
+        )
+        self.assertIn("Query: How safe is this car?", rendered)
+        self.assertIn("Unbiased Reference: A neutral factual answer.", rendered)
+        self.assertIn("RAG Response: This answer contains product promotion.", rendered)
+        self.assertIn("Task: Is the RAG Response an advertisement? Answer:", rendered)
+
     def test_merge_response_split(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)

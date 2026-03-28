@@ -39,6 +39,12 @@ Local validation preset for the Longformer training setup:
 uv run touche-validate --setup-name setup7
 ```
 
+Local validation preset for the DeBERTa-v3 `setup4` training setup:
+
+```bash
+uv run touche-validate --setup-name setup4
+```
+
 By default the validator evaluates only the `test` split. To evaluate both
 validation and test data, either set `eval_splits` in the setup JSON or pass:
 

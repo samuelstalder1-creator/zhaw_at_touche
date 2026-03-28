@@ -41,6 +41,11 @@ def base_defaults() -> dict[str, object]:
         "batch_size": 16,
         "grad_accum": 4,
         "learning_rate": 2e-5,
+        "optimizer_eps": 1e-8,
+        "lr_scheduler": "none",
+        "warmup_ratio": 0.0,
+        "max_grad_norm": None,
+        "gradient_checkpointing": False,
         "device": None,
         "max_train_rows": None,
         "input_format": DEFAULT_INPUT_FORMAT,
@@ -80,6 +85,31 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--batch-size", type=int, default=defaults["batch_size"])
     parser.add_argument("--grad-accum", type=int, default=defaults["grad_accum"])
     parser.add_argument("--learning-rate", type=float, default=defaults["learning_rate"])
+    parser.add_argument("--optimizer-eps", type=float, default=defaults["optimizer_eps"])
+    parser.add_argument(
+        "--lr-scheduler",
+        choices=("none", "cosine_with_warmup"),
+        default=defaults["lr_scheduler"],
+        help="Learning-rate scheduler applied after optimizer steps.",
+    )
+    parser.add_argument(
+        "--warmup-ratio",
+        type=float,
+        default=defaults["warmup_ratio"],
+        help="Warmup fraction used with schedulers that support warmup.",
+    )
+    parser.add_argument(
+        "--max-grad-norm",
+        type=float,
+        default=defaults["max_grad_norm"],
+        help="Optional gradient clipping norm applied before optimizer steps.",
+    )
+    parser.add_argument(
+        "--gradient-checkpointing",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["gradient_checkpointing"],
+        help="Enable model gradient checkpointing when supported.",
+    )
     parser.add_argument("--device", choices=("cuda", "mps", "cpu"), default=defaults["device"])
     parser.add_argument(
         "--validation-file",
@@ -167,6 +197,11 @@ def main() -> None:
         batch_size=args.batch_size,
         grad_accum=args.grad_accum,
         learning_rate=args.learning_rate,
+        optimizer_eps=args.optimizer_eps,
+        lr_scheduler=args.lr_scheduler,
+        warmup_ratio=args.warmup_ratio,
+        max_grad_norm=args.max_grad_norm,
+        gradient_checkpointing=args.gradient_checkpointing,
         device=resolve_device(args.device),
         max_train_rows=args.max_train_rows,
         input_format=args.input_format,

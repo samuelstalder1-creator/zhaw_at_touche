@@ -102,6 +102,12 @@ Longformer setup with Gemini neutral-reference context:
 uv run touche-train --setup-name setup7
 ```
 
+DeBERTa-v3 setup with the unbiased-reference / RAG-response prompt:
+
+```bash
+uv run touche-train --setup-name setup4
+```
+
 Training now also writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`

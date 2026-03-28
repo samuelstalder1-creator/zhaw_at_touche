@@ -42,7 +42,7 @@
 - Validation defaults to the generated Gemini `test` file only, with fallback to the preprocessed merged `test` file.
 - Validation can include both `validation` and `test` through `--eval-splits validation test`.
 - Validation can load either a local saved model directory or a remote Hugging Face model name.
-- Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference.
+- Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference, while `setup4` uses a DeBERTa-oriented unbiased-reference / RAG-response prompt.
 - Device resolution order is `cuda -> mps -> cpu`, unless the user explicitly forces a device.
 
 ## Output Contracts
@@ -65,7 +65,7 @@
 - Writes `training_summary.json` next to the model bundle.
 - Writes step/epoch monitoring events to `training_metrics.jsonl`.
 - Uses the full training split by default, with optional subset training through `--max-train-rows`.
-- Supports alternative input formats such as the `setup7` long-context neutral-reference prompt.
+- Supports alternative input formats such as the `setup7` long-context neutral-reference prompt and the `setup4` unbiased-reference / RAG-response prompt.
 - Supports W&B online logging and optional epoch-end validation monitoring.
 
 ### `touche-validate`
@@ -75,12 +75,12 @@
 - Uses the `test` split by default unless explicit input files or `--eval-splits` are passed.
 - Evaluates the main `response` field against `gold_label`.
 - If a generated text field is present, also scores it and reports its positive-rate as a false-positive monitoring signal.
-- Supports reference-aware validation presets such as `setup7`.
+- Supports reference-aware validation presets such as `setup7` and `setup4`.
 
 ## Current Assumptions
 
 - The classification task remains binary: `0 = no ad`, `1 = ad`.
-- The default training text format remains `Query: ... Response: ... Answer:`, while `setup7` uses a long-context neutral-reference format.
+- The default training text format remains `Query: ... Response: ... Answer:`, while `setup7` uses a long-context neutral-reference format and `setup4` uses an unbiased-reference / RAG-response format.
 - Gemini is the only implemented neutral-generation backend in this migration.
 
 ## Known Gaps

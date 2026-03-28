@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass
@@ -10,7 +11,7 @@ from typing import Any, Sequence
 import torch
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_cosine_schedule_with_warmup
 
 from .datasets import DEFAULT_INPUT_FORMAT, build_model_input
 from .evaluation_utils import metrics_dict, validation_metrics_payload
@@ -43,6 +44,14 @@ def autocast_context(device: str):
     return nullcontext()
 
 
+def model_inputs(batch: dict[str, Any], device: str) -> dict[str, torch.Tensor]:
+    return {
+        key: value.to(device)
+        for key, value in batch.items()
+        if isinstance(value, torch.Tensor) and key != "labels"
+    }
+
+
 def load_jsonl_rows(file_path: Path) -> list[dict[str, Any]]:
     if not file_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {file_path}")
@@ -71,6 +80,11 @@ class TrainingConfig:
     batch_size: int
     grad_accum: int
     learning_rate: float
+    optimizer_eps: float
+    lr_scheduler: str
+    warmup_ratio: float
+    max_grad_norm: float | None
+    gradient_checkpointing: bool
     device: str
     max_train_rows: int | None = None
     input_format: str = DEFAULT_INPUT_FORMAT
@@ -234,11 +248,7 @@ def evaluate_records(
     model.eval()
     with torch.inference_mode():
         for batch in loader:
-            inputs = {
-                key: value.to(device)
-                for key, value in batch.items()
-                if key in {"input_ids", "attention_mask"}
-            }
+            inputs = model_inputs(batch, device)
             labels = batch["labels"].to(device)
             with autocast_context(device):
                 logits = model(**inputs).logits
@@ -289,6 +299,11 @@ def maybe_init_wandb(config: TrainingConfig):
             "batch_size": config.batch_size,
             "grad_accum": config.grad_accum,
             "learning_rate": config.learning_rate,
+            "optimizer_eps": config.optimizer_eps,
+            "lr_scheduler": config.lr_scheduler,
+            "warmup_ratio": config.warmup_ratio,
+            "max_grad_norm": config.max_grad_norm,
+            "gradient_checkpointing": config.gradient_checkpointing,
             "device": config.device,
             "max_train_rows": config.max_train_rows,
             "input_format": config.input_format,
@@ -301,7 +316,31 @@ def maybe_init_wandb(config: TrainingConfig):
     return run
 
 
+def maybe_init_scheduler(
+    *,
+    optimizer,
+    scheduler_name: str,
+    warmup_ratio: float,
+    total_steps: int,
+):
+    if scheduler_name == "none":
+        return None
+    if scheduler_name == "cosine_with_warmup":
+        warmup_steps = int(total_steps * warmup_ratio)
+        return get_cosine_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=total_steps,
+        )
+    raise ValueError(f"Unsupported scheduler '{scheduler_name}'.")
+
+
 def train_model(config: TrainingConfig) -> dict[str, Any]:
+    if config.grad_accum < 1:
+        raise ValueError("--grad-accum must be >= 1.")
+    if config.warmup_ratio < 0 or config.warmup_ratio >= 1:
+        raise ValueError("--warmup-ratio must be >= 0 and < 1.")
+
     config.output_dir.mkdir(parents=True, exist_ok=True)
     metrics_log_path = config.output_dir / "training_metrics.jsonl"
     if metrics_log_path.exists():
@@ -312,6 +351,11 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         config.model_name,
         num_labels=2,
     ).to(config.device)
+    if config.gradient_checkpointing:
+        gradient_checkpointing_enable = getattr(model, "gradient_checkpointing_enable", None)
+        if gradient_checkpointing_enable is None:
+            raise ValueError(f"Model '{config.model_name}' does not support gradient checkpointing.")
+        gradient_checkpointing_enable()
 
     train_dataset = ResponseClassificationDataset(config.train_path, max_rows=config.max_train_rows)
     collator = InstructionCollator(
@@ -335,7 +379,19 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         positive_class_weight_scale=config.positive_class_weight_scale,
     )
     loss_function = torch.nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config.learning_rate,
+        eps=config.optimizer_eps,
+    )
+    optimizer_steps_per_epoch = math.ceil(len(train_loader) / config.grad_accum)
+    total_optimizer_steps = max(optimizer_steps_per_epoch * config.epochs, 1)
+    scheduler = maybe_init_scheduler(
+        optimizer=optimizer,
+        scheduler_name=config.lr_scheduler,
+        warmup_ratio=config.warmup_ratio,
+        total_steps=total_optimizer_steps,
+    )
     validation_records = (
         load_jsonl_rows(config.validation_path)
         if config.validation_path is not None
@@ -355,6 +411,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                     "dataset/validation_rows": len(validation_records) if validation_records is not None else 0,
                     "train/class_weight_negative": class_weights[0].item(),
                     "train/class_weight_positive": class_weights[1].item(),
+                    "train/optimizer_steps_total": total_optimizer_steps,
                 },
                 step=0,
             )
@@ -366,11 +423,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
             progress = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{config.epochs}")
 
             for step, batch in enumerate(progress, start=1):
-                inputs = {
-                    key: value.to(config.device)
-                    for key, value in batch.items()
-                    if key in {"input_ids", "attention_mask"}
-                }
+                inputs = model_inputs(batch, config.device)
                 labels = batch["labels"].to(config.device)
 
                 with autocast_context(config.device):
@@ -402,7 +455,11 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                     )
 
                 if step % config.grad_accum == 0 or step == len(train_loader):
+                    if config.max_grad_norm is not None:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), config.max_grad_norm)
                     optimizer.step()
+                    if scheduler is not None:
+                        scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
 
                 progress.set_postfix(loss=f"{batch_loss:.4f}")
@@ -518,6 +575,11 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         "batch_size": config.batch_size,
         "grad_accum": config.grad_accum,
         "learning_rate": config.learning_rate,
+        "optimizer_eps": config.optimizer_eps,
+        "lr_scheduler": config.lr_scheduler,
+        "warmup_ratio": config.warmup_ratio,
+        "max_grad_norm": config.max_grad_norm,
+        "gradient_checkpointing": config.gradient_checkpointing,
         "max_length": config.max_length,
         "input_format": config.input_format,
         "reference_field": config.reference_field,

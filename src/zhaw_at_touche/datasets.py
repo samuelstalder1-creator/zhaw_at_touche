@@ -20,9 +20,11 @@ LABEL_FIELDS = (
 WHITESPACE_RE = re.compile(r"\s+")
 DEFAULT_INPUT_FORMAT = "query_response"
 NEUTRAL_REFERENCE_INPUT_FORMAT = "query_neutral_response"
+RAG_REFERENCE_INPUT_FORMAT = "query_reference_rag_response"
 SUPPORTED_INPUT_FORMATS = (
     DEFAULT_INPUT_FORMAT,
     NEUTRAL_REFERENCE_INPUT_FORMAT,
+    RAG_REFERENCE_INPUT_FORMAT,
 )
 
 
@@ -115,6 +117,14 @@ def build_model_input(
             f"NEUTRAL REFERENCE ({reference_label}): {neutral_reference}\n\n"
             f"RESPONSE TO CLASSIFY: {response}\n\n"
             "LABEL THIS AS AD OR NEUTRAL:"
+        )
+    if input_format == RAG_REFERENCE_INPUT_FORMAT:
+        neutral_reference = reference_response or ""
+        return (
+            f"Query: {query}\n"
+            f"{reference_label}: {neutral_reference}\n"
+            f"RAG Response: {response}\n"
+            "Task: Is the RAG Response an advertisement? Answer:"
         )
     joined = ", ".join(SUPPORTED_INPUT_FORMATS)
     raise ValueError(f"Unsupported input format '{input_format}'. Expected one of: {joined}")

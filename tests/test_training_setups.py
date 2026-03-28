@@ -39,9 +39,15 @@ class TrainingSetupsTests(unittest.TestCase):
                         "batch_size": 8,
                         "train_file": "data/custom-train.jsonl",
                         "max_train_rows": 100,
-                        "input_format": "query_neutral_response",
+                        "input_format": "query_reference_rag_response",
                         "reference_field": "gemini25flashlite",
+                        "reference_label": "Unbiased Reference",
                         "validation_file": "data/custom-validation.jsonl",
+                        "optimizer_eps": 1e-6,
+                        "lr_scheduler": "cosine_with_warmup",
+                        "warmup_ratio": 0.05,
+                        "max_grad_norm": 1.0,
+                        "gradient_checkpointing": True,
                         "wandb_enabled": False,
                         "wandb_project": "local-test",
                     }
@@ -62,9 +68,15 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.batch_size, 8)
             self.assertEqual(args.train_file, "data/custom-train.jsonl")
             self.assertEqual(args.max_train_rows, 100)
-            self.assertEqual(args.input_format, "query_neutral_response")
+            self.assertEqual(args.input_format, "query_reference_rag_response")
             self.assertEqual(args.reference_field, "gemini25flashlite")
+            self.assertEqual(args.reference_label, "Unbiased Reference")
             self.assertEqual(args.validation_file, "data/custom-validation.jsonl")
+            self.assertEqual(args.optimizer_eps, 1e-6)
+            self.assertEqual(args.lr_scheduler, "cosine_with_warmup")
+            self.assertEqual(args.warmup_ratio, 0.05)
+            self.assertEqual(args.max_grad_norm, 1.0)
+            self.assertTrue(args.gradient_checkpointing)
             self.assertFalse(args.wandb)
             self.assertEqual(args.wandb_project, "local-test")
 

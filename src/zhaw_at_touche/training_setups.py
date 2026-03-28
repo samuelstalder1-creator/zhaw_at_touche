@@ -10,13 +10,17 @@ ALLOWED_SETUP_FIELDS = {
     "batch_size",
     "device",
     "epochs",
+    "gradient_checkpointing",
     "grad_accum",
     "input_format",
     "learning_rate",
+    "lr_scheduler",
     "max_length",
+    "max_grad_norm",
     "max_train_rows",
     "model_dir",
     "model_name",
+    "optimizer_eps",
     "pad_to_max_length",
     "positive_class_weight_scale",
     "reference_field",
@@ -27,6 +31,7 @@ ALLOWED_SETUP_FIELDS = {
     "wandb_enabled",
     "wandb_project",
     "wandb_run_name",
+    "warmup_ratio",
 }
 
 
