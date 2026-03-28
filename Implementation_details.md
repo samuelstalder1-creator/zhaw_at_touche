@@ -1,26 +1,25 @@
 # Implementation Details
 
-## Consolidation
+## Module Mapping
 
-- `neutral_response_generator/main.py` was migrated into:
+- Neutral-response generation is implemented in:
   - `src/zhaw_at_touche/generation_utils.py`
   - `src/zhaw_at_touche/cli/generate_neutral.py`
-- `neutral_response_generator/analyze_token_counts.py` was migrated into:
+- Generated-data token analysis is implemented in:
   - `src/zhaw_at_touche/generated_stats.py`
   - `src/zhaw_at_touche/cli/generated_stats.py`
-- `neutral_response_generator/check_dataset_overlap.py` was migrated into:
+- Split-overlap checks are implemented in:
   - `src/zhaw_at_touche/overlap_utils.py`
   - `src/zhaw_at_touche/cli/check_overlap.py`
-- `dagmar/setup6/main.py` was split into:
+- Training, validation, and manual inference are implemented in:
   - `src/zhaw_at_touche/modeling.py`
   - `src/zhaw_at_touche/cli/train_model.py`
   - `src/zhaw_at_touche/cli/validate_model.py`
   - `src/zhaw_at_touche/cli/manual_inference.py`
-- `run_evaluation/main.py` was migrated into:
+- Evaluation summaries are implemented in:
   - `src/zhaw_at_touche/evaluation_utils.py`
   - `src/zhaw_at_touche/cli/evaluation_matrix.py`
-- The legacy `run_evaluation/` folder was removed because its evaluation tooling now lives under `src/zhaw_at_touche/`.
-- The legacy `neutral_response_generator/` folder was removed because its generator, stats, and overlap tooling now live under `src/zhaw_at_touche/`.
+- Only the current package layout is kept in the repository; imported standalone folders are no longer present.
 
 ## Folder Decisions
 

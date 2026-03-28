@@ -1,5 +1,5 @@
 {
-  "description": "Merged defaults from the former dagmar/setup6 project.",
+  "description": "RoBERTa training defaults for setup6.",
   "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
   "model_name": "FacebookAI/roberta-base",
   "max_length": 512,

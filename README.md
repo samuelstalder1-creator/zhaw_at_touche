@@ -1,6 +1,6 @@
 # zhaw_at_touche
 
-Unified `uv`-managed tooling for the Touché ad-detection workflow. The old `dagmar`, `neutral_response_generator`, and `run_evaluation` repos have been consolidated into one shared Python 3.12 project with CLI entry points.
+Unified `uv`-managed tooling for the Touché ad-detection workflow in one shared Python 3.12 project with CLI entry points.
 
 ## Repository Layout
 
@@ -215,7 +215,7 @@ Useful override:
 
 - `uv run touche-check-overlap --sample-limit 5`
 
-### 9. Recreate the old run_evaluation summary
+### 9. Generate a confusion-matrix summary from prediction files
 
 ```bash
 uv run touche-eval-matrix results/setupX
@@ -226,4 +226,4 @@ uv run touche-eval-matrix results/setupX
 - `data/task/README.md` contains the original dataset description.
 - `data/generated/chatgpt/` is included so OpenAI-generated files can follow the same layout later.
 - `validate_model/` stores evaluation-only presets for already-trained models such as `teamCMU`.
-- The neutral-response generation tooling now lives in `src/zhaw_at_touche/`; use the root CLI entry points instead of the old standalone scripts.
+- Use the root CLI entry points in `src/zhaw_at_touche/` for generation, training, validation, and analysis tasks.

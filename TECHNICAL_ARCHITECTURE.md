@@ -4,7 +4,7 @@
 
 This document explains the technical implementation of the `zhaw_at_touche` repository, how the code is structured, and how the main training and evaluation workflow is executed.
 
-The project consolidates three earlier standalone tools into one Python package with multiple CLI entry points:
+The project is organized as one Python package with multiple CLI entry points:
 
 - preprocessing and dataset utilities
 - neutral-response generation
@@ -202,7 +202,7 @@ The implementation builds indexes per split, intersects key sets, and returns sm
 
 ### `evaluation_utils.py`
 
-[`src/zhaw_at_touche/evaluation_utils.py`](src/zhaw_at_touche/evaluation_utils.py) contains the pure metric and confusion-matrix logic shared by validation and legacy-style evaluation reporting:
+[`src/zhaw_at_touche/evaluation_utils.py`](src/zhaw_at_touche/evaluation_utils.py) contains the pure metric and confusion-matrix logic shared by validation and summary reporting:
 
 - JSONL discovery
 - confusion-matrix counting
@@ -326,7 +326,7 @@ Legacy aliases are preserved for compatibility:
 
 ### `evaluation_matrix.py`
 
-[`src/zhaw_at_touche/cli/evaluation_matrix.py`](src/zhaw_at_touche/cli/evaluation_matrix.py) recreates the old `run_evaluation` confusion-matrix summary from prediction JSONL files without requiring model inference.
+[`src/zhaw_at_touche/cli/evaluation_matrix.py`](src/zhaw_at_touche/cli/evaluation_matrix.py) builds a confusion-matrix summary from prediction JSONL files without requiring model inference.
 
 ## End-To-End Data Flow
 
