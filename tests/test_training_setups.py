@@ -38,6 +38,7 @@ class TrainingSetupsTests(unittest.TestCase):
                         "epochs": 3,
                         "batch_size": 8,
                         "train_file": "data/custom-train.jsonl",
+                        "max_train_rows": 100,
                     }
                 ),
                 encoding="utf-8",
@@ -55,6 +56,7 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.epochs, 3)
             self.assertEqual(args.batch_size, 8)
             self.assertEqual(args.train_file, "data/custom-train.jsonl")
+            self.assertEqual(args.max_train_rows, 100)
 
     def test_parse_args_allows_cli_override(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -77,6 +79,11 @@ class TrainingSetupsTests(unittest.TestCase):
 
             self.assertEqual(args.epochs, 7)
             self.assertEqual(args.batch_size, 8)
+
+    def test_parse_args_defaults_to_full_training_set(self) -> None:
+        args = parse_args([])
+
+        self.assertIsNone(args.max_train_rows)
 
 
 if __name__ == "__main__":

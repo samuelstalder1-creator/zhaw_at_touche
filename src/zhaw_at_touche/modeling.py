@@ -52,6 +52,14 @@ def load_jsonl_rows(file_path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def limit_records(records: Sequence[dict[str, Any]], max_rows: int | None) -> list[dict[str, Any]]:
+    if max_rows is None or max_rows == 0:
+        return list(records)
+    if max_rows < 0:
+        raise ValueError("--max-train-rows must be >= 0.")
+    return list(records[:max_rows])
+
+
 @dataclass(frozen=True)
 class TrainingConfig:
     model_name: str
@@ -63,11 +71,12 @@ class TrainingConfig:
     grad_accum: int
     learning_rate: float
     device: str
+    max_train_rows: int | None = None
 
 
 class ResponseClassificationDataset(Dataset):
-    def __init__(self, file_path: Path):
-        self.records = load_jsonl_rows(file_path)
+    def __init__(self, file_path: Path, max_rows: int | None = None):
+        self.records = limit_records(load_jsonl_rows(file_path), max_rows)
 
     def __len__(self) -> int:
         return len(self.records)
@@ -127,7 +136,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         num_labels=2,
     ).to(config.device)
 
-    train_dataset = ResponseClassificationDataset(config.train_path)
+    train_dataset = ResponseClassificationDataset(config.train_path, max_rows=config.max_train_rows)
     collator = InstructionCollator(tokenizer=tokenizer, max_length=config.max_length)
     train_loader = DataLoader(
         train_dataset,
@@ -203,6 +212,16 @@ def load_model_bundle(model_dir: Path, device: str):
 
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
     model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
+    model.eval()
+    return tokenizer, model
+
+
+def load_model_reference(model_source: str | Path, device: str):
+    if isinstance(model_source, Path):
+        return load_model_bundle(model_source, device)
+
+    tokenizer = AutoTokenizer.from_pretrained(model_source)
+    model = AutoModelForSequenceClassification.from_pretrained(model_source).to(device)
     model.eval()
     return tokenizer, model
 

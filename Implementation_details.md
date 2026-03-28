@@ -29,6 +29,7 @@
 - `data/generated/gemini/` stores generated neutral-response datasets.
 - `data/generated/chatgpt/` is intentionally present even though no OpenAI generation backend is implemented yet.
 - `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup6`.
+- `validate_model/<setup-name>.json` stores reusable defaults for evaluation-only experiments such as `teamCMU`.
 - `models/<setup-name>/` stores saved Hugging Face model bundles plus `training_summary.json`.
 - `results/<setup-name>/` stores validation artifacts and prediction exports.
 
@@ -36,7 +37,10 @@
 
 - Training defaults to `data/generated/gemini/responses-train-with-neutral_gemini.jsonl` if present.
 - If generated files are missing, training falls back to `data/task/preprocessed/responses-train-merged.jsonl`.
-- Validation defaults to the generated Gemini `test` and `validation` files, with the same fallback to preprocessed merged files.
+- Training uses the full training file by default, with optional row limiting through `--max-train-rows`.
+- Validation defaults to the generated Gemini `test` file only, with fallback to the preprocessed merged `test` file.
+- Validation can include both `validation` and `test` through `--eval-splits validation test`.
+- Validation can load either a local saved model directory or a remote Hugging Face model name.
 - Device resolution order is `cuda -> mps -> cpu`, unless the user explicitly forces a device.
 
 ## Output Contracts
@@ -57,10 +61,13 @@
 - Loads optional defaults from `train_model/<setup-name>.json` before applying CLI overrides.
 - Saves the Hugging Face model/tokenizer bundle to `models/<setup-name>/`.
 - Writes `training_summary.json` next to the model bundle.
+- Uses the full training split by default, with optional subset training through `--max-train-rows`.
 
 ### `touche-validate`
 
+- Loads optional defaults from `validate_model/<setup-name>.json` before applying CLI overrides.
 - Writes one `*-predictions.jsonl` file per evaluated dataset.
+- Uses the `test` split by default unless explicit input files or `--eval-splits` are passed.
 - Evaluates the main `response` field against `gold_label`.
 - If a generated text field is present, also scores it and reports its positive-rate as a false-positive monitoring signal.
 

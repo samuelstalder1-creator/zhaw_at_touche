@@ -30,6 +30,7 @@ def base_defaults() -> dict[str, object]:
         "grad_accum": 4,
         "learning_rate": 2e-5,
         "device": None,
+        "max_train_rows": None,
     }
 
 
@@ -58,6 +59,12 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--grad-accum", type=int, default=defaults["grad_accum"])
     parser.add_argument("--learning-rate", type=float, default=defaults["learning_rate"])
     parser.add_argument("--device", choices=("cuda", "mps", "cpu"), default=defaults["device"])
+    parser.add_argument(
+        "--max-train-rows",
+        type=int,
+        default=defaults["max_train_rows"],
+        help="Optional limit for training rows. By default the full training file is used.",
+    )
     return parser
 
 
@@ -90,6 +97,7 @@ def main() -> None:
         grad_accum=args.grad_accum,
         learning_rate=args.learning_rate,
         device=resolve_device(args.device),
+        max_train_rows=args.max_train_rows,
     )
     summary = train_model(config)
     print(f"trained model saved to {model_dir}")

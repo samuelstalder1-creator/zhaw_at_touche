@@ -4,8 +4,10 @@ import argparse
 import csv
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
+from typing import Sequence
 
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
 from zhaw_at_touche.datasets import detect_generated_text_field
@@ -18,22 +20,22 @@ from zhaw_at_touche.evaluation_utils import (
     write_csv,
 )
 from zhaw_at_touche.jsonl import read_jsonl, write_jsonl
-from zhaw_at_touche.modeling import load_model_bundle, predict_with_bundle, resolve_device
+from zhaw_at_touche.validation_setups import DEFAULT_VALIDATION_SETUPS_DIR, load_setup_defaults
 
 
-def resolve_default_eval_paths() -> list[Path]:
+def resolve_default_eval_paths(eval_splits: Sequence[str] | None = None) -> list[Path]:
+    splits = list(eval_splits) if eval_splits else ["test"]
     generated_paths = [
-        Path("data/generated/gemini/responses-test-with-neutral_gemini.jsonl"),
-        Path("data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"),
+        Path(f"data/generated/gemini/responses-{split}-with-neutral_gemini.jsonl")
+        for split in splits
     ]
     if all(path.exists() for path in generated_paths):
         return generated_paths
 
-    preprocessed_paths = [
-        Path("data/task/preprocessed/responses-test-merged.jsonl"),
-        Path("data/task/preprocessed/responses-validation-merged.jsonl"),
+    return [
+        Path(f"data/task/preprocessed/responses-{split}-merged.jsonl")
+        for split in splits
     ]
-    return preprocessed_paths
 
 
 def save_confusion_matrix_image(
@@ -83,32 +85,121 @@ def write_csv_rows(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]
         writer.writerows(rows)
 
 
-def build_parser() -> argparse.ArgumentParser:
+def base_defaults() -> dict[str, object]:
+    return {
+        "model_name": None,
+        "model_dir": None,
+        "results_dir": None,
+        "eval_splits": ["test"],
+        "input_files": None,
+        "text_field": "response",
+        "generated_field": None,
+        "batch_size": 16,
+        "max_length": 512,
+        "threshold": 0.5,
+        "device": None,
+    }
+
+
+def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.ArgumentParser:
+    defaults = base_defaults()
+    if setup_defaults:
+        defaults.update(setup_defaults)
+    input_file_defaults = defaults["input_files"]
+    if input_file_defaults is None:
+        input_file_defaults = [str(path) for path in resolve_default_eval_paths(defaults["eval_splits"])]
+
     parser = argparse.ArgumentParser(description="Validate a trained model and write evaluation artifacts.")
     parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
-    parser.add_argument("--model-dir", default=None)
-    parser.add_argument("--results-dir", default=None)
-    parser.add_argument("--input-files", nargs="+", default=[str(path) for path in resolve_default_eval_paths()])
-    parser.add_argument("--text-field", default="response", help="Text field used for the main prediction.")
+    parser.add_argument(
+        "--setups-dir",
+        default=str(DEFAULT_VALIDATION_SETUPS_DIR),
+        help="Directory containing optional <setup-name>.json evaluation defaults.",
+    )
+    parser.add_argument(
+        "--model-name",
+        default=defaults["model_name"],
+        help="Remote or local Hugging Face model reference for evaluation.",
+    )
+    parser.add_argument("--model-dir", default=defaults["model_dir"])
+    parser.add_argument("--results-dir", default=defaults["results_dir"])
+    parser.add_argument(
+        "--eval-splits",
+        nargs="+",
+        choices=("validation", "test"),
+        default=defaults["eval_splits"],
+        help="Default evaluation splits when --input-files is not passed. Defaults to test only.",
+    )
+    parser.add_argument("--input-files", nargs="+", default=input_file_defaults)
+    parser.add_argument("--text-field", default=defaults["text_field"], help="Text field used for the main prediction.")
     parser.add_argument(
         "--generated-field",
-        default=None,
+        default=defaults["generated_field"],
         help="Optional generated text field to score for false-positive monitoring.",
     )
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--max-length", type=int, default=512)
-    parser.add_argument("--threshold", type=float, default=0.5)
-    parser.add_argument("--device", choices=("cuda", "mps", "cpu"))
+    parser.add_argument("--batch-size", type=int, default=defaults["batch_size"])
+    parser.add_argument("--max-length", type=int, default=defaults["max_length"])
+    parser.add_argument("--threshold", type=float, default=defaults["threshold"])
+    parser.add_argument("--device", choices=("cuda", "mps", "cpu"), default=defaults["device"])
     return parser
 
 
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
+    pre_parser.add_argument("--setups-dir", default=str(DEFAULT_VALIDATION_SETUPS_DIR))
+    pre_args, _ = pre_parser.parse_known_args(argv)
+
+    setup_defaults = load_setup_defaults(
+        setup_name=pre_args.setup_name,
+        setups_dir=Path(pre_args.setups_dir),
+    )
+    setup_provided_input_files = "input_files" in setup_defaults
+    parser = build_parser(setup_defaults)
+    args = parser.parse_args(argv)
+
+    provided_model_name = any(
+        token == "--model-name" or token.startswith("--model-name=")
+        for token in raw_argv
+    )
+    provided_model_dir = any(
+        token == "--model-dir" or token.startswith("--model-dir=")
+        for token in raw_argv
+    )
+    if provided_model_name and provided_model_dir:
+        parser.error("Pass only one of --model-name or --model-dir.")
+    if provided_model_name:
+        args.model_dir = None
+    if provided_model_dir:
+        args.model_name = None
+    provided_input_files = any(
+        token == "--input-files" or token.startswith("--input-files=")
+        for token in raw_argv
+    )
+    if not provided_input_files and not setup_provided_input_files:
+        args.input_files = [str(path) for path in resolve_default_eval_paths(args.eval_splits)]
+    return args
+
+
+def resolve_model_source(args: argparse.Namespace) -> str | Path:
+    if args.model_name:
+        return str(args.model_name)
+    if args.model_dir:
+        return Path(args.model_dir)
+    return DEFAULT_MODELS_DIR / args.setup_name
+
+
 def main() -> None:
-    args = build_parser().parse_args()
-    model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
+    from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
+
+    args = parse_args()
+    model_source = resolve_model_source(args)
     results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
     results_dir.mkdir(parents=True, exist_ok=True)
     device = resolve_device(args.device)
-    tokenizer, model = load_model_bundle(model_dir, device)
+    print(f"loading model from {model_source}")
+    tokenizer, model = load_model_reference(model_source, device)
 
     all_output_rows: list[dict[str, Any]] = []
     all_gold_labels: list[int] = []
@@ -183,11 +274,16 @@ def main() -> None:
             generated_positive_count = sum(prediction.label for prediction in generated_predictions)
             summary["generated_positive_rate"] = generated_positive_count / len(generated_predictions)
         file_summaries[path.name] = summary
-        print(f"{path.name}: accuracy={summary['accuracy']:.4f} weighted_f1={summary['weighted']['f1']:.4f}")
+        positive_label = summary.get("positive_label")
+        file_f1 = positive_label["f1"] if isinstance(positive_label, dict) else 0.0
+        print(
+            f"{path.name}: accuracy={summary['accuracy']:.4f} "
+            f"f1={file_f1:.4f} weighted_f1={summary['weighted']['f1']:.4f}"
+        )
 
     overall_summary = metrics_dict(all_gold_labels, all_predicted_labels)
     summary_payload = {
-        "model_dir": str(model_dir),
+        "model_source": str(model_source),
         "results_dir": str(results_dir),
         "device": device,
         "text_field": args.text_field,
@@ -253,6 +349,9 @@ def main() -> None:
     )
 
     print(f"overall accuracy={overall_summary['accuracy']:.4f}")
+    overall_positive_label = overall_summary.get("positive_label")
+    if isinstance(overall_positive_label, dict):
+        print(f"overall f1={overall_positive_label['f1']:.4f}")
     print(f"overall weighted_f1={overall_summary['weighted']['f1']:.4f}")
     print(f"artifacts written to {results_dir}")
 

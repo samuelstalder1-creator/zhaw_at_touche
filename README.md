@@ -12,6 +12,7 @@ Unified `uv`-managed tooling for the Touché ad-detection workflow. The old `dag
 │       ├── gemini/              # generated neutral responses from Gemini
 │       └── chatgpt/             # reserved for generated OpenAI outputs
 ├── train_model/                 # named training setup defaults
+├── validate_model/              # evaluation-only setup defaults
 ├── models/
 │   ├── setupX/                  # saved model bundle for one experiment
 │   ├── setupY/                  # saved model bundle for another experiment
@@ -95,11 +96,32 @@ Merged Dagmar setup:
 uv run touche-train --setup-name setup6
 ```
 
+By default training uses the full training dataset. To train on a subset:
+
+```bash
+uv run touche-train --setup-name setup6 --max-train-rows 1000
+```
+
 ### 4. Validate a trained model
 
 ```bash
 uv run touche-validate --setup-name setupX
 ```
+
+By default validation evaluates only the `test` split. To evaluate both
+validation and test data:
+
+```bash
+uv run touche-validate --setup-name setupX --eval-splits validation test
+```
+
+The validator also supports evaluation-only presets for already-trained remote models:
+
+```bash
+uv run touche-validate --setup-name teamCMU
+```
+
+`teamCMU` is defined in `validate_model/teamCMU.json` and evaluates the published Hugging Face model `teknology/ad-classifier-v0.4` without using `train_model/`. It also defaults to test-only evaluation unless you pass `--eval-splits validation test`.
 
 Default validation artifacts:
 
@@ -183,4 +205,5 @@ uv run touche-eval-matrix results/setupX
 
 - `data/task/README.md` contains the original dataset description.
 - `data/generated/chatgpt/` is included so OpenAI-generated files can follow the same layout later.
+- `validate_model/` stores evaluation-only presets for already-trained models such as `teamCMU`.
 - The neutral-response generation tooling now lives in `src/zhaw_at_touche/`; use the root CLI entry points instead of the old standalone scripts.

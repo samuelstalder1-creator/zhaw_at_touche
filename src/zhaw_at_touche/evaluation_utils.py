@@ -231,6 +231,19 @@ def metrics_dict(
 ) -> dict[str, Any]:
     counts, labels, total_rows = counts_from_pairs(gold_labels, predicted_labels)
     per_label, macro, weighted = compute_metrics(counts, labels)
+    positive_label_metrics = next(
+        (
+            {
+                "precision": float(metric["precision"]),
+                "recall": float(metric["recall"]),
+                "f1": float(metric["f1"]),
+                "support": int(metric["support"]),
+            }
+            for metric in per_label
+            if metric["label"] == 1
+        ),
+        None,
+    )
     return {
         "samples": total_rows,
         "accuracy": accuracy(gold_labels, predicted_labels),
@@ -240,6 +253,7 @@ def metrics_dict(
             for gold in labels
         },
         "per_label": list(per_label),
+        "positive_label": positive_label_metrics,
         "macro": macro,
         "weighted": weighted,
     }

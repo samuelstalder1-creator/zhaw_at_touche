@@ -4,29 +4,30 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_TRAINING_SETUPS_DIR = Path("train_model")
+DEFAULT_VALIDATION_SETUPS_DIR = Path("validate_model")
 
 ALLOWED_SETUP_FIELDS = {
     "batch_size",
     "device",
-    "epochs",
-    "grad_accum",
-    "learning_rate",
+    "eval_splits",
+    "generated_field",
+    "input_files",
     "max_length",
-    "max_train_rows",
     "model_dir",
     "model_name",
-    "train_file",
+    "results_dir",
+    "text_field",
+    "threshold",
 }
 
 
-def setup_config_path(setup_name: str, setups_dir: Path = DEFAULT_TRAINING_SETUPS_DIR) -> Path:
+def setup_config_path(setup_name: str, setups_dir: Path = DEFAULT_VALIDATION_SETUPS_DIR) -> Path:
     return setups_dir / f"{setup_name}.json"
 
 
 def load_setup_defaults(
     setup_name: str,
-    setups_dir: Path = DEFAULT_TRAINING_SETUPS_DIR,
+    setups_dir: Path = DEFAULT_VALIDATION_SETUPS_DIR,
 ) -> dict[str, Any]:
     config_path = setup_config_path(setup_name, setups_dir)
     if not config_path.exists():
@@ -35,15 +36,15 @@ def load_setup_defaults(
     try:
         payload = json.loads(config_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid JSON in training setup config: {config_path}") from exc
+        raise ValueError(f"Invalid JSON in validation setup config: {config_path}") from exc
 
     if not isinstance(payload, dict):
-        raise ValueError(f"Training setup config must be a JSON object: {config_path}")
+        raise ValueError(f"Validation setup config must be a JSON object: {config_path}")
 
     unknown_fields = sorted(set(payload) - ALLOWED_SETUP_FIELDS - {"description"})
     if unknown_fields:
         joined = ", ".join(unknown_fields)
-        raise ValueError(f"Unsupported fields in training setup config {config_path}: {joined}")
+        raise ValueError(f"Unsupported fields in validation setup config {config_path}: {joined}")
 
     defaults: dict[str, Any] = {}
     for field in ALLOWED_SETUP_FIELDS:

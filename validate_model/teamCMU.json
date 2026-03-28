@@ -1,0 +1,7 @@
+{
+  "description": "Evaluation-only preset for the published teamCMU model hosted on Hugging Face.",
+  "model_name": "teknology/ad-classifier-v0.4",
+  "results_dir": "results/teamCMU",
+  "max_length": 512,
+  "batch_size": 32
+}
