@@ -1,0 +1,40 @@
+{
+  "model_name": "FacebookAI/roberta-base",
+  "train_path": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "output_dir": "models/setup6",
+  "device": "cuda",
+  "epochs": 1,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "max_length": 512,
+  "input_format": "query_response",
+  "reference_field": null,
+  "reference_label": "GEMINI",
+  "pad_to_max_length": false,
+  "positive_class_weight_scale": 2.0,
+  "validation_path": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "tensorboard_enabled": true,
+  "tensorboard_dir": "models/setup6/tensorboard",
+  "wandb_enabled": true,
+  "wandb_project": "zhaw-at-touche-training",
+  "wandb_dir": "models/setup6/wandb",
+  "wandb_run_name": "setup6",
+  "metrics_log_path": "models/setup6/training_metrics.jsonl",
+  "train_rows": 32727,
+  "epoch_losses": [
+    0.046586175907762775
+  ],
+  "validation_history": [
+    {
+      "phase": "validation",
+      "event": "epoch",
+      "epoch": 0,
+      "loss": 0.009021485815005111,
+      "accuracy": 0.9968858131487889,
+      "positive_f1": 0.9949438202247192,
+      "weighted_f1": 0.9968853276505578,
+      "samples": 5780
+    }
+  ]
+}
