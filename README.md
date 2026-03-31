@@ -187,6 +187,11 @@ The local Longformer training preset also has a matching validation preset:
 uv run touche-validate --setup-name setup7
 ```
 
+Additional local validation presets are available for `setup4`, `setup9`,
+`setup10`, `setup11`, and `setup12`. Setups such as `setup6` and `setup8`
+still validate through the default `models/<setup-name>/` and
+`results/<setup-name>/` path resolution.
+
 Default validation artifacts:
 
 - `results/setupX/metrics_summary.json`

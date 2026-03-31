@@ -14,4 +14,5 @@
 
 - The migration keeps the current Gemini generation behavior and the current binary classifier behavior.
 - Utility-level tests cover merge logic, text cleanup, generated-field detection, and metric computation.
+- Named setup documentation now spans `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`; keep `README.md`, `train_model/README.md`, `validate_model/README.md`, and `setup.md` synchronized when adding or removing presets.
 - Full integration testing still depends on a synced `uv` environment plus model/API access.

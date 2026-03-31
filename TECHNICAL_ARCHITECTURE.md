@@ -112,7 +112,7 @@ The entire pipeline uses JSONL as the exchange format between steps. That keeps 
 
 Three input formats are currently supported:
 
-- the default `Query: ... Response: ... Answer:` prompt
+- the default `Query: ... Response: ... Answer:` prompt, used by setups such as `setup6`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`
 - a neutral-reference format used by `setup7`, where query, Gemini neutral reference, and target response are combined into one long context
 - a reference-plus-RAG format used by `setup4`, where query, unbiased reference, and RAG response are rendered with an explicit advertisement-labeling instruction
 
@@ -130,7 +130,7 @@ That formatting is reused in both training and inference so the model sees the s
 
 [`src/zhaw_at_touche/training_setups.py`](src/zhaw_at_touche/training_setups.py) loads optional JSON defaults from `train_model/<setup-name>.json`.
 
-This gives the project a simple experiment-configuration mechanism without introducing a separate config framework. The implementation validates supported fields and lets the CLI override any of them later.
+This gives the project a simple experiment-configuration mechanism without introducing a separate config framework. The implementation validates supported fields, including scheduler and optimizer-tuning fields such as `weight_decay`, `layerwise_lr_decay`, and `freeze_embeddings_epochs`, and lets the CLI override any of them later.
 
 ### `validation_setups.py`
 
@@ -155,7 +155,7 @@ Important implementation details:
 - `resolve_device` chooses `cuda`, then `mps`, then `cpu`, unless the user explicitly forces a device.
 - `InstructionCollator` converts raw records into the standardized prompt format before tokenization.
 - `build_class_weights` compensates for class imbalance by up-weighting the positive class.
-- `train_model` runs a manual PyTorch training loop with `AdamW`, gradient accumulation, optional gradient checkpointing, optional gradient clipping, scheduler support, and optional autocast for supported CUDA hardware.
+- `train_model` runs a manual PyTorch training loop with `AdamW`, gradient accumulation, optional gradient checkpointing, optional gradient clipping, `none`/`linear`/`cosine_with_warmup` schedulers, optional layerwise LR decay, temporary embedding freezing, and optional autocast for supported CUDA hardware.
 - training uses the full training file by default, but `max_train_rows` can restrict it to a subset.
 - trained model and tokenizer files are saved directly to `models/<setup-name>/`.
 - `load_model_reference` can load either a local bundle path or a remote Hugging Face model reference.
@@ -259,6 +259,12 @@ It also supports setup-specific prompt structures. `setup7`, for example, uses
 Longformer with a 1024-token context that includes the `gemini25flashlite`
 neutral response as a reference segment.
 
+Other current presets such as `setup6`, `setup8`, `setup9`, `setup10`,
+`setup11`, and `setup12` stay on the default query-response prompt, while
+`setup9` additionally exercises the newer optimizer controls for stabilized
+DeBERTa-v3 fine-tuning and `setup10` to `setup12` use linear warmup/decay
+scheduling for ALBERT, ELECTRA, and DistilRoBERTa baselines.
+
 For monitoring, the command writes `training_metrics.jsonl` locally and can log
 the same metrics to W&B online.
 
@@ -284,6 +290,11 @@ passing `--eval-splits validation test`, or bypassed entirely with explicit
 The same module also supports reference-aware validation, which matters for
 models like `setup7` whose prompt structure differs from the default
 query-response format.
+
+Matching local validation presets are currently defined for `setup4`, `setup7`,
+`setup9`, `setup10`, `setup11`, and `setup12`. Setups such as `setup6` and
+`setup8` still work through the default `models/<setup-name>/` and
+`results/<setup-name>/` resolution path without a dedicated validation JSON.
 
 The validation step does more than print metrics. It also standardizes outputs into reusable artifact files:
 

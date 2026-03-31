@@ -25,6 +25,11 @@
 - Implemented PyTorch-based classifier training with reusable setup presets,
   configurable prompt formats, class weighting, validation during training, and
   W&B monitoring.
+- Expanded the local experiment matrix with stabilized DeBERTa-v3, ALBERT,
+  ELECTRA, and DistilRoBERTa presets plus matching validation presets.
+- Extended the training loop with linear scheduling, explicit weight decay,
+  layerwise LR decay, and optional embedding freezing for architecture-specific
+  fine-tuning experiments.
 - Implemented validation/export tooling for metrics, confusion matrices,
   prediction files, and misclassification analysis.
 - Added utility/test coverage for configuration loading, metrics, overlap
@@ -34,8 +39,10 @@
 
 - Train final candidate models on the target GPU environment and compare the key
   setups on validation and test performance.
-- Analyze why `setup4` performs very badly after training.
-- Test different but similar BERT-family models as setup alternatives.
+- Analyze whether `setup9` actually fixes the DeBERTa-v3 instability seen in
+  `setup4` and `setup8`.
+- Train and compare the newly added ALBERT, ELECTRA, and DistilRoBERTa setup
+  alternatives against the RoBERTa and Longformer baselines.
 - Select the final submission checkpoint and rerun validation to archive the
   final results.
 - Build a Docker container with the trained model for the Touché challenge

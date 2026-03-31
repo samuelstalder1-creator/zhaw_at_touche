@@ -27,10 +27,11 @@
 - `data/task/preprocessed/` contains merged response + label files created by `touche-preprocess`.
 - `data/generated/gemini/` stores generated neutral-response datasets.
 - `data/generated/chatgpt/` is intentionally present even though no OpenAI generation backend is implemented yet.
-- `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup6`.
-- `train_model/setup7.json` configures the Longformer neutral-reference training run.
+- `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`.
+- The current setup family covers RoBERTa, Longformer, DeBERTa-v3, ALBERT, ELECTRA, and DistilRoBERTa variants.
 - `validate_model/<setup-name>.json` stores reusable defaults for evaluation-only experiments such as `teamCMU`.
-- `validate_model/setup7.json` mirrors the Longformer input format for local evaluation.
+- `validate_model/setup4.json` and `validate_model/setup7.json` mirror the reference-aware local training setups.
+- `validate_model/setup9.json`, `validate_model/setup10.json`, `validate_model/setup11.json`, and `validate_model/setup12.json` provide explicit local validation presets for the newer query-response baselines.
 - `models/<setup-name>/` stores saved Hugging Face model bundles plus `training_summary.json`.
 - `results/<setup-name>/` stores validation artifacts and prediction exports.
 
@@ -42,7 +43,7 @@
 - Validation defaults to the generated Gemini `test` file only, with fallback to the preprocessed merged `test` file.
 - Validation can include both `validation` and `test` through `--eval-splits validation test`.
 - Validation can load either a local saved model directory or a remote Hugging Face model name.
-- Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference, while `setup4` uses a DeBERTa-oriented unbiased-reference / RAG-response prompt.
+- Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference, `setup4` uses an unbiased-reference / RAG-response prompt, and `setup6`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12` stay on the default query-response prompt.
 - Device resolution order is `cuda -> mps -> cpu`, unless the user explicitly forces a device.
 
 ## Output Contracts
@@ -66,6 +67,7 @@
 - Writes step/epoch monitoring events to `training_metrics.jsonl`.
 - Uses the full training split by default, with optional subset training through `--max-train-rows`.
 - Supports alternative input formats such as the `setup7` long-context neutral-reference prompt and the `setup4` unbiased-reference / RAG-response prompt.
+- Supports `none`, `linear`, and `cosine_with_warmup` schedulers plus optimizer controls such as weight decay, layerwise LR decay, and temporary embedding freezing.
 - Supports W&B online logging and optional epoch-end validation monitoring.
 
 ### `touche-validate`
@@ -80,7 +82,8 @@
 ## Current Assumptions
 
 - The classification task remains binary: `0 = no ad`, `1 = ad`.
-- The default training text format remains `Query: ... Response: ... Answer:`, while `setup7` uses a long-context neutral-reference format and `setup4` uses an unbiased-reference / RAG-response format.
+- The default training text format remains `Query: ... Response: ... Answer:`. `setup7` uses a long-context neutral-reference format, `setup4` uses an unbiased-reference / RAG-response format, and the other current local setups stay on the default prompt.
+- The local setup matrix currently spans RoBERTa, Longformer, DeBERTa-v3 variants, ALBERT, ELECTRA, and DistilRoBERTa.
 - Gemini is the only implemented neutral-generation backend in this migration.
 
 ## Known Gaps
