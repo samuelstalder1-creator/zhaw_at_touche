@@ -62,7 +62,6 @@ def load_setup_defaults(
 
     defaults: dict[str, Any] = {}
     for field in ALLOWED_SETUP_FIELDS:
-        value = payload.get(field)
-        if value is not None:
-            defaults[field] = value
+        if field in payload:
+            defaults[field] = payload[field]
     return defaults

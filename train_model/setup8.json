@@ -1,10 +1,14 @@
 {
-  "description": "DeBERTa-v3 training defaults for setup8, mirroring setup6.",
+  "description": "DeBERTa-v3-base fine-tuning. Requires deberta-specific hyperparameters: eps=1e-6, grad clipping, and warmup to prevent early gradient explosion.",
   "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
   "model_name": "microsoft/deberta-v3-base",
   "max_length": 512,
-  "epochs": 1,
+  "epochs": 3,
   "batch_size": 16,
   "grad_accum": 4,
-  "learning_rate": 2e-05
+  "learning_rate": 2e-05,
+  "optimizer_eps": 1e-06,
+  "max_grad_norm": 1.0,
+  "lr_scheduler": "cosine_with_warmup",
+  "warmup_ratio": 0.06
 }
