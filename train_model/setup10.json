@@ -1,0 +1,15 @@
+{
+  "description": "ALBERT-base-v2 fine-tuning. Lightweight due to cross-layer parameter sharing. Stable with standard hyperparameters but benefits from slightly higher LR due to fewer effective parameters.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "albert/albert-base-v2",
+  "max_length": 512,
+  "epochs": 5,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "device": "cuda"
+}

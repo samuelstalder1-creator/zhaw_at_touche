@@ -97,7 +97,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     )
     parser.add_argument(
         "--lr-scheduler",
-        choices=("none", "cosine_with_warmup"),
+        choices=("none", "linear", "cosine_with_warmup"),
         default=defaults["lr_scheduler"],
         help="Learning-rate scheduler applied after optimizer steps.",
     )

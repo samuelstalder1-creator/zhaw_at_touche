@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the DistilRoBERTa setup12 model.",
+  "model_dir": "models/setup12",
+  "results_dir": "results/setup12",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

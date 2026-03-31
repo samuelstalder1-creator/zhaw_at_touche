@@ -120,6 +120,24 @@ Stabilized DeBERTa-v3 setup with lower LR and optimizer safeguards:
 uv run touche-train --setup-name setup9
 ```
 
+ALBERT-base-v2 setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup10
+```
+
+ELECTRA-base discriminator setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup11
+```
+
+DistilRoBERTa setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup12
+```
+
 Training now also writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`

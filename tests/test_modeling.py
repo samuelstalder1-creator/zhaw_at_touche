@@ -100,6 +100,19 @@ class OptimizerHelpersTests(unittest.TestCase):
         self.assertTrue(modeling.set_embeddings_trainable(model, trainable=True))
         self.assertTrue(all(parameter.requires_grad for parameter in model.fake.embeddings.parameters()))
 
+    def test_maybe_init_scheduler_supports_linear(self) -> None:
+        parameter = torch.nn.Parameter(torch.tensor(1.0))
+        optimizer = torch.optim.AdamW([parameter], lr=1e-3)
+
+        scheduler = modeling.maybe_init_scheduler(
+            optimizer=optimizer,
+            scheduler_name="linear",
+            warmup_ratio=0.1,
+            total_steps=10,
+        )
+
+        self.assertIsNotNone(scheduler)
+
 
 if __name__ == "__main__":
     unittest.main()

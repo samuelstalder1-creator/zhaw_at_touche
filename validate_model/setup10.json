@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the ALBERT-base-v2 setup10 model.",
+  "model_dir": "models/setup10",
+  "results_dir": "results/setup10",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

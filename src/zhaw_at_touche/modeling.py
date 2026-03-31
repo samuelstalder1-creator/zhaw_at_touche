@@ -11,7 +11,12 @@ from typing import Any, Sequence
 import torch
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_cosine_schedule_with_warmup
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
+)
 
 from .datasets import DEFAULT_INPUT_FORMAT, build_model_input
 from .evaluation_utils import metrics_dict, validation_metrics_payload
@@ -454,6 +459,13 @@ def maybe_init_scheduler(
 ):
     if scheduler_name == "none":
         return None
+    if scheduler_name == "linear":
+        warmup_steps = int(total_steps * warmup_ratio)
+        return get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=total_steps,
+        )
     if scheduler_name == "cosine_with_warmup":
         warmup_steps = int(total_steps * warmup_ratio)
         return get_cosine_schedule_with_warmup(

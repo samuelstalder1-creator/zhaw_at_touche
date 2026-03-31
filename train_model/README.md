@@ -66,6 +66,24 @@ Stabilized DeBERTa-v3 setup with lower LR, more warmup, weight decay, layerwise 
 uv run touche-train --setup-name setup9
 ```
 
+ALBERT-base-v2 setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup10
+```
+
+ELECTRA-base discriminator setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup11
+```
+
+DistilRoBERTa setup with linear warmup/decay scheduling:
+
+```bash
+uv run touche-train --setup-name setup12
+```
+
 By default `touche-train` uses the full training file. To train on only a
 subset, pass for example:
 

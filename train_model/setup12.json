@@ -1,0 +1,15 @@
+{
+  "description": "DistilRoBERTa fine-tuning. 6-layer distilled RoBERTa, ~2x faster training and inference. Can tolerate slightly higher LR and more epochs due to smaller capacity.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "distilroberta-base",
+  "max_length": 512,
+  "epochs": 5,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "device": "cuda"
+}

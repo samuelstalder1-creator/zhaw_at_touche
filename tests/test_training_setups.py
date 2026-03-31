@@ -114,6 +114,33 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertIsNone(args.max_train_rows)
         self.assertTrue(args.wandb)
 
+    def test_parse_args_accepts_linear_scheduler(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup10.json").write_text(
+                json.dumps(
+                    {
+                        "model_name": "albert/albert-base-v2",
+                        "lr_scheduler": "linear",
+                        "warmup_ratio": 0.06,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            args = parse_args(
+                [
+                    "--setup-name",
+                    "setup10",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(args.model_name, "albert/albert-base-v2")
+            self.assertEqual(args.lr_scheduler, "linear")
+            self.assertEqual(args.warmup_ratio, 0.06)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,16 @@
+{
+  "description": "ELECTRA-base discriminator fine-tuning. Pretrained with replaced-token detection, strong on classification. Trains stably with RoBERTa-like hyperparameters.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "google/electra-base-discriminator",
+  "max_length": 512,
+  "epochs": 4,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "max_grad_norm": 1.0,
+  "device": "cuda"
+}

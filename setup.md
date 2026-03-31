@@ -1,6 +1,6 @@
 # Setup Comparison Summary
 
-This file compares the named training setups currently defined in the repository: `setup4`, `setup6`, `setup7`, `setup8`, and `setup9`.
+This file compares the named training setups currently defined in the repository: `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`.
 
 ## Quick Comparison
 
@@ -11,6 +11,9 @@ This file compares the named training setups currently defined in the repository
 | `setup7` | `allenai/longformer-base-4096` | `query_neutral_response` | `gemini25flashlite` as `GEMINI` | 1024 | 1 | `4 x 8` | 32 | Long-context setup with Gemini neutral reference |
 | `setup8` | `microsoft/deberta-v3-base` | `query_response` | none | 512 | 3 | `16 x 4` | 64 | `setup6` recipe with DeBERTa-v3 |
 | `setup9` | `microsoft/deberta-v3-base` | `query_response` | none | 512 | 3 | `16 x 4` | 64 | Stabilized DeBERTa-v3 retry for `setup8` |
+| `setup10` | `albert/albert-base-v2` | `query_response` | none | 512 | 5 | `16 x 4` | 64 | Lightweight ALBERT baseline with linear schedule |
+| `setup11` | `google/electra-base-discriminator` | `query_response` | none | 512 | 4 | `16 x 4` | 64 | ELECTRA discriminator baseline with linear schedule |
+| `setup12` | `distilroberta-base` | `query_response` | none | 512 | 5 | `16 x 4` | 64 | DistilRoBERTa baseline with linear schedule |
 
 ## Key Differences
 
@@ -21,6 +24,9 @@ This file compares the named training setups currently defined in the repository
 | `setup7` | `pad_to_max_length=true`, `positive_class_weight_scale=1.5`, longer context window, smaller micro-batch |
 | `setup8` | Same behavior as `setup6` except `model_name=microsoft/deberta-v3-base` |
 | `setup9` | `learning_rate=8e-06`, `optimizer_eps=1e-07`, `weight_decay=0.01`, `lr_scheduler=cosine_with_warmup`, `warmup_ratio=0.1`, `max_grad_norm=1.0`, `layerwise_lr_decay=0.9`, `freeze_embeddings_epochs=1` |
+| `setup10` | `learning_rate=3e-05`, `weight_decay=0.01`, `lr_scheduler=linear`, `warmup_ratio=0.06`, `device=cuda` |
+| `setup11` | `learning_rate=2e-05`, `weight_decay=0.01`, `lr_scheduler=linear`, `warmup_ratio=0.06`, `max_grad_norm=1.0`, `device=cuda` |
+| `setup12` | `learning_rate=3e-05`, `weight_decay=0.01`, `lr_scheduler=linear`, `warmup_ratio=0.06`, `device=cuda` |
 
 ## Validation And Artifact Status
 
@@ -31,6 +37,9 @@ This file compares the named training setups currently defined in the repository
 | `setup7` | `validate_model/setup7.json` | `models/setup7/` | `results/setup7/` | no | no |
 | `setup8` | none | `models/setup8/` | `results/setup8/` | no | no |
 | `setup9` | `validate_model/setup9.json` | `models/setup9/` | `results/setup9/` | no | no |
+| `setup10` | `validate_model/setup10.json` | `models/setup10/` | `results/setup10/` | no | no |
+| `setup11` | `validate_model/setup11.json` | `models/setup11/` | `results/setup11/` | no | no |
+| `setup12` | `validate_model/setup12.json` | `models/setup12/` | `results/setup12/` | no | no |
 
 ## Committed Results
 
@@ -43,6 +52,9 @@ Only `setup6` currently has committed evaluation artifacts in the repository, so
 | `setup7` | n/a | n/a | n/a | n/a | no committed results |
 | `setup8` | n/a | n/a | n/a | n/a | no committed results |
 | `setup9` | n/a | n/a | n/a | n/a | new stabilized DeBERTa config, no committed results yet |
+| `setup10` | n/a | n/a | n/a | n/a | new ALBERT config, no committed results yet |
+| `setup11` | n/a | n/a | n/a | n/a | new ELECTRA config, no committed results yet |
+| `setup12` | n/a | n/a | n/a | n/a | new DistilRoBERTa config, no committed results yet |
 
 Overall confusion counts for committed `setup6` results:
 
@@ -61,6 +73,9 @@ Overall confusion counts for committed `setup6` results:
 
 - `setup6` and `setup8` are the cleanest head-to-head comparison because they use the same recipe and differ only in backbone model
 - `setup9` is the practical follow-up to `setup8`: same DeBERTa backbone and prompt format, but with the lower LR and optimizer stabilizers aimed at reducing divergence
+- `setup10` gives you a lighter non-DeBERTa alternative with standard `query_response` input and a linear schedule
+- `setup11` gives you an ELECTRA discriminator baseline with a standard prompt format and linear scheduling
+- `setup12` gives you a smaller RoBERTa-family baseline that should train faster than full RoBERTa
 - `setup4` is the more engineered DeBERTa variant and is not directly comparable to `setup6` or `setup8` on architecture alone because the prompt format and optimization settings also change
 - `setup7` is the outlier: longest context, smallest per-device batch, and reference-aware input
-- The repository does not yet contain committed results for `setup4`, `setup7`, `setup8`, or `setup9`, so any real performance comparison still requires training and validation for those setups
+- The repository does not yet contain committed results for `setup4`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, or `setup12`, so any real performance comparison still requires training and validation for those setups
