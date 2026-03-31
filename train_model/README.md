@@ -39,6 +39,12 @@ Example:
 uv run touche-train --setup-name setup6
 ```
 
+DeBERTa-v3 variant of setup6:
+
+```bash
+uv run touche-train --setup-name setup8
+```
+
 Longformer neutral-reference setup:
 
 ```bash

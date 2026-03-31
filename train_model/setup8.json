@@ -1,0 +1,10 @@
+{
+  "description": "DeBERTa-v3 training defaults for setup8, mirroring setup6.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "model_name": "microsoft/deberta-v3-base",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05
+}

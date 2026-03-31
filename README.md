@@ -96,6 +96,12 @@ Merged Dagmar setup:
 uv run touche-train --setup-name setup6
 ```
 
+DeBERTa-v3 variant of setup6:
+
+```bash
+uv run touche-train --setup-name setup8
+```
+
 Longformer setup with Gemini neutral-reference context:
 
 ```bash
