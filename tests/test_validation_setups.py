@@ -5,7 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from zhaw_at_touche.cli.validate_model import parse_args, resolve_default_eval_paths, resolve_model_source
+from zhaw_at_touche.cli.validate_model import (
+    parse_args,
+    resolve_default_eval_paths,
+    resolve_model_source,
+    resolve_scoring_backend,
+)
 from zhaw_at_touche.validation_setups import load_setup_defaults
 
 
@@ -140,6 +145,59 @@ class ValidationSetupsTests(unittest.TestCase):
             )
 
             self.assertEqual(args.input_files, ["custom-a.jsonl", "custom-b.jsonl"])
+
+    def test_load_setup_defaults_accepts_embedding_divergence_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup100.json").write_text(
+                json.dumps(
+                    {
+                        "scoring_backend": "embedding_divergence",
+                        "model_dir": "models/setup100",
+                        "results_dir": "results/setup100",
+                        "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+                        "neutral_field": "gemini25flashlite",
+                        "distance_metric": "cosine",
+                        "score_granularity": "sentence",
+                        "sentence_agg": "max",
+                        "threshold_metric": "positive_f1",
+                        "calibration_input_files": [
+                            "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            defaults = load_setup_defaults("setup100", setups_dir)
+
+            self.assertEqual(defaults["scoring_backend"], "embedding_divergence")
+            self.assertEqual(defaults["embedding_model_name"], "sentence-transformers/all-MiniLM-L6-v2")
+            self.assertEqual(defaults["neutral_field"], "gemini25flashlite")
+
+    def test_resolve_scoring_backend_detects_embedding_divergence_setup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup100.json").write_text(
+                json.dumps(
+                    {
+                        "scoring_backend": "embedding_divergence",
+                        "model_dir": "models/setup100",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            backend = resolve_scoring_backend(
+                [
+                    "--setup-name",
+                    "setup100",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(backend, "embedding_divergence")
 
 
 if __name__ == "__main__":

@@ -415,7 +415,7 @@ The output is written under `data/generated/<provider>/`, for example
 
 ### 5. Validation
 
-`touche-validate` loads either a saved local bundle or a remote evaluation-only model reference, predicts labels for one or more evaluation files, and writes:
+`touche-validate` loads either a saved local bundle, a remote evaluation-only model reference, or delegates backend-specific setups such as `setup100` to the embedding-divergence validator. In the classifier path it predicts labels for one or more evaluation files and writes:
 
 - per-file prediction JSONL outputs
 - aggregate metrics

@@ -231,12 +231,15 @@ Default validation artifacts:
 
 `setup100` is a two-stage experiment. `touche-train --setup-name setup100`
 fits and saves an embedding-divergence threshold/state bundle in
-`models/setup100/embedding_state.json`. `touche-embed-divergence` then loads
-that saved threshold by default, falling back to validation calibration only if
-no saved state or manual threshold is available.
+`models/setup100/embedding_state.json`. You can then validate it either with
+`touche-validate --setup-name setup100` or directly with
+`touche-embed-divergence --setup-name setup100`. Both routes load the saved
+threshold by default and fall back to validation calibration only if no saved
+state or manual threshold is available.
 
 ```bash
 uv run touche-train --setup-name setup100
+uv run touche-validate --setup-name setup100
 uv run touche-embed-divergence --setup-name setup100
 ```
 

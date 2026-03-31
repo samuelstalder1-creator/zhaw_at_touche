@@ -1,5 +1,6 @@
 {
   "description": "Embedding-space divergence validation preset that loads the saved threshold/state from models/setup100 when available.",
+  "scoring_backend": "embedding_divergence",
   "model_dir": "models/setup100",
   "results_dir": "results/setup100",
   "eval_splits": [

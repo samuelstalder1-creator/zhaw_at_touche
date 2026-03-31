@@ -62,14 +62,16 @@ Embedding-divergence baseline:
 
 ```bash
 uv run touche-train --setup-name setup100
+uv run touche-validate --setup-name setup100
 uv run touche-embed-divergence --setup-name setup100
 ```
 
 `setup100` uses `train_model/setup100.json` plus `validate_model/setup100.json`.
 The train step saves `models/setup100/embedding_state.json` with the fitted
-threshold and summary. The evaluation step loads that saved state by default
-and only recalibrates on the validation split if no saved threshold or manual
-`--threshold` is available.
+threshold and summary. `touche-validate --setup-name setup100` now delegates to
+the embedding-divergence backend automatically, and the evaluation step loads
+the saved state by default. It only recalibrates on the validation split if no
+saved threshold or manual `--threshold` is available.
 
 By default the validator evaluates only the `test` split. To evaluate both
 validation and test data, either set `eval_splits` in the setup JSON or pass:

@@ -77,6 +77,7 @@
 ### `touche-validate`
 
 - Loads optional defaults from `validate_model/<setup-name>.json` before applying CLI overrides.
+- Delegates `setup100`-style embedding-divergence configs to the matching backend instead of forcing them through the classifier validator.
 - Writes one `*-predictions.jsonl` file per evaluated dataset.
 - Uses the `test` split by default unless explicit input files or `--eval-splits` are passed.
 - Evaluates the main `response` field against `gold_label`.

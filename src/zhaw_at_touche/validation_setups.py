@@ -8,7 +8,10 @@ DEFAULT_VALIDATION_SETUPS_DIR = Path("validate_model")
 
 ALLOWED_SETUP_FIELDS = {
     "batch_size",
+    "calibration_input_files",
     "device",
+    "distance_metric",
+    "embedding_model_name",
     "eval_splits",
     "generated_field",
     "input_format",
@@ -16,12 +19,17 @@ ALLOWED_SETUP_FIELDS = {
     "max_length",
     "model_dir",
     "model_name",
+    "neutral_field",
     "pad_to_max_length",
     "reference_field",
     "reference_label",
     "results_dir",
+    "score_granularity",
+    "scoring_backend",
+    "sentence_agg",
     "text_field",
     "threshold",
+    "threshold_metric",
 }
 
 

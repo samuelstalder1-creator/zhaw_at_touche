@@ -19,6 +19,7 @@ ALLOWED_SETUP_FIELDS = {
     "neutral_field",
     "results_dir",
     "score_granularity",
+    "scoring_backend",
     "sentence_agg",
     "threshold",
     "threshold_metric",

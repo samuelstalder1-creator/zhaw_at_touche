@@ -165,20 +165,30 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     return parser
 
 
-def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+def load_requested_setup_defaults(argv: Sequence[str] | None = None) -> tuple[list[str], dict[str, Any]]:
     raw_argv = list(argv) if argv is not None else sys.argv[1:]
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
     pre_parser.add_argument("--setups-dir", default=str(DEFAULT_VALIDATION_SETUPS_DIR))
-    pre_args, _ = pre_parser.parse_known_args(argv)
+    pre_args, _ = pre_parser.parse_known_args(raw_argv)
 
     setup_defaults = load_setup_defaults(
         setup_name=pre_args.setup_name,
         setups_dir=Path(pre_args.setups_dir),
     )
+    return raw_argv, setup_defaults
+
+
+def resolve_scoring_backend(argv: Sequence[str] | None = None) -> str:
+    _, setup_defaults = load_requested_setup_defaults(argv)
+    return str(setup_defaults.get("scoring_backend", "classifier"))
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    raw_argv, setup_defaults = load_requested_setup_defaults(argv)
     setup_provided_input_files = "input_files" in setup_defaults
     parser = build_parser(setup_defaults)
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_argv)
 
     provided_model_name = any(
         token == "--model-name" or token.startswith("--model-name=")
@@ -224,9 +234,16 @@ def _warn_collapse(summary: dict, context: str) -> None:
 
 
 def main() -> None:
+    raw_argv = sys.argv[1:]
+    if resolve_scoring_backend(raw_argv) == "embedding_divergence":
+        from zhaw_at_touche.cli.embedding_divergence import main as embedding_divergence_main
+
+        embedding_divergence_main(raw_argv)
+        return
+
     from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
 
-    args = parse_args()
+    args = parse_args(raw_argv)
     model_source = resolve_model_source(args)
     results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
     results_dir.mkdir(parents=True, exist_ok=True)

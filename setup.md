@@ -85,7 +85,7 @@ Overall confusion counts for committed `setup6` results:
 `setup100` is intentionally not part of the classifier training table above because it does not fine-tune a transformer classifier.
 
 - Train command: `uv run touche-train --setup-name setup100`
-- Eval command: `uv run touche-embed-divergence --setup-name setup100`
+- Eval command: `uv run touche-validate --setup-name setup100` or `uv run touche-embed-divergence --setup-name setup100`
 - Type: embedding-space divergence baseline with a saved threshold/state phase
 - Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
 - Reference field: `gemini25flashlite`
