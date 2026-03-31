@@ -5,3 +5,7 @@
 - `generated/chatgpt/`: reserved for the same file format if OpenAI-generated data is added later
 
 The original dataset description is in `task/README.md`.
+
+The current named training setups use the Gemini-generated `responses-*-with-neutral_gemini.jsonl`
+files as their default training, validation, and evaluation inputs when those
+files are present.

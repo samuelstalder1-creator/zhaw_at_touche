@@ -1,4 +1,11 @@
 # Webis Generated Native Ads 2025
+
+> Local repository note: this file is the upstream dataset card. In this
+> repository, the binary-classification experiments operate on the `responses`
+> split and the derived Gemini-enriched JSONL files under
+> `data/generated/gemini/`. The local experiment presets are summarized in
+> [`setup.md`](../../setup.md).
+
 ## Table of Contents
 - [Dataset Description](#dataset-description)
   - [Dataset Summary](#dataset-summary)

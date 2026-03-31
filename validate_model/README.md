@@ -45,6 +45,19 @@ Local validation preset for the DeBERTa-v3 `setup4` training setup:
 uv run touche-validate --setup-name setup4
 ```
 
+Additional local validation presets for the newer query-response baselines:
+
+```bash
+uv run touche-validate --setup-name setup9
+uv run touche-validate --setup-name setup10
+uv run touche-validate --setup-name setup11
+uv run touche-validate --setup-name setup12
+```
+
+Setups such as `setup6` and `setup8` do not need a dedicated validation JSON.
+They fall back to the default local paths `models/<setup-name>/` and
+`results/<setup-name>/` when you pass `--setup-name`.
+
 By default the validator evaluates only the `test` split. To evaluate both
 validation and test data, either set `eval_splits` in the setup JSON or pass:
 
