@@ -1,89 +1,61 @@
-# Setup 8 Summary
+# Setup Comparison Summary
 
-`setup8` is the DeBERTa-v3 version of `setup6`.
+This file compares the named training setups currently defined in the repository: `setup4`, `setup6`, `setup7`, and `setup8`.
 
-## What It Is
+## Quick Comparison
 
-- Setup name: `setup8`
-- Purpose: keep the `setup6` recipe and replace the backbone with `microsoft/deberta-v3-base`
-- Train command: `uv run touche-train --setup-name setup8`
-- Validate command: `uv run touche-validate --setup-name setup8`
+| Setup | Backbone | Input format | Reference text | Max length | Epochs | Batch x accum | Effective batch | Main idea |
+| --- | --- | --- | --- | ---: | ---: | --- | ---: | --- |
+| `setup4` | `microsoft/deberta-v3-base` | `query_reference_rag_response` | `gemini25flashlite` as `Unbiased Reference` | 512 | 6 | `16 x 4` | 64 | Most tuned DeBERTa setup with reference-aware input |
+| `setup6` | `FacebookAI/roberta-base` | `query_response` | none | 512 | 3 | `16 x 4` | 64 | Simple RoBERTa baseline |
+| `setup7` | `allenai/longformer-base-4096` | `query_neutral_response` | `gemini25flashlite` as `GEMINI` | 1024 | 1 | `4 x 8` | 32 | Long-context setup with Gemini neutral reference |
+| `setup8` | `microsoft/deberta-v3-base` | `query_response` | none | 512 | 3 | `16 x 4` | 64 | `setup6` recipe with DeBERTa-v3 |
 
-## Key Configuration
+## Key Differences
 
-- Model: `microsoft/deberta-v3-base`
-- Training file: `data/generated/gemini/responses-train-with-neutral_gemini.jsonl`
-- Validation file during training: `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl`
-- Input format: `query_response`
-- Max length: `512`
-- Epochs: `3`
-- Batch size: `16`
-- Gradient accumulation: `4`
-- Effective batch size per optimizer step: `64`
-- Learning rate: `2e-05`
-- Optimizer epsilon: `1e-08`
-- Scheduler: `none`
-- Gradient checkpointing: `false`
-- Positive class weight scale: `2.0`
-- W&B logging: enabled by default, project `zhaw-at-touche-training`
-- Output model directory: `models/setup8/`
-- Output results directory: `results/setup8/`
+| Setup | Notable settings |
+| --- | --- |
+| `setup4` | `optimizer_eps=1e-06`, `lr_scheduler=cosine_with_warmup`, `warmup_ratio=0.05`, `max_grad_norm=1.0`, `gradient_checkpointing=true`, `device=cuda`, `positive_class_weight_scale=1.0` |
+| `setup6` | Uses mostly global defaults beyond the basic training hyperparameters |
+| `setup7` | `pad_to_max_length=true`, `positive_class_weight_scale=1.5`, longer context window, smaller micro-batch |
+| `setup8` | Same behavior as `setup6` except `model_name=microsoft/deberta-v3-base` |
 
-## Status
+## Validation And Artifact Status
 
-As of 2026-03-31, the preset exists, but there are no committed `setup8` training or validation artifacts in the repository yet.
+| Setup | Validation preset file | Expected model dir | Expected results dir | Committed model dir | Committed results dir |
+| --- | --- | --- | --- | --- | --- |
+| `setup4` | `validate_model/setup4.json` | `models/setup4/` | `results/setup4/` | no | no |
+| `setup6` | none | `models/setup6/` | `results/setup6/` | yes | yes |
+| `setup7` | `validate_model/setup7.json` | `models/setup7/` | `results/setup7/` | no | no |
+| `setup8` | none | `models/setup8/` | `results/setup8/` | no | no |
 
-- No committed `models/setup8/`
-- No committed `results/setup8/`
+## Committed Results
 
-## Closest Baseline Results
+Only `setup6` currently has committed evaluation artifacts in the repository, so it is the only setup with numbers that can be compared directly right now.
 
-The closest available reference is `setup6`, because `setup8` mirrors it except for the backbone model.
+| Setup | Accuracy | Positive precision | Positive recall | Positive F1 | Notes |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `setup4` | n/a | n/a | n/a | n/a | no committed results |
+| `setup6` | 0.3071 | 0.3071 | 1.0000 | 0.4699 | predicted label `1` for every row |
+| `setup7` | n/a | n/a | n/a | n/a | no committed results |
+| `setup8` | n/a | n/a | n/a | n/a | no committed results |
 
-- Overall accuracy: `0.3071`
-- Positive-class precision: `0.3071`
-- Positive-class recall: `1.0000`
-- Positive-class F1: `0.4699`
-- Observed behavior: `setup6` predicted label `1` for every row
-
-Confusion counts from `setup6` overall:
+Overall confusion counts for committed `setup6` results:
 
 - True negatives: `0`
 - False positives: `8315`
 - False negatives: `0`
 - True positives: `3685`
 
-## Example Input
+## How To Read The Input Formats
 
-Example training row:
+- `query_response`: model sees only the query and the response to classify
+- `query_neutral_response`: model sees the query, a Gemini neutral reference, and the response to classify
+- `query_reference_rag_response`: model sees the query, an explicit reference answer, and the RAG response to classify
 
-- `query`: `Can the Dyson air purifier help with allergies and asthma?`
-- `label`: `1`
-- `item`: `Dyson Purifier Hot+Cool Formaldehyde Purifying Fan Heater`
+## Fast Takeaways
 
-Formatted model input for `setup8`:
-
-```text
-Query: Can the Dyson air purifier help with allergies and asthma?
-Response: The Dyson air purifier can help reduce allergens and improve air quality ... If you have severe allergies or asthma, it's advisable to consult a healthcare provider for personalized advice and treatment.
-Answer:
-```
-
-## Example Output
-
-Expected prediction record shape:
-
-```json
-{
-  "source_file": "responses-test-with-neutral_gemini.jsonl",
-  "id": "4SFIB7N0-6313-ZTXU",
-  "query": "What are the benefits of using water coolers instead of bottled water?",
-  "gold_label": 1,
-  "response_label": 1,
-  "response_ad_prob": 1.0,
-  "gemini25flashlite_label": 1,
-  "gemini25flashlite_ad_prob": 1.0
-}
-```
-
-`1` means ad and `0` means neutral.
+- `setup6` and `setup8` are the cleanest head-to-head comparison because they use the same recipe and differ only in backbone model
+- `setup4` is the more engineered DeBERTa variant and is not directly comparable to `setup6` or `setup8` on architecture alone because the prompt format and optimization settings also change
+- `setup7` is the outlier: longest context, smallest per-device batch, and reference-aware input
+- The repository does not yet contain committed results for `setup4`, `setup7`, or `setup8`, so any real performance comparison still requires training and validation for those setups
