@@ -1,5 +1,6 @@
 {
-  "description": "Embedding-space divergence baseline using sentence-transformer embeddings and sentence-level greedy alignment against the Gemini neutral reference.",
+  "description": "Embedding-space divergence validation preset that loads the saved threshold/state from models/setup100 when available.",
+  "model_dir": "models/setup100",
   "results_dir": "results/setup100",
   "eval_splits": [
     "test"

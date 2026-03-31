@@ -12,6 +12,7 @@ from zhaw_at_touche.embedding_divergence import (
     aggregate_sentence_distances,
     calibrate_threshold,
     greedy_sentence_alignment,
+    load_embedding_state,
     split_sentences,
 )
 
@@ -68,6 +69,7 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
                         "sentence_agg": "max",
                         "threshold_metric": "positive_f1",
                         "batch_size": 64,
+                        "model_dir": "models/setup100",
                     }
                 ),
                 encoding="utf-8",
@@ -88,6 +90,24 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
             self.assertEqual(args.sentence_agg, "max")
             self.assertEqual(args.threshold_metric, "positive_f1")
             self.assertEqual(args.batch_size, 64)
+            self.assertEqual(args.model_dir, "models/setup100")
+
+    def test_load_embedding_state_reads_saved_threshold_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            model_dir = Path(tmp_dir)
+            payload = {
+                "trainer_type": "embedding_divergence",
+                "threshold": 0.42,
+                "threshold_summary": {"accuracy": 0.75},
+            }
+            (model_dir / "embedding_state.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+
+            state = load_embedding_state(model_dir)
+
+            self.assertEqual(state, payload)
 
 
 if __name__ == "__main__":

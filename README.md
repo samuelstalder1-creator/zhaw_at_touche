@@ -93,7 +93,7 @@ uv run touche-train --setup-name setupX
 
 The CLI also reads optional defaults from `train_model/<setup-name>.json`.
 
-Default model output:
+Default training output directory:
 
 - `models/setupX/`
 
@@ -154,11 +154,20 @@ DistilRoBERTa setup with linear warmup/decay scheduling:
 uv run touche-train --setup-name setup12
 ```
 
-Training now also writes local monitoring artifacts next to the model bundle:
+Embedding-divergence setup that fits and saves a threshold/state bundle instead
+of a classifier checkpoint:
+
+```bash
+uv run touche-train --setup-name setup100
+```
+
+Classifier training writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`
 - `training_metrics.jsonl`
 - W&B run files in `models/<setup-name>/wandb/` by default
+
+`setup100` instead writes `embedding_state.json` plus `training_summary.json`.
 
 For online monitoring, log in to W&B first:
 
@@ -220,14 +229,21 @@ Default validation artifacts:
 
 ### 4b. Run the embedding-divergence baseline
 
-`setup100` is an evaluation-only experiment. It does not fine-tune a classifier. Instead it embeds the Gemini neutral response and the RAG response separately, computes a divergence score, calibrates a threshold on the validation split, and evaluates on the test split.
+`setup100` is a two-stage experiment. `touche-train --setup-name setup100`
+fits and saves an embedding-divergence threshold/state bundle in
+`models/setup100/embedding_state.json`. `touche-embed-divergence` then loads
+that saved threshold by default, falling back to validation calibration only if
+no saved state or manual threshold is available.
 
 ```bash
+uv run touche-train --setup-name setup100
 uv run touche-embed-divergence --setup-name setup100
 ```
 
 Default artifacts:
 
+- `models/setup100/embedding_state.json`
+- `models/setup100/training_summary.json`
 - `results/setup100/metrics_summary.json`
 - `results/setup100/response_metrics.txt`
 - `results/setup100/confusion_matrix.csv`

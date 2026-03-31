@@ -32,9 +32,9 @@
 - Extended the training loop with linear scheduling, explicit weight decay,
   layerwise LR decay, and optional embedding freezing for architecture-specific
   fine-tuning experiments.
-- Added `setup100`, an evaluation-only embedding-divergence baseline that uses
-  sentence embeddings and greedy sentence alignment instead of a trained
-  classifier.
+- Added `setup100`, an embedding-divergence baseline that fits and saves a
+  threshold/state bundle during training and reuses it during evaluation
+  instead of fine-tuning a classifier.
 - Implemented validation/export tooling for metrics, confusion matrices,
   prediction files, and misclassification analysis.
 - Added utility/test coverage for configuration loading, metrics, overlap

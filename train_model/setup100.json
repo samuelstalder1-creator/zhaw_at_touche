@@ -1,0 +1,15 @@
+{
+  "description": "Embedding-space divergence baseline trained as a saved threshold/state bundle instead of a fine-tuned classifier checkpoint.",
+  "trainer_type": "embedding_divergence",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "neutral_field": "gemini25flashlite",
+  "distance_metric": "cosine",
+  "score_granularity": "sentence",
+  "sentence_agg": "max",
+  "threshold_metric": "positive_f1",
+  "batch_size": 32,
+  "max_length": 256,
+  "device": "cuda"
+}

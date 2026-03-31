@@ -15,6 +15,7 @@ ALLOWED_SETUP_FIELDS = {
     "eval_splits",
     "input_files",
     "max_length",
+    "model_dir",
     "neutral_field",
     "results_dir",
     "score_granularity",

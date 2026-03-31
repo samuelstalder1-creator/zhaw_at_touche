@@ -33,6 +33,7 @@ def resolve_default_validation_path() -> Path | None:
 
 def base_defaults() -> dict[str, object]:
     return {
+        "trainer_type": "classifier",
         "train_file": str(resolve_default_train_path()),
         "model_name": "FacebookAI/roberta-base",
         "model_dir": None,
@@ -57,6 +58,11 @@ def base_defaults() -> dict[str, object]:
         "pad_to_max_length": False,
         "positive_class_weight_scale": 2.0,
         "validation_file": str(resolve_default_validation_path()) if resolve_default_validation_path() else None,
+        "neutral_field": "gemini25flashlite",
+        "distance_metric": "cosine",
+        "score_granularity": "sentence",
+        "sentence_agg": "max",
+        "threshold_metric": "positive_f1",
         "wandb_enabled": True,
         "wandb_project": "zhaw-at-touche-training",
         "wandb_dir": None,
@@ -71,6 +77,12 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
 
     parser = argparse.ArgumentParser(description="Train the binary ad classifier.")
     parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
+    parser.add_argument(
+        "--trainer-type",
+        choices=("classifier", "embedding_divergence"),
+        default=defaults["trainer_type"],
+        help="Training backend selected by the setup.",
+    )
     parser.add_argument(
         "--setups-dir",
         default=str(DEFAULT_TRAINING_SETUPS_DIR),
@@ -161,6 +173,35 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Multiplier used when computing the positive-class loss weight.",
     )
     parser.add_argument(
+        "--neutral-field",
+        default=defaults["neutral_field"],
+        help="Reference/neutral text field used by embedding-divergence training.",
+    )
+    parser.add_argument(
+        "--distance-metric",
+        choices=("cosine",),
+        default=defaults["distance_metric"],
+        help="Distance metric used by embedding-divergence training.",
+    )
+    parser.add_argument(
+        "--score-granularity",
+        choices=("response", "sentence"),
+        default=defaults["score_granularity"],
+        help="Scoring granularity used by embedding-divergence training.",
+    )
+    parser.add_argument(
+        "--sentence-agg",
+        choices=("max", "mean"),
+        default=defaults["sentence_agg"],
+        help="Sentence-score aggregation used by embedding-divergence training.",
+    )
+    parser.add_argument(
+        "--threshold-metric",
+        choices=("positive_f1", "accuracy"),
+        default=defaults["threshold_metric"],
+        help="Metric used to fit the embedding-divergence threshold.",
+    )
+    parser.add_argument(
         "--wandb",
         action=argparse.BooleanOptionalAction,
         default=defaults["wandb_enabled"],
@@ -205,10 +246,34 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
+    from zhaw_at_touche.embedding_divergence import (
+        EmbeddingDivergenceTrainingConfig,
+        train_embedding_divergence,
+    )
     from zhaw_at_touche.modeling import TrainingConfig, resolve_device, train_model
 
     args = parse_args()
     model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
+    if args.trainer_type == "embedding_divergence":
+        config = EmbeddingDivergenceTrainingConfig(
+            embedding_model_name=args.model_name,
+            train_path=Path(args.train_file),
+            output_dir=model_dir,
+            max_length=args.max_length,
+            batch_size=args.batch_size,
+            device=resolve_device(args.device),
+            neutral_field=args.neutral_field,
+            distance_metric=args.distance_metric,
+            score_granularity=args.score_granularity,
+            sentence_agg=args.sentence_agg,
+            threshold_metric=args.threshold_metric,
+            validation_path=Path(args.validation_file) if args.validation_file else None,
+        )
+        summary = train_embedding_divergence(config)
+        print(f"trained embedding-divergence state saved to {model_dir}")
+        print(f"training rows: {summary['train_rows']}")
+        return
+
     config = TrainingConfig(
         model_name=args.model_name,
         train_path=Path(args.train_file),

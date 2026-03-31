@@ -7,6 +7,7 @@ loads the matching file automatically when you pass `--setup-name <setup-name>`.
 
 Supported JSON fields:
 
+- `trainer_type`
 - `train_file`
 - `model_name`
 - `model_dir`
@@ -31,6 +32,11 @@ Supported JSON fields:
 - `pad_to_max_length`
 - `positive_class_weight_scale`
 - `validation_file`
+- `neutral_field`
+- `distance_metric`
+- `score_granularity`
+- `sentence_agg`
+- `threshold_metric`
 - `wandb_enabled`
 - `wandb_project`
 - `wandb_dir`
@@ -84,6 +90,17 @@ DistilRoBERTa setup with linear warmup/decay scheduling:
 uv run touche-train --setup-name setup12
 ```
 
+Embedding-divergence setup that saves a threshold/state bundle instead of a
+classifier checkpoint:
+
+```bash
+uv run touche-train --setup-name setup100
+```
+
+`setup100` uses `trainer_type=embedding_divergence`. Its training output is
+`models/setup100/embedding_state.json` plus `models/setup100/training_summary.json`.
+It does not write a Hugging Face classifier bundle.
+
 By default `touche-train` uses the full training file. To train on only a
 subset, pass for example:
 
@@ -91,11 +108,15 @@ subset, pass for example:
 uv run touche-train --setup-name setup6 --max-train-rows 1000
 ```
 
-Training also writes local monitoring artifacts:
+Classifier training also writes local monitoring artifacts:
 
 - `training_summary.json`
 - `training_metrics.jsonl`
 - W&B run files under `<model-dir>/wandb/` by default
+
+`setup100` is different: it writes `embedding_state.json` plus
+`training_summary.json`, with no classifier checkpoint, no training-metrics log,
+and no W&B run.
 
 W&B logging uses the online service. Authenticate first:
 

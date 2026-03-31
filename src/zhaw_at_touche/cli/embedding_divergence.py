@@ -8,8 +8,14 @@ from pathlib import Path
 from typing import Any
 from typing import Sequence
 
-from zhaw_at_touche.constants import DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
-from zhaw_at_touche.embedding_divergence import calibrate_threshold, load_embedding_model, score_record, score_records
+from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
+from zhaw_at_touche.embedding_divergence import (
+    calibrate_threshold,
+    load_embedding_model,
+    load_embedding_state,
+    score_record,
+    score_records,
+)
 from zhaw_at_touche.embedding_setups import DEFAULT_EMBEDDING_SETUPS_DIR, load_setup_defaults
 from zhaw_at_touche.evaluation_utils import (
     compute_metrics,
@@ -84,6 +90,7 @@ def write_csv_rows(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]
 
 def base_defaults() -> dict[str, object]:
     return {
+        "model_dir": None,
         "results_dir": None,
         "eval_splits": ["test"],
         "input_files": None,
@@ -120,6 +127,11 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         "--setups-dir",
         default=str(DEFAULT_EMBEDDING_SETUPS_DIR),
         help="Directory containing optional <setup-name>.json embedding-divergence defaults.",
+    )
+    parser.add_argument(
+        "--model-dir",
+        default=defaults["model_dir"],
+        help="Directory containing a saved embedding_state.json threshold/state bundle.",
     )
     parser.add_argument("--results-dir", default=defaults["results_dir"])
     parser.add_argument(
@@ -171,38 +183,47 @@ def main() -> None:
     args = parse_args()
     results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
     results_dir.mkdir(parents=True, exist_ok=True)
+    model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
     device = resolve_device(args.device)
-    print(f"loading embedding model {args.embedding_model_name}")
-    tokenizer, model = load_embedding_model(args.embedding_model_name, device)
-
-    calibration_records: list[dict[str, Any]] = []
-    for raw_path in args.calibration_input_files:
-        path = Path(raw_path)
-        calibration_records.extend(list(read_jsonl(path)))
-    if not calibration_records:
-        raise ValueError("Calibration input files must contain at least one labeled record.")
-
-    calibration_scores: list[float] = []
-    calibration_labels: list[int] = []
-    for record in calibration_records:
-        score, _ = score_record(
-            tokenizer=tokenizer,
-            model=model,
-            record=record,
-            neutral_field=args.neutral_field,
-            score_granularity=args.score_granularity,
-            sentence_agg=args.sentence_agg,
-            device=device,
-            batch_size=args.batch_size,
-            max_length=args.max_length,
-        )
-        calibration_scores.append(score)
-        calibration_labels.append(int(record["label"]))
+    saved_state = load_embedding_state(model_dir)
 
     threshold = args.threshold
     calibration_summary = None
     threshold_source = "manual"
+    if threshold is None and saved_state is not None:
+        raw_threshold = saved_state.get("threshold")
+        if raw_threshold is not None:
+            threshold = float(raw_threshold)
+            calibration_summary = saved_state.get("threshold_summary")
+            threshold_source = "saved_state"
+
+    print(f"loading embedding model {args.embedding_model_name}")
+    tokenizer, model = load_embedding_model(args.embedding_model_name, device)
     if threshold is None:
+        calibration_records: list[dict[str, Any]] = []
+        for raw_path in args.calibration_input_files:
+            path = Path(raw_path)
+            calibration_records.extend(list(read_jsonl(path)))
+        if not calibration_records:
+            raise ValueError("Calibration input files must contain at least one labeled record.")
+
+        calibration_scores: list[float] = []
+        calibration_labels: list[int] = []
+        for record in calibration_records:
+            score, _ = score_record(
+                tokenizer=tokenizer,
+                model=model,
+                record=record,
+                neutral_field=args.neutral_field,
+                score_granularity=args.score_granularity,
+                sentence_agg=args.sentence_agg,
+                device=device,
+                batch_size=args.batch_size,
+                max_length=args.max_length,
+            )
+            calibration_scores.append(score)
+            calibration_labels.append(int(record["label"]))
+
         threshold, calibration_summary = calibrate_threshold(
             calibration_scores,
             calibration_labels,
@@ -284,6 +305,7 @@ def main() -> None:
     summary_payload = {
         "scoring_backend": "embedding_divergence",
         "embedding_model_name": args.embedding_model_name,
+        "model_dir": str(model_dir),
         "results_dir": str(results_dir),
         "device": device,
         "distance_metric": args.distance_metric,

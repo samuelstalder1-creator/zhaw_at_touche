@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Sequence
 
 import torch
@@ -9,7 +11,7 @@ import torch.nn.functional as F
 from transformers import AutoModel
 
 from .evaluation_utils import metrics_dict
-from .modeling import autocast_context, load_tokenizer_from_pretrained
+from .modeling import autocast_context, load_jsonl_rows, load_tokenizer_from_pretrained
 
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 
@@ -19,6 +21,26 @@ class DivergencePrediction:
     label: int
     score: float
     sentence_candidates: list[dict[str, Any]] | None = None
+
+
+@dataclass(frozen=True)
+class EmbeddingDivergenceTrainingConfig:
+    embedding_model_name: str
+    train_path: Path
+    output_dir: Path
+    max_length: int
+    batch_size: int
+    device: str
+    neutral_field: str
+    distance_metric: str
+    score_granularity: str
+    sentence_agg: str
+    threshold_metric: str
+    validation_path: Path | None = None
+
+
+def embedding_state_path(model_dir: Path) -> Path:
+    return model_dir / "embedding_state.json"
 
 
 def split_sentences(text: str) -> list[str]:
@@ -214,6 +236,131 @@ def calibrate_threshold(
     if best_summary is None:
         raise ValueError("Could not calibrate a threshold.")
     return best_threshold, best_summary
+
+
+def record_scores(
+    *,
+    tokenizer,
+    model,
+    records: Sequence[dict[str, Any]],
+    neutral_field: str,
+    score_granularity: str,
+    sentence_agg: str,
+    device: str,
+    batch_size: int,
+    max_length: int,
+) -> list[float]:
+    scores: list[float] = []
+    for record in records:
+        score, _ = score_record(
+            tokenizer=tokenizer,
+            model=model,
+            record=record,
+            neutral_field=neutral_field,
+            score_granularity=score_granularity,
+            sentence_agg=sentence_agg,
+            device=device,
+            batch_size=batch_size,
+            max_length=max_length,
+        )
+        scores.append(score)
+    return scores
+
+
+def load_embedding_state(model_dir: Path) -> dict[str, Any] | None:
+    state_path = embedding_state_path(model_dir)
+    if not state_path.exists():
+        return None
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Embedding state must be a JSON object: {state_path}")
+    return payload
+
+
+def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dict[str, Any]:
+    if config.distance_metric != "cosine":
+        raise ValueError(f"Unsupported distance metric '{config.distance_metric}'.")
+
+    config.output_dir.mkdir(parents=True, exist_ok=True)
+    tokenizer, model = load_embedding_model(config.embedding_model_name, config.device)
+    train_records = load_jsonl_rows(config.train_path)
+    train_scores = record_scores(
+        tokenizer=tokenizer,
+        model=model,
+        records=train_records,
+        neutral_field=config.neutral_field,
+        score_granularity=config.score_granularity,
+        sentence_agg=config.sentence_agg,
+        device=config.device,
+        batch_size=config.batch_size,
+        max_length=config.max_length,
+    )
+    train_labels = [int(record["label"]) for record in train_records]
+
+    threshold_records = train_records
+    threshold_scores = train_scores
+    threshold_labels = train_labels
+    threshold_source = "train"
+
+    validation_summary = None
+    validation_scores: list[float] | None = None
+    validation_labels: list[int] | None = None
+    if config.validation_path is not None:
+        validation_records = load_jsonl_rows(config.validation_path)
+        validation_scores = record_scores(
+            tokenizer=tokenizer,
+            model=model,
+            records=validation_records,
+            neutral_field=config.neutral_field,
+            score_granularity=config.score_granularity,
+            sentence_agg=config.sentence_agg,
+            device=config.device,
+            batch_size=config.batch_size,
+            max_length=config.max_length,
+        )
+        validation_labels = [int(record["label"]) for record in validation_records]
+        threshold_records = validation_records
+        threshold_scores = validation_scores
+        threshold_labels = validation_labels
+        threshold_source = "validation"
+
+    threshold, threshold_summary = calibrate_threshold(
+        threshold_scores,
+        threshold_labels,
+        threshold_metric=config.threshold_metric,
+    )
+
+    train_predictions = [1 if score >= threshold else 0 for score in train_scores]
+    train_summary = metrics_dict(train_labels, train_predictions)
+    if validation_scores is not None and validation_labels is not None:
+        validation_predictions = [1 if score >= threshold else 0 for score in validation_scores]
+        validation_summary = metrics_dict(validation_labels, validation_predictions)
+
+    summary = {
+        "trainer_type": "embedding_divergence",
+        "embedding_model_name": config.embedding_model_name,
+        "train_path": str(config.train_path),
+        "validation_path": str(config.validation_path) if config.validation_path else None,
+        "output_dir": str(config.output_dir),
+        "device": config.device,
+        "neutral_field": config.neutral_field,
+        "distance_metric": config.distance_metric,
+        "score_granularity": config.score_granularity,
+        "sentence_agg": config.sentence_agg,
+        "threshold_metric": config.threshold_metric,
+        "threshold_source": threshold_source,
+        "threshold": threshold,
+        "train_rows": len(train_records),
+        "threshold_rows": len(threshold_records),
+        "train_summary": train_summary,
+        "threshold_summary": threshold_summary,
+        "validation_summary": validation_summary,
+    }
+    state_path = embedding_state_path(config.output_dir)
+    state_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    summary_path = config.output_dir / "training_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    return summary
 
 
 def score_record(

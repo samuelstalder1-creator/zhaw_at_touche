@@ -49,7 +49,7 @@ This layout deliberately separates immutable inputs from derived artifacts:
 - `data/task/preprocessed/` contains merged response-plus-label files created from raw inputs.
 - `data/generated/<provider>/` contains neutral-response files enriched with generated text fields.
 - `validate_model/<setup-name>.json` contains evaluation-only presets for already-trained models.
-- `models/<setup-name>/` contains trained classifier bundles and a `training_summary.json`.
+- `models/<setup-name>/` contains trained classifier bundles or saved embedding-divergence state plus a `training_summary.json`.
 - `results/<setup-name>/` contains prediction exports, confusion matrices, metrics, and analysis CSVs.
 
 ## Packaging And Entry Points
@@ -141,7 +141,7 @@ This is separate from `training_setups.py` on purpose. It allows evaluation-only
 
 ### `embedding_setups.py`
 
-[`src/zhaw_at_touche/embedding_setups.py`](src/zhaw_at_touche/embedding_setups.py) loads optional defaults for the embedding-divergence baseline from `validate_model/setup100.json`.
+[`src/zhaw_at_touche/embedding_setups.py`](src/zhaw_at_touche/embedding_setups.py) loads optional defaults for the embedding-divergence baseline from `validate_model/setup100.json`, including the saved-state `model_dir`.
 
 It keeps the experiment idea lightweight: a named JSON setup can define the embedding model, neutral-reference field, score granularity, thresholding behavior, and output paths without introducing another configuration system.
 
@@ -173,7 +173,7 @@ The training code intentionally avoids a larger trainer abstraction. The advanta
 
 ### `embedding_divergence.py`
 
-[`src/zhaw_at_touche/embedding_divergence.py`](src/zhaw_at_touche/embedding_divergence.py) implements the evaluation-only semantic-drift baseline used by `setup100`.
+[`src/zhaw_at_touche/embedding_divergence.py`](src/zhaw_at_touche/embedding_divergence.py) implements the semantic-drift baseline used by `setup100` for both threshold fitting and evaluation.
 
 It is responsible for:
 
@@ -182,7 +182,8 @@ It is responsible for:
 - splitting responses into sentences
 - greedy sentence alignment between the neutral reference and the response
 - cosine-distance scoring
-- threshold calibration on labeled validation data
+- threshold calibration on labeled train or validation data
+- saving and reloading `embedding_state.json` threshold bundles
 
 ### `generation_utils.py`
 
@@ -333,12 +334,13 @@ The validation step does more than print metrics. It also standardizes outputs i
 It performs the following:
 
 1. load the embedding-divergence setup defaults
-2. load the embedding model
-3. score validation records to calibrate a threshold when needed
-4. score the requested evaluation files
-5. write prediction JSONL files
-6. aggregate file-level and overall metrics
-7. export CSV, JSON, TXT, and PNG artifacts
+2. look for a saved `embedding_state.json` threshold bundle in `models/<setup-name>/`
+3. load the embedding model
+4. calibrate a threshold on validation data only when no saved or manual threshold is available
+5. score the requested evaluation files
+6. write prediction JSONL files
+7. aggregate file-level and overall metrics
+8. export CSV, JSON, TXT, and PNG artifacts
 
 ### `manual_inference.py`
 
