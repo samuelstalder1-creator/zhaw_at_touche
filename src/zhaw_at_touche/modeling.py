@@ -62,6 +62,20 @@ def load_jsonl_rows(file_path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def load_tokenizer_from_pretrained(model_source: str | Path):
+    try:
+        return AutoTokenizer.from_pretrained(model_source)
+    except (ImportError, ValueError) as exc:
+        error_message = str(exc).lower()
+        if "sentencepiece" not in error_message and "tiktoken" not in error_message:
+            raise
+        raise RuntimeError(
+            f"Tokenizer for '{model_source}' could not be loaded because an optional tokenizer "
+            "backend is missing. Reinstall the project dependencies so `sentencepiece` is "
+            "available, for example with `uv sync` or `.venv/bin/pip install -e .`, then retry."
+        ) from exc
+
+
 def limit_records(records: Sequence[dict[str, Any]], max_rows: int | None) -> list[dict[str, Any]]:
     if max_rows is None or max_rows == 0:
         return list(records)
@@ -346,7 +360,7 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
     if metrics_log_path.exists():
         metrics_log_path.unlink()
 
-    tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+    tokenizer = load_tokenizer_from_pretrained(config.model_name)
     model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
         num_labels=2,
@@ -612,7 +626,7 @@ def load_model_bundle(model_dir: Path, device: str):
     if not model_dir.exists():
         raise FileNotFoundError(f"Model directory not found: {model_dir}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    tokenizer = load_tokenizer_from_pretrained(model_dir)
     model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
     model.eval()
     return tokenizer, model
@@ -622,7 +636,7 @@ def load_model_reference(model_source: str | Path, device: str):
     if isinstance(model_source, Path):
         return load_model_bundle(model_source, device)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_source)
+    tokenizer = load_tokenizer_from_pretrained(model_source)
     model = AutoModelForSequenceClassification.from_pretrained(model_source).to(device)
     model.eval()
     return tokenizer, model
