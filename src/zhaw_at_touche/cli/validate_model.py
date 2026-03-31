@@ -211,6 +211,18 @@ def resolve_model_source(args: argparse.Namespace) -> str | Path:
     return DEFAULT_MODELS_DIR / args.setup_name
 
 
+def _warn_collapse(summary: dict, context: str) -> None:
+    """Warn if the model predicted only one class (collapsed predictions)."""
+    per_label = summary.get("per_label", [])
+    collapsed = [m for m in per_label if float(m["recall"]) == 0.0]
+    if collapsed:
+        labels = [str(m["label"]) for m in collapsed]
+        print(
+            f"WARNING [{context}]: model never correctly predicted class(es) {labels} "
+            f"— possible prediction collapse (check class weights or training)"
+        )
+
+
 def main() -> None:
     from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
 
@@ -311,8 +323,10 @@ def main() -> None:
             f"{path.name}: accuracy={summary['accuracy']:.4f} "
             f"f1={file_f1:.4f} weighted_f1={summary['weighted']['f1']:.4f}"
         )
+        _warn_collapse(summary, context=path.name)
 
     overall_summary = metrics_dict(all_gold_labels, all_predicted_labels)
+    _warn_collapse(overall_summary, context="overall")
     summary_payload = {
         "model_source": str(model_source),
         "results_dir": str(results_dir),
