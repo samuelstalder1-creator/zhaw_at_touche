@@ -1,0 +1,18 @@
+{
+  "description": "Stabilized DeBERTa-v3 setup using a lower LR, longer warmup, weight decay, layerwise LR decay, and one frozen-embedding epoch.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "microsoft/deberta-v3-base",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 8e-06,
+  "optimizer_eps": 1e-07,
+  "weight_decay": 0.01,
+  "lr_scheduler": "cosine_with_warmup",
+  "warmup_ratio": 0.1,
+  "max_grad_norm": 1.0,
+  "layerwise_lr_decay": 0.9,
+  "freeze_embeddings_epochs": 1
+}

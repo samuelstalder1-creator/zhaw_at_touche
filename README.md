@@ -114,6 +114,12 @@ DeBERTa-v3 setup with the unbiased-reference / RAG-response prompt:
 uv run touche-train --setup-name setup4
 ```
 
+Stabilized DeBERTa-v3 setup with lower LR and optimizer safeguards:
+
+```bash
+uv run touche-train --setup-name setup9
+```
+
 Training now also writes local monitoring artifacts next to the model bundle:
 
 - `training_summary.json`

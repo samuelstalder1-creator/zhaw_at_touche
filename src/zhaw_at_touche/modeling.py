@@ -17,6 +17,16 @@ from .datasets import DEFAULT_INPUT_FORMAT, build_model_input
 from .evaluation_utils import metrics_dict, validation_metrics_payload
 from .jsonl import append_jsonl, read_jsonl
 
+NO_WEIGHT_DECAY_MARKERS = (
+    ".bias",
+    ".LayerNorm.weight",
+    ".LayerNorm.bias",
+    ".layer_norm.weight",
+    ".layer_norm.bias",
+    ".norm.weight",
+    ".norm.bias",
+)
+
 
 def resolve_device(requested_device: str | None) -> str:
     if requested_device is not None:
@@ -95,10 +105,13 @@ class TrainingConfig:
     grad_accum: int
     learning_rate: float
     optimizer_eps: float
+    weight_decay: float
     lr_scheduler: str
     warmup_ratio: float
     max_grad_norm: float | None
     gradient_checkpointing: bool
+    layerwise_lr_decay: float | None
+    freeze_embeddings_epochs: int
     device: str
     max_train_rows: int | None = None
     input_format: str = DEFAULT_INPUT_FORMAT
@@ -220,6 +233,105 @@ def build_class_weights(
     return torch.tensor([1.0, positive_weight], device=device)
 
 
+def resolve_base_model(model):
+    base_prefix = getattr(model, "base_model_prefix", "")
+    if base_prefix:
+        base_model = getattr(model, base_prefix, None)
+        if base_model is not None:
+            return base_model, base_prefix
+    base_model = getattr(model, "base_model", None)
+    return base_model, base_prefix
+
+
+def embedding_module(model):
+    base_model, _ = resolve_base_model(model)
+    if base_model is None:
+        return None
+    return getattr(base_model, "embeddings", None)
+
+
+def encoder_layer_count(model) -> int:
+    base_model, _ = resolve_base_model(model)
+    if base_model is None:
+        return 0
+    encoder = getattr(base_model, "encoder", None)
+    layers = getattr(encoder, "layer", None)
+    if layers is None:
+        return 0
+    try:
+        return len(layers)
+    except TypeError:
+        return 0
+
+
+def set_embeddings_trainable(model, *, trainable: bool) -> bool:
+    embeddings = embedding_module(model)
+    if embeddings is None:
+        return False
+
+    for parameter in embeddings.parameters():
+        parameter.requires_grad = trainable
+    return True
+
+
+def uses_weight_decay(parameter_name: str, parameter: torch.nn.Parameter) -> bool:
+    if parameter.ndim <= 1:
+        return False
+    if parameter_name.endswith(".bias"):
+        return False
+    return not any(marker in parameter_name for marker in NO_WEIGHT_DECAY_MARKERS)
+
+
+def optimizer_param_groups(
+    model,
+    *,
+    learning_rate: float,
+    weight_decay: float,
+    layerwise_lr_decay: float | None,
+) -> list[dict[str, Any]]:
+    if layerwise_lr_decay is not None and not 0 < layerwise_lr_decay <= 1:
+        raise ValueError("--layerwise-lr-decay must be > 0 and <= 1.")
+
+    total_encoder_layers = encoder_layer_count(model)
+    _, base_prefix = resolve_base_model(model)
+    if layerwise_lr_decay is not None and (not base_prefix or total_encoder_layers == 0):
+        raise ValueError("Layerwise LR decay requires a model with accessible encoder layers.")
+
+    embedding_prefix = f"{base_prefix}.embeddings." if base_prefix else ""
+    layer_prefixes = [
+        f"{base_prefix}.encoder.layer.{index}."
+        for index in range(total_encoder_layers)
+    ]
+    grouped_parameters: dict[tuple[float, float], list[torch.nn.Parameter]] = {}
+
+    for parameter_name, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+
+        group_lr = learning_rate
+        if layerwise_lr_decay is not None:
+            if parameter_name.startswith(embedding_prefix):
+                group_lr = learning_rate * (layerwise_lr_decay**total_encoder_layers)
+            else:
+                for index, layer_prefix in enumerate(layer_prefixes):
+                    if parameter_name.startswith(layer_prefix):
+                        depth_from_top = total_encoder_layers - 1 - index
+                        group_lr = learning_rate * (layerwise_lr_decay**depth_from_top)
+                        break
+
+        group_weight_decay = weight_decay if uses_weight_decay(parameter_name, parameter) else 0.0
+        grouped_parameters.setdefault((group_lr, group_weight_decay), []).append(parameter)
+
+    return [
+        {"params": parameters, "lr": group_lr, "weight_decay": group_weight_decay}
+        for (group_lr, group_weight_decay), parameters in sorted(grouped_parameters.items())
+    ]
+
+
+def optimizer_learning_rate(optimizer: torch.optim.Optimizer) -> float:
+    return max(group["lr"] for group in optimizer.param_groups)
+
+
 def evaluate_records(
     *,
     tokenizer,
@@ -314,10 +426,13 @@ def maybe_init_wandb(config: TrainingConfig):
             "grad_accum": config.grad_accum,
             "learning_rate": config.learning_rate,
             "optimizer_eps": config.optimizer_eps,
+            "weight_decay": config.weight_decay,
             "lr_scheduler": config.lr_scheduler,
             "warmup_ratio": config.warmup_ratio,
             "max_grad_norm": config.max_grad_norm,
             "gradient_checkpointing": config.gradient_checkpointing,
+            "layerwise_lr_decay": config.layerwise_lr_decay,
+            "freeze_embeddings_epochs": config.freeze_embeddings_epochs,
             "device": config.device,
             "max_train_rows": config.max_train_rows,
             "input_format": config.input_format,
@@ -354,6 +469,10 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         raise ValueError("--grad-accum must be >= 1.")
     if config.warmup_ratio < 0 or config.warmup_ratio >= 1:
         raise ValueError("--warmup-ratio must be >= 0 and < 1.")
+    if config.weight_decay < 0:
+        raise ValueError("--weight-decay must be >= 0.")
+    if config.freeze_embeddings_epochs < 0:
+        raise ValueError("--freeze-embeddings-epochs must be >= 0.")
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
     metrics_log_path = config.output_dir / "training_metrics.jsonl"
@@ -370,6 +489,11 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         if gradient_checkpointing_enable is None:
             raise ValueError(f"Model '{config.model_name}' does not support gradient checkpointing.")
         gradient_checkpointing_enable()
+    embeddings_frozen = False
+    if config.freeze_embeddings_epochs > 0:
+        if not set_embeddings_trainable(model, trainable=False):
+            raise ValueError(f"Model '{config.model_name}' does not expose an embeddings module to freeze.")
+        embeddings_frozen = True
 
     train_dataset = ResponseClassificationDataset(config.train_path, max_rows=config.max_train_rows)
     collator = InstructionCollator(
@@ -393,8 +517,14 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         positive_class_weight_scale=config.positive_class_weight_scale,
     )
     loss_function = torch.nn.CrossEntropyLoss(weight=class_weights)
+    param_groups = optimizer_param_groups(
+        model,
+        learning_rate=config.learning_rate,
+        weight_decay=config.weight_decay,
+        layerwise_lr_decay=config.layerwise_lr_decay,
+    )
     optimizer = torch.optim.AdamW(
-        model.parameters(),
+        param_groups,
         lr=config.learning_rate,
         eps=config.optimizer_eps,
     )
@@ -426,11 +556,16 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                     "train/class_weight_negative": class_weights[0].item(),
                     "train/class_weight_positive": class_weights[1].item(),
                     "train/optimizer_steps_total": total_optimizer_steps,
+                    "train/embeddings_frozen_initially": embeddings_frozen,
                 },
                 step=0,
             )
 
         for epoch in range(config.epochs):
+            if embeddings_frozen and epoch >= config.freeze_embeddings_epochs:
+                set_embeddings_trainable(model, trainable=True)
+                embeddings_frozen = False
+
             model.train()
             optimizer.zero_grad(set_to_none=True)
             running_loss = 0.0
@@ -455,16 +590,18 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                     "epoch": epoch,
                     "step": global_step,
                     "batch_loss": batch_loss,
-                    "lr": optimizer.param_groups[0]["lr"],
+                    "lr": optimizer_learning_rate(optimizer),
+                    "embeddings_frozen": embeddings_frozen,
                 }
                 append_jsonl(metrics_log_path, step_metrics)
                 if wandb_run is not None:
                     wandb_run.log(
                         {
                             "train/loss": batch_loss,
-                            "lr": optimizer.param_groups[0]["lr"],
+                            "lr": optimizer_learning_rate(optimizer),
                             "epoch": epoch,
                             "train/step": global_step,
+                            "train/embeddings_frozen": float(embeddings_frozen),
                         }
                     )
 
@@ -485,15 +622,17 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                 "event": "epoch",
                 "epoch": epoch,
                 "epoch_loss": epoch_loss,
-                "lr": optimizer.param_groups[0]["lr"],
+                "lr": optimizer_learning_rate(optimizer),
+                "embeddings_frozen": embeddings_frozen,
             }
             append_jsonl(metrics_log_path, epoch_metrics)
             if wandb_run is not None:
                 wandb_run.log(
                     {
                         "train/epoch_loss": epoch_loss,
-                        "lr": optimizer.param_groups[0]["lr"],
+                        "lr": optimizer_learning_rate(optimizer),
                         "epoch": epoch,
+                        "train/embeddings_frozen": float(embeddings_frozen),
                     }
                 )
 
@@ -590,10 +729,13 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         "grad_accum": config.grad_accum,
         "learning_rate": config.learning_rate,
         "optimizer_eps": config.optimizer_eps,
+        "weight_decay": config.weight_decay,
         "lr_scheduler": config.lr_scheduler,
         "warmup_ratio": config.warmup_ratio,
         "max_grad_norm": config.max_grad_norm,
         "gradient_checkpointing": config.gradient_checkpointing,
+        "layerwise_lr_decay": config.layerwise_lr_decay,
+        "freeze_embeddings_epochs": config.freeze_embeddings_epochs,
         "max_length": config.max_length,
         "input_format": config.input_format,
         "reference_field": config.reference_field,

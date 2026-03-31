@@ -10,9 +10,11 @@ ALLOWED_SETUP_FIELDS = {
     "batch_size",
     "device",
     "epochs",
+    "freeze_embeddings_epochs",
     "gradient_checkpointing",
     "grad_accum",
     "input_format",
+    "layerwise_lr_decay",
     "learning_rate",
     "lr_scheduler",
     "max_length",
@@ -31,6 +33,7 @@ ALLOWED_SETUP_FIELDS = {
     "wandb_enabled",
     "wandb_project",
     "wandb_run_name",
+    "weight_decay",
     "warmup_ratio",
 }
 

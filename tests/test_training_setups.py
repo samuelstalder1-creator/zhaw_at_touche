@@ -44,10 +44,13 @@ class TrainingSetupsTests(unittest.TestCase):
                         "reference_label": "Unbiased Reference",
                         "validation_file": "data/custom-validation.jsonl",
                         "optimizer_eps": 1e-6,
+                        "weight_decay": 0.01,
                         "lr_scheduler": "cosine_with_warmup",
                         "warmup_ratio": 0.05,
                         "max_grad_norm": 1.0,
                         "gradient_checkpointing": True,
+                        "layerwise_lr_decay": 0.9,
+                        "freeze_embeddings_epochs": 1,
                         "wandb_enabled": False,
                         "wandb_project": "local-test",
                     }
@@ -73,10 +76,13 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.reference_label, "Unbiased Reference")
             self.assertEqual(args.validation_file, "data/custom-validation.jsonl")
             self.assertEqual(args.optimizer_eps, 1e-6)
+            self.assertEqual(args.weight_decay, 0.01)
             self.assertEqual(args.lr_scheduler, "cosine_with_warmup")
             self.assertEqual(args.warmup_ratio, 0.05)
             self.assertEqual(args.max_grad_norm, 1.0)
             self.assertTrue(args.gradient_checkpointing)
+            self.assertEqual(args.layerwise_lr_decay, 0.9)
+            self.assertEqual(args.freeze_embeddings_epochs, 1)
             self.assertFalse(args.wandb)
             self.assertEqual(args.wandb_project, "local-test")
 
