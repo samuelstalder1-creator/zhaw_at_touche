@@ -10,7 +10,8 @@ Unified `uv`-managed tooling for the Touché ad-detection workflow in one shared
 │   ├── task/                     # official Touché task files
 │   └── generated/
 │       ├── gemini/              # generated neutral responses from Gemini
-│       └── chatgpt/             # reserved for generated OpenAI outputs
+│       ├── qwen/                # generated neutral responses from a self-hosted Qwen backend
+│       └── chatgpt/             # reserved for future hosted OpenAI outputs
 ├── train_model/                 # named training setup defaults
 ├── validate_model/              # evaluation-only setup defaults
 ├── models/
@@ -54,7 +55,7 @@ uv run touche-preprocess
 
 ### 2. Generate neutral responses
 
-Requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+Gemini generation requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
 
 ```bash
 export GEMINI_API_KEY="..."
@@ -68,6 +69,21 @@ Default outputs:
 - `data/generated/gemini/responses-train-with-neutral_gemini.jsonl`
 - `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl`
 - `data/generated/gemini/responses-test-with-neutral_gemini.jsonl`
+
+Self-hosted Qwen generation uses an OpenAI-compatible local endpoint. Example for the validation split:
+
+```bash
+export QWEN_API_BASE="http://127.0.0.1:8000/v1"
+export QWEN_API_KEY="EMPTY"
+uv run touche-generate-neutral \
+  --provider qwen \
+  --split validation \
+  --model Qwen/Qwen2.5-1.5B-Instruct
+```
+
+This writes:
+
+- `data/generated/qwen/responses-validation-with-neutral_qwen.jsonl`
 
 ### 3. Train a model
 
@@ -202,6 +218,24 @@ Default validation artifacts:
 - `results/setupX/misclassified_analysis.csv`
 - `results/setupX/*-predictions.jsonl`
 
+### 4b. Run the embedding-divergence baseline
+
+`setup100` is an evaluation-only experiment. It does not fine-tune a classifier. Instead it embeds the Gemini neutral response and the RAG response separately, computes a divergence score, calibrates a threshold on the validation split, and evaluates on the test split.
+
+```bash
+uv run touche-embed-divergence --setup-name setup100
+```
+
+Default artifacts:
+
+- `results/setup100/metrics_summary.json`
+- `results/setup100/response_metrics.txt`
+- `results/setup100/confusion_matrix.csv`
+- `results/setup100/confusion_matrix.png`
+- `results/setup100/standardized_results.csv`
+- `results/setup100/misclassified_analysis.csv`
+- `results/setup100/*-predictions.jsonl`
+
 ### 5. Manually test a model with custom text
 
 Single example:
@@ -273,6 +307,7 @@ uv run touche-eval-matrix results/setupX
 ## Notes
 
 - `data/task/README.md` contains the original dataset description.
-- `data/generated/chatgpt/` is included so OpenAI-generated files can follow the same layout later.
+- `data/generated/qwen/` is used for self-hosted Qwen neutral-response runs.
+- `data/generated/chatgpt/` is included so future hosted OpenAI-generated files can follow the same layout later.
 - `validate_model/` stores evaluation-only presets for already-trained models such as `teamCMU`.
 - Use the root CLI entry points in `src/zhaw_at_touche/` for generation, training, validation, and analysis tasks.

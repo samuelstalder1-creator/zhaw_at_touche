@@ -8,11 +8,19 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 from typing import Any
 
-from zhaw_at_touche.constants import DEFAULT_GEMINI_MODEL, DEFAULT_PROVIDER, DEFAULT_TASK_DIR
+from zhaw_at_touche.constants import (
+    DEFAULT_GEMINI_MODEL,
+    DEFAULT_PROVIDER,
+    DEFAULT_QWEN_API_BASE,
+    DEFAULT_QWEN_MODEL,
+    DEFAULT_TASK_DIR,
+)
 from zhaw_at_touche.datasets import load_label_map, merge_response_row
 from zhaw_at_touche.generation_utils import (
     clean_response_text,
-    generate_neutral_response,
+    default_backend_for_provider,
+    generate_neutral_response_gemini,
+    generate_neutral_response_openai_compatible,
     load_done_ids,
     model_alias,
     with_retries,
@@ -22,7 +30,7 @@ from zhaw_at_touche.jsonl import append_jsonl, read_jsonl
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate neutral baseline responses with Gemini and write enriched JSONL output."
+        description="Generate neutral baseline responses and write enriched JSONL output."
     )
     parser.add_argument(
         "--split",
@@ -34,7 +42,29 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--labels", default=None, help="Path to the response labels JSONL file.")
     parser.add_argument("--out", default=None, help="Output JSONL path.")
     parser.add_argument("--provider", default=DEFAULT_PROVIDER, help="Subdirectory name under data/generated.")
-    parser.add_argument("--model", default=DEFAULT_GEMINI_MODEL, help="Gemini model name.")
+    parser.add_argument(
+        "--backend",
+        choices=("auto", "gemini", "openai_compatible"),
+        default="auto",
+        help="Generation backend. Defaults to provider-specific auto resolution.",
+    )
+    parser.add_argument("--model", default=None, help="Model name. Defaults depend on --provider.")
+    parser.add_argument(
+        "--api-base",
+        default=None,
+        help="Base URL for self-hosted OpenAI-compatible generation backends.",
+    )
+    parser.add_argument(
+        "--api-key",
+        default=None,
+        help="API key for self-hosted OpenAI-compatible backends. Defaults to env or EMPTY.",
+    )
+    parser.add_argument(
+        "--request-timeout",
+        type=float,
+        default=120.0,
+        help="Per-request timeout in seconds for self-hosted backends.",
+    )
     parser.add_argument("--max-items", type=int, default=0, help="Process at most N items (0 = all).")
     parser.add_argument("--workers", type=int, default=8, help="Number of parallel API workers.")
     parser.add_argument("--sleep", type=float, default=0.0, help="Optional fixed sleep between requests.")
@@ -52,24 +82,60 @@ def resolve_paths(args: argparse.Namespace) -> tuple[Path, Path, Path]:
     return responses_path, labels_path, output_path
 
 
+def resolve_backend(args: argparse.Namespace) -> str:
+    if args.backend != "auto":
+        return args.backend
+    return default_backend_for_provider(args.provider)
+
+
+def resolve_model(args: argparse.Namespace) -> str:
+    if args.model:
+        return args.model
+    if args.provider == "qwen":
+        return DEFAULT_QWEN_MODEL
+    return DEFAULT_GEMINI_MODEL
+
+
 def main() -> None:
     args = build_parser().parse_args()
     if args.workers < 1:
         raise ValueError("--workers must be >= 1.")
 
+    backend = resolve_backend(args)
+    model_name = resolve_model(args)
     responses_path, labels_path, output_path = resolve_paths(args)
-
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.")
-
-    import google.genai as genai
-
-    client = genai.Client(api_key=api_key)
     label_map = load_label_map(labels_path)
-    response_field = model_alias(args.model)
+    response_field = model_alias(model_name)
     done_ids = load_done_ids(output_path, response_field)
     print(f"[info] Already in output ({response_field}): {len(done_ids)} ids", file=sys.stderr)
+
+    gemini_client = None
+    openai_api_base = None
+    openai_api_key = None
+    if backend == "gemini":
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.")
+
+        import google.genai as genai
+
+        gemini_client = genai.Client(api_key=api_key)
+    elif backend == "openai_compatible":
+        openai_api_base = (
+            args.api_base
+            or os.environ.get("QWEN_API_BASE")
+            or os.environ.get("OPENAI_API_BASE")
+            or os.environ.get("OPENAI_BASE_URL")
+            or DEFAULT_QWEN_API_BASE
+        )
+        openai_api_key = (
+            args.api_key
+            or os.environ.get("QWEN_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")
+            or "EMPTY"
+        )
+    else:
+        raise ValueError(f"Unsupported backend '{backend}'.")
 
     usage_totals = {
         "input_tokens": 0,
@@ -86,7 +152,19 @@ def main() -> None:
         query = row["query"]
 
         def call_model():
-            return generate_neutral_response(client=client, model=args.model, query=query)
+            if backend == "gemini":
+                return generate_neutral_response_gemini(
+                    client=gemini_client,
+                    model=model_name,
+                    query=query,
+                )
+            return generate_neutral_response_openai_compatible(
+                api_base=openai_api_base or "",
+                api_key=openai_api_key or "EMPTY",
+                model=model_name,
+                query=query,
+                timeout=args.request_timeout,
+            )
 
         neutral_response, usage = with_retries(call_model)
         merged_row = merge_response_row(row, label_map.get(row_id))

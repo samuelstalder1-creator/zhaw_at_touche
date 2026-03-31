@@ -1,0 +1,22 @@
+{
+  "description": "Embedding-space divergence baseline using sentence-transformer embeddings and sentence-level greedy alignment against the Gemini neutral reference.",
+  "results_dir": "results/setup100",
+  "eval_splits": [
+    "test"
+  ],
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "neutral_field": "gemini25flashlite",
+  "distance_metric": "cosine",
+  "score_granularity": "sentence",
+  "sentence_agg": "max",
+  "threshold_metric": "positive_f1",
+  "batch_size": 32,
+  "max_length": 256,
+  "device": "cuda"
+}

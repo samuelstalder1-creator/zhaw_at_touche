@@ -17,6 +17,8 @@
   preprocessing to training, evaluation, and planned Docker deployment.
 - Implemented preprocessing and a Gemini-based neutral-response generation
   pipeline for the dataset workflow.
+- Extended neutral-response generation to support a self-hosted Qwen backend
+  through an OpenAI-compatible local API.
 - Built and compared different model setups, including `roberta-base` and
   DeBERTa-based configurations.
 - Analyzed token distributions in the data and generated-response outputs.
@@ -30,6 +32,9 @@
 - Extended the training loop with linear scheduling, explicit weight decay,
   layerwise LR decay, and optional embedding freezing for architecture-specific
   fine-tuning experiments.
+- Added `setup100`, an evaluation-only embedding-divergence baseline that uses
+  sentence embeddings and greedy sentence alignment instead of a trained
+  classifier.
 - Implemented validation/export tooling for metrics, confusion matrices,
   prediction files, and misclassification analysis.
 - Added utility/test coverage for configuration loading, metrics, overlap
@@ -43,6 +48,9 @@
   `setup4` and `setup8`.
 - Train and compare the newly added ALBERT, ELECTRA, and DistilRoBERTa setup
   alternatives against the RoBERTa and Longformer baselines.
+- Compare `setup100` against the trained classifier baselines to see whether
+  semantic drift scoring can surface ad insertions with fewer model-specific
+  training assumptions.
 - Select the final submission checkpoint and rerun validation to archive the
   final results.
 - Build a Docker container with the trained model for the Touché challenge

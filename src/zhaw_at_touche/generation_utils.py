@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
 import random
 import re
 import sys
 import time
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +35,7 @@ Length:
 MODEL_ALIASES = {
     "gemini-1.5-flash": "gemini15flash",
     "gemini-2.5-flash-lite": "gemini25flashlite",
+    "Qwen/Qwen2.5-1.5B-Instruct": "qwen",
 }
 
 BULLET_CHARS = "•◦▪●‣∙"
@@ -46,6 +50,16 @@ def model_alias(model_name: str) -> str:
     if alias:
         return alias
     return re.sub(r"[^a-zA-Z0-9]+", "", model_name).lower()
+
+
+def default_backend_for_provider(provider: str) -> str:
+    if provider == "gemini":
+        return "gemini"
+    if provider == "qwen":
+        return "openai_compatible"
+    raise ValueError(
+        f"Unsupported provider '{provider}'. Supported providers: gemini, qwen."
+    )
 
 
 def load_done_ids(out_path: Path, response_field: str) -> set[str]:
@@ -146,7 +160,7 @@ def get_usage_counts(response: Any) -> dict[str, int]:
     }
 
 
-def generate_neutral_response(client: Any, model: str, query: str) -> tuple[str, dict[str, int]]:
+def generate_neutral_response_gemini(client: Any, model: str, query: str) -> tuple[str, dict[str, int]]:
     response = client.models.generate_content(
         model=model,
         contents=query.strip(),
@@ -168,6 +182,97 @@ def generate_neutral_response(client: Any, model: str, query: str) -> tuple[str,
     if not text:
         raise RuntimeError("Empty model output.")
     return text, get_usage_counts(response)
+
+
+def _openai_compatible_text(payload: dict[str, Any]) -> str:
+    choices = payload.get("choices")
+    if not isinstance(choices, list):
+        return ""
+
+    parts: list[str] = []
+    for choice in choices:
+        if not isinstance(choice, dict):
+            continue
+        message = choice.get("message")
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        if isinstance(content, str) and content.strip():
+            parts.append(content.strip())
+            continue
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                text = block.get("text")
+                if isinstance(text, str) and text.strip():
+                    parts.append(text.strip())
+
+    return " ".join(parts).strip()
+
+
+def get_openai_compatible_usage_counts(payload: dict[str, Any]) -> dict[str, int]:
+    usage = payload.get("usage")
+    if not isinstance(usage, dict):
+        usage = {}
+
+    input_tokens = int(usage.get("prompt_tokens", 0) or 0)
+    output_tokens = int(usage.get("completion_tokens", 0) or 0)
+    total_tokens = int(usage.get("total_tokens", 0) or 0)
+    return {
+        "input_tokens": input_tokens,
+        "cached_input_tokens": 0,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+
+
+def generate_neutral_response_openai_compatible(
+    *,
+    api_base: str,
+    api_key: str,
+    model: str,
+    query: str,
+    timeout: float,
+) -> tuple[str, dict[str, int]]:
+    if not api_base:
+        raise RuntimeError("OpenAI-compatible API base URL is required.")
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": query.strip()},
+        ],
+        "temperature": 0.2,
+    }
+    body = json.dumps(payload).encode("utf-8")
+    request = urllib_request.Request(
+        url=f"{api_base.rstrip('/')}/chat/completions",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib_request.urlopen(request, timeout=timeout) as response:
+            raw = response.read().decode("utf-8")
+    except urllib_error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"OpenAI-compatible request failed with HTTP {exc.code}: {detail}"
+        ) from exc
+    except urllib_error.URLError as exc:
+        raise RuntimeError(f"OpenAI-compatible request failed: {exc.reason}") from exc
+
+    parsed = json.loads(raw)
+    text = _openai_compatible_text(parsed)
+    if not text:
+        raise RuntimeError("Empty model output.")
+    return text, get_openai_compatible_usage_counts(parsed)
 
 
 def with_retries(function, *, max_retries: int = 6, base_sleep: float = 1.0):

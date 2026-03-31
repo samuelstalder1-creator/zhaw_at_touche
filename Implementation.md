@@ -12,12 +12,13 @@
 ## Workflow
 
 1. `touche-preprocess` merges response rows with label rows.
-2. `touche-generate-neutral` creates neutral responses with Gemini.
+2. `touche-generate-neutral` creates neutral responses with either Gemini or a self-hosted OpenAI-compatible Qwen backend.
 3. `touche-train` trains a binary classifier on the full training split by default, supports optional subset training, can switch input formats for setups such as `setup7` and `setup4`, exposes optimizer controls such as weight decay and scheduler selection, and writes local monitoring logs.
 4. `touche-validate` evaluates either a saved local model bundle or an evaluation-only remote model setup, using the test split by default and optionally validation plus test.
-5. `touche-predict` supports manual inference for custom text.
-6. `touche-stats-data` and `touche-stats-generated` provide dataset summaries, token analysis, and histograms.
-7. `touche-check-overlap` reports split leakage across train, validation, and test response files.
-8. `touche-eval-matrix` generates a confusion-matrix summary from existing prediction files.
+5. `touche-embed-divergence` runs an evaluation-only baseline that measures embedding drift between the Gemini neutral reference and the response, calibrates a threshold on validation data, and writes the same style of result artifacts.
+6. `touche-predict` supports manual inference for custom text.
+7. `touche-stats-data` and `touche-stats-generated` provide dataset summaries, token analysis, and histograms.
+8. `touche-check-overlap` reports split leakage across train, validation, and test response files.
+9. `touche-eval-matrix` generates a confusion-matrix summary from existing prediction files.
 
 The current named experiment family covers RoBERTa, Longformer, several DeBERTa-v3 variants, ALBERT, ELECTRA, and DistilRoBERTa through `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`.

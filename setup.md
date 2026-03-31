@@ -79,3 +79,18 @@ Overall confusion counts for committed `setup6` results:
 - `setup4` is the more engineered DeBERTa variant and is not directly comparable to `setup6` or `setup8` on architecture alone because the prompt format and optimization settings also change
 - `setup7` is the outlier: longest context, smallest per-device batch, and reference-aware input
 - The repository does not yet contain committed results for `setup4`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, or `setup12`, so any real performance comparison still requires training and validation for those setups
+
+## Experimental Setup100
+
+`setup100` is intentionally not part of the training table above because it is not a fine-tuned classifier.
+
+- Command: `uv run touche-embed-divergence --setup-name setup100`
+- Type: evaluation-only embedding-space divergence baseline
+- Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
+- Reference field: `gemini25flashlite`
+- Score: sentence-level cosine divergence with greedy alignment and `max` aggregation
+- Thresholding: calibrated on the validation split, then applied to the test split
+
+The goal is to treat the neutral response as a semantic anchor and score how far
+the RAG response drifts away from it, rather than training a classifier on the
+combined prompt.

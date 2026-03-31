@@ -58,6 +58,17 @@ Setups such as `setup6` and `setup8` do not need a dedicated validation JSON.
 They fall back to the default local paths `models/<setup-name>/` and
 `results/<setup-name>/` when you pass `--setup-name`.
 
+Embedding-divergence baseline:
+
+```bash
+uv run touche-embed-divergence --setup-name setup100
+```
+
+`setup100` is evaluation-only and uses `validate_model/setup100.json` with the
+new `touche-embed-divergence` CLI. It embeds the neutral reference and the
+response separately, computes a drift score, calibrates a threshold on the
+validation split, and evaluates on the test split.
+
 By default the validator evaluates only the `test` split. To evaluate both
 validation and test data, either set `eval_splits` in the setup JSON or pass:
 

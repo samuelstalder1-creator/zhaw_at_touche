@@ -15,6 +15,8 @@
   - `src/zhaw_at_touche/modeling.py`
   - `src/zhaw_at_touche/cli/train_model.py`
   - `src/zhaw_at_touche/cli/validate_model.py`
+  - `src/zhaw_at_touche/embedding_divergence.py`
+  - `src/zhaw_at_touche/cli/embedding_divergence.py`
   - `src/zhaw_at_touche/cli/manual_inference.py`
 - Evaluation summaries are implemented in:
   - `src/zhaw_at_touche/evaluation_utils.py`
@@ -26,7 +28,8 @@
 - `data/task/` is the canonical home for official dataset files.
 - `data/task/preprocessed/` contains merged response + label files created by `touche-preprocess`.
 - `data/generated/gemini/` stores generated neutral-response datasets.
-- `data/generated/chatgpt/` is intentionally present even though no OpenAI generation backend is implemented yet.
+- `data/generated/qwen/` stores generated neutral-response datasets from the self-hosted Qwen backend.
+- `data/generated/chatgpt/` is intentionally present even though no hosted OpenAI generation backend is implemented yet.
 - `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`.
 - The current setup family covers RoBERTa, Longformer, DeBERTa-v3, ALBERT, ELECTRA, and DistilRoBERTa variants.
 - `validate_model/<setup-name>.json` stores reusable defaults for evaluation-only experiments such as `teamCMU`.
@@ -44,6 +47,7 @@
 - Validation can include both `validation` and `test` through `--eval-splits validation test`.
 - Validation can load either a local saved model directory or a remote Hugging Face model name.
 - Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference, `setup4` uses an unbiased-reference / RAG-response prompt, and `setup6`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12` stay on the default query-response prompt.
+- The embedding-divergence baseline in `setup100` defaults to validation-based threshold calibration plus test evaluation against the same Gemini neutral-reference field.
 - Device resolution order is `cuda -> mps -> cpu`, unless the user explicitly forces a device.
 
 ## Output Contracts
@@ -55,7 +59,7 @@
 
 ### `touche-generate-neutral`
 
-- Adds a generated text field named from the model alias, for example `gemini25flashlite`.
+- Adds a generated text field named from the model alias, for example `gemini25flashlite` or `qwen`.
 - Preserves base fields and merged label metadata when available.
 - Appends incrementally so interrupted runs can resume.
 
@@ -79,15 +83,24 @@
 - If a generated text field is present, also scores it and reports its positive-rate as a false-positive monitoring signal.
 - Supports reference-aware validation presets such as `setup7` and `setup4`.
 
+### `touche-embed-divergence`
+
+- Loads optional defaults from `validate_model/setup100.json`.
+- Embeds the neutral reference and the response separately with a sentence-embedding model.
+- Computes a drift score either at the full-response level or by greedy sentence alignment.
+- Calibrates a threshold on validation data when `--threshold` is not supplied.
+- Writes the same family of metrics, confusion-matrix, prediction, and misclassification artifacts as the classifier validator.
+
 ## Current Assumptions
 
 - The classification task remains binary: `0 = no ad`, `1 = ad`.
 - The default training text format remains `Query: ... Response: ... Answer:`. `setup7` uses a long-context neutral-reference format, `setup4` uses an unbiased-reference / RAG-response format, and the other current local setups stay on the default prompt.
 - The local setup matrix currently spans RoBERTa, Longformer, DeBERTa-v3 variants, ALBERT, ELECTRA, and DistilRoBERTa.
-- Gemini is the only implemented neutral-generation backend in this migration.
+- `setup100` is an evaluation-only semantic-drift baseline rather than a trainable setup.
+- Neutral-response generation currently supports Gemini plus a self-hosted OpenAI-compatible Qwen backend.
 
 ## Known Gaps
 
-- No OpenAI generation client is implemented yet for `data/generated/chatgpt/`.
+- No hosted OpenAI generation client is implemented yet for `data/generated/chatgpt/`.
 - GPU-specific PyTorch wheel selection is documented, but not hardcoded into the project because that depends on the remote machine.
 - End-to-end training was not run as part of this migration; lightweight utility tests cover the pure Python pieces.

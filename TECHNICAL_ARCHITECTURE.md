@@ -60,6 +60,7 @@ The root [`pyproject.toml`](pyproject.toml) defines the project and exposes thes
 - `touche-generate-neutral`
 - `touche-train`
 - `touche-validate`
+- `touche-embed-divergence`
 - `touche-predict`
 - `touche-stats-data`
 - `touche-stats-generated`
@@ -138,6 +139,12 @@ This gives the project a simple experiment-configuration mechanism without intro
 
 This is separate from `training_setups.py` on purpose. It allows evaluation-only presets for already-trained local or remote models, such as the `teamCMU` Hugging Face model, without treating them as trainable experiments.
 
+### `embedding_setups.py`
+
+[`src/zhaw_at_touche/embedding_setups.py`](src/zhaw_at_touche/embedding_setups.py) loads optional defaults for the embedding-divergence baseline from `validate_model/setup100.json`.
+
+It keeps the experiment idea lightweight: a named JSON setup can define the embedding model, neutral-reference field, score granularity, thresholding behavior, and output paths without introducing another configuration system.
+
 ### `modeling.py`
 
 [`src/zhaw_at_touche/modeling.py`](src/zhaw_at_touche/modeling.py) is the main ML runtime module. It is responsible for:
@@ -163,6 +170,19 @@ Important implementation details:
 - predictions are returned as a small `Prediction` dataclass containing the binary label and the positive-class probability.
 
 The training code intentionally avoids a larger trainer abstraction. The advantage is that the execution path remains explicit and easy to adapt for this binary classification task.
+
+### `embedding_divergence.py`
+
+[`src/zhaw_at_touche/embedding_divergence.py`](src/zhaw_at_touche/embedding_divergence.py) implements the evaluation-only semantic-drift baseline used by `setup100`.
+
+It is responsible for:
+
+- loading a sentence-embedding model
+- mean-pooling token embeddings into normalized sentence or passage vectors
+- splitting responses into sentences
+- greedy sentence alignment between the neutral reference and the response
+- cosine-distance scoring
+- threshold calibration on labeled validation data
 
 ### `generation_utils.py`
 
@@ -226,12 +246,12 @@ This step turns the raw paired-file format into a more convenient single-file fo
 
 ### `generate_neutral.py`
 
-[`src/zhaw_at_touche/cli/generate_neutral.py`](src/zhaw_at_touche/cli/generate_neutral.py) drives the Gemini generation workflow.
+[`src/zhaw_at_touche/cli/generate_neutral.py`](src/zhaw_at_touche/cli/generate_neutral.py) drives the neutral-response generation workflow.
 
 Implementation characteristics:
 
 - resolves default paths from the requested split
-- requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`
+- supports Gemini plus self-hosted OpenAI-compatible generation backends such as Qwen
 - loads labels so generated rows can preserve label metadata
 - supports resumable generation by skipping IDs already written to the output file
 - uses `ThreadPoolExecutor` for parallel API calls
@@ -306,6 +326,20 @@ The validation step does more than print metrics. It also standardizes outputs i
 - `misclassified_analysis.csv`
 - `*-predictions.jsonl`
 
+### `embedding_divergence.py`
+
+[`src/zhaw_at_touche/cli/embedding_divergence.py`](src/zhaw_at_touche/cli/embedding_divergence.py) runs the setup100 baseline end to end.
+
+It performs the following:
+
+1. load the embedding-divergence setup defaults
+2. load the embedding model
+3. score validation records to calibrate a threshold when needed
+4. score the requested evaluation files
+5. write prediction JSONL files
+6. aggregate file-level and overall metrics
+7. export CSV, JSON, TXT, and PNG artifacts
+
 ### `manual_inference.py`
 
 [`src/zhaw_at_touche/cli/manual_inference.py`](src/zhaw_at_touche/cli/manual_inference.py) reuses the same prediction path for one-off examples. It supports both:
@@ -364,8 +398,10 @@ Input files originate in `data/task/`, for example:
 `touche-generate-neutral` enriches response rows with a generated field derived from the model alias, for example:
 
 - `gemini25flashlite`
+- `qwen`
 
-The output is written under `data/generated/<provider>/`.
+The output is written under `data/generated/<provider>/`, for example
+`data/generated/gemini/` or `data/generated/qwen/`.
 
 ### 4. Training
 
@@ -471,7 +507,7 @@ This gives quick coverage over the logic most likely to regress while avoiding h
 
 ## Current Limitations
 
-- Neutral-response generation is implemented only for Gemini-style providers.
+- Neutral-response generation is implemented for Gemini plus self-hosted OpenAI-compatible providers such as Qwen.
 - The repository is strongly file-based and does not include experiment tracking, dataset versioning, or a service layer.
 - Validation and reporting are batch-oriented rather than online or interactive.
 - Large dataset files are stored directly in the repository, which creates repository-size pressure and GitHub large-file warnings.

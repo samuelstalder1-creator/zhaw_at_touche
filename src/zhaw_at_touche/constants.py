@@ -16,6 +16,8 @@ DEFAULT_TASK_CATEGORIES = ("responses", "sentence-pairs", "tokens")
 DEFAULT_SETUP_NAME = "setupX"
 DEFAULT_PROVIDER = "gemini"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
+DEFAULT_QWEN_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
+DEFAULT_QWEN_API_BASE = "http://127.0.0.1:8000/v1"
 
 BASE_GENERATED_FIELDS = {
     "ad_num",
