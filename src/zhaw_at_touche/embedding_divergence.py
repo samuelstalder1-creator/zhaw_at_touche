@@ -8,6 +8,7 @@ from typing import Any, Sequence
 
 import torch
 import torch.nn.functional as F
+from tqdm.auto import tqdm
 from transformers import AutoModel
 
 from .evaluation_utils import metrics_dict
@@ -41,6 +42,10 @@ class EmbeddingDivergenceTrainingConfig:
 
 def embedding_state_path(model_dir: Path) -> Path:
     return model_dir / "embedding_state.json"
+
+
+def emit_progress(message: str) -> None:
+    print(message, flush=True)
 
 
 def split_sentences(text: str) -> list[str]:
@@ -249,9 +254,13 @@ def record_scores(
     device: str,
     batch_size: int,
     max_length: int,
+    progress_label: str | None = None,
 ) -> list[float]:
     scores: list[float] = []
-    for record in records:
+    iterator = records
+    if progress_label:
+        iterator = tqdm(records, desc=progress_label, unit="record")
+    for record in iterator:
         score, _ = score_record(
             tokenizer=tokenizer,
             model=model,
@@ -282,8 +291,14 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
         raise ValueError(f"Unsupported distance metric '{config.distance_metric}'.")
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
+    emit_progress(f"loading embedding model {config.embedding_model_name}")
     tokenizer, model = load_embedding_model(config.embedding_model_name, config.device)
+    emit_progress(f"loading training rows from {config.train_path}")
     train_records = load_jsonl_rows(config.train_path)
+    emit_progress(
+        f"scoring {len(train_records)} training rows "
+        f"({config.score_granularity}, neutral_field={config.neutral_field})"
+    )
     train_scores = record_scores(
         tokenizer=tokenizer,
         model=model,
@@ -294,6 +309,7 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
         device=config.device,
         batch_size=config.batch_size,
         max_length=config.max_length,
+        progress_label="setup100 train",
     )
     train_labels = [int(record["label"]) for record in train_records]
 
@@ -306,7 +322,11 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
     validation_scores: list[float] | None = None
     validation_labels: list[int] | None = None
     if config.validation_path is not None:
+        emit_progress(f"loading calibration rows from {config.validation_path}")
         validation_records = load_jsonl_rows(config.validation_path)
+        emit_progress(
+            f"scoring {len(validation_records)} validation rows for threshold fitting"
+        )
         validation_scores = record_scores(
             tokenizer=tokenizer,
             model=model,
@@ -317,6 +337,7 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
             device=config.device,
             batch_size=config.batch_size,
             max_length=config.max_length,
+            progress_label="setup100 validation",
         )
         validation_labels = [int(record["label"]) for record in validation_records]
         threshold_records = validation_records
@@ -324,11 +345,16 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
         threshold_labels = validation_labels
         threshold_source = "validation"
 
+    emit_progress(
+        f"fitting threshold on {len(threshold_records)} {threshold_source} rows "
+        f"using metric={config.threshold_metric}"
+    )
     threshold, threshold_summary = calibrate_threshold(
         threshold_scores,
         threshold_labels,
         threshold_metric=config.threshold_metric,
     )
+    emit_progress(f"selected threshold={threshold:.6f} ({threshold_source})")
 
     train_predictions = [1 if score >= threshold else 0 for score in train_scores]
     train_summary = metrics_dict(train_labels, train_predictions)
@@ -356,6 +382,7 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
         "threshold_summary": threshold_summary,
         "validation_summary": validation_summary,
     }
+    emit_progress(f"writing embedding-divergence state to {config.output_dir}")
     state_path = embedding_state_path(config.output_dir)
     state_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     summary_path = config.output_dir / "training_summary.json"
