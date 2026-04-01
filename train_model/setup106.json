@@ -1,0 +1,14 @@
+{
+  "description": "Sentence-level delta classifier. Aligns each response sentence to its best-matching neutral sentence using Hungarian matching (optimal bipartite, not greedy). For each aligned pair, classifies [sent_emb | neutral_sent_emb | sent_emb - neutral_sent_emb] -> promotional or not. Aggregates sentence-level predictions across the document. Keeps sentence granularity but makes the comparison directional rather than a scalar distance. Trainer type: sentence_delta_classifier.",
+  "trainer_type": "sentence_delta_classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "sentence",
+  "sentence_delta_agg": "mean_prob",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 256,
+  "device": "cuda"
+}

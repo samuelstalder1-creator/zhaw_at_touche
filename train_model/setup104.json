@@ -1,0 +1,13 @@
+{
+  "description": "Full embedding classifier. Concatenates [response_emb | neutral_emb | response_emb - neutral_emb] as input to a logistic regression. Gives the classifier access to both absolute embedding positions and the direction of divergence. The subtraction vector is the key fix over raw cosine distance: same magnitude, different direction = different semantics. Frozen encoder, no fine-tuning. Trainer type: embedding_classifier.",
+  "trainer_type": "embedding_classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}
