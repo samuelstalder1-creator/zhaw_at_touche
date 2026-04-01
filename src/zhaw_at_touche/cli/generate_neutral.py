@@ -21,11 +21,14 @@ from zhaw_at_touche.generation_utils import (
     default_backend_for_provider,
     generate_neutral_response_gemini,
     generate_neutral_response_openai_compatible,
+    generate_neutral_response_transformers,
+    load_local_generation_model,
     load_done_ids,
     model_alias,
     with_retries,
 )
 from zhaw_at_touche.jsonl import append_jsonl, read_jsonl
+from zhaw_at_touche.modeling import resolve_device
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -44,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider", default=DEFAULT_PROVIDER, help="Subdirectory name under data/generated.")
     parser.add_argument(
         "--backend",
-        choices=("auto", "gemini", "openai_compatible"),
+        choices=("auto", "gemini", "transformers", "openai_compatible"),
         default="auto",
         help="Generation backend. Defaults to provider-specific auto resolution.",
     )
@@ -65,9 +68,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=120.0,
         help="Per-request timeout in seconds for self-hosted backends.",
     )
+    parser.add_argument(
+        "--device",
+        choices=("cuda", "mps", "cpu"),
+        default=None,
+        help="Device used by local transformers generation backends.",
+    )
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=220,
+        help="Maximum number of generated tokens for local transformers backends.",
+    )
     parser.add_argument("--max-items", type=int, default=0, help="Process at most N items (0 = all).")
-    parser.add_argument("--workers", type=int, default=8, help="Number of parallel API workers.")
-    parser.add_argument("--sleep", type=float, default=0.0, help="Optional fixed sleep between requests.")
+    parser.add_argument("--workers", type=int, default=8, help="Number of parallel generation workers.")
+    parser.add_argument("--sleep", type=float, default=0.0, help="Optional fixed sleep between generations.")
     return parser
 
 
@@ -112,6 +127,9 @@ def main() -> None:
     gemini_client = None
     openai_api_base = None
     openai_api_key = None
+    local_tokenizer = None
+    local_model = None
+    local_device = None
     if backend == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
@@ -134,6 +152,13 @@ def main() -> None:
             or os.environ.get("OPENAI_API_KEY")
             or "EMPTY"
         )
+    elif backend == "transformers":
+        local_device = resolve_device(args.device)
+        print(
+            f"[info] Loading local transformers model {model_name} on {local_device}",
+            file=sys.stderr,
+        )
+        local_tokenizer, local_model = load_local_generation_model(model_name, local_device)
     else:
         raise ValueError(f"Unsupported backend '{backend}'.")
 
@@ -143,7 +168,14 @@ def main() -> None:
         "output_tokens": 0,
         "total_tokens": 0,
     }
-    max_in_flight = max(1, args.workers * 4)
+    effective_workers = args.workers
+    if backend == "transformers" and effective_workers != 1:
+        print(
+            f"[info] Backend '{backend}' uses a shared local model; forcing --workers 1",
+            file=sys.stderr,
+        )
+        effective_workers = 1
+    max_in_flight = max(1, effective_workers * 4)
     total_rows_seen = 0
     rows_written = 0
 
@@ -157,6 +189,14 @@ def main() -> None:
                     client=gemini_client,
                     model=model_name,
                     query=query,
+                )
+            if backend == "transformers":
+                return generate_neutral_response_transformers(
+                    tokenizer=local_tokenizer,
+                    model=local_model,
+                    query=query,
+                    device=local_device or "cpu",
+                    max_new_tokens=args.max_new_tokens,
                 )
             return generate_neutral_response_openai_compatible(
                 api_base=openai_api_base or "",
@@ -175,7 +215,7 @@ def main() -> None:
 
         return row_id, merged_row, usage
 
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=effective_workers) as executor:
         in_flight = set()
         pending_ids: set[str] = set()
 

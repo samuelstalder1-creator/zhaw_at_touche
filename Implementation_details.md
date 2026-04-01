@@ -28,7 +28,7 @@
 - `data/task/` is the canonical home for official dataset files.
 - `data/task/preprocessed/` contains merged response + label files created by `touche-preprocess`.
 - `data/generated/gemini/` stores generated neutral-response datasets.
-- `data/generated/qwen/` stores generated neutral-response datasets from the self-hosted Qwen backend.
+- `data/generated/qwen/` stores generated neutral-response datasets from the local Qwen2.5 backend.
 - `data/generated/chatgpt/` is intentionally present even though no hosted OpenAI generation backend is implemented yet.
 - `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, and the embedding-divergence setups `setup100`, `setup101`, and `setup102`.
 - The current setup family covers RoBERTa, Longformer, DeBERTa-v3, ALBERT, ELECTRA, and DistilRoBERTa variants.
@@ -98,7 +98,7 @@
 - The default training text format remains `Query: ... Response: ... Answer:`. `setup7` uses a long-context neutral-reference format, `setup4` uses an unbiased-reference / RAG-response format, and the other current local setups stay on the default prompt.
 - The local setup matrix currently spans RoBERTa, Longformer, DeBERTa-v3 variants, ALBERT, ELECTRA, and DistilRoBERTa.
 - `setup100`, `setup101`, and `setup102` are saved-state semantic-drift baselines rather than fine-tuned classifier setups.
-- Neutral-response generation currently supports Gemini plus a self-hosted OpenAI-compatible Qwen backend.
+- Neutral-response generation currently supports Gemini plus a local Qwen2.5 backend, with optional OpenAI-compatible mode for Qwen if desired.
 
 ## Known Gaps
 

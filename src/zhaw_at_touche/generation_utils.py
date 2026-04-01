@@ -5,6 +5,7 @@ import random
 import re
 import sys
 import time
+from contextlib import nullcontext
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 from pathlib import Path
@@ -56,7 +57,7 @@ def default_backend_for_provider(provider: str) -> str:
     if provider == "gemini":
         return "gemini"
     if provider == "qwen":
-        return "openai_compatible"
+        return "transformers"
     raise ValueError(
         f"Unsupported provider '{provider}'. Supported providers: gemini, qwen."
     )
@@ -182,6 +183,88 @@ def generate_neutral_response_gemini(client: Any, model: str, query: str) -> tup
     if not text:
         raise RuntimeError("Empty model output.")
     return text, get_usage_counts(response)
+
+
+def build_chat_messages(query: str) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": query.strip()},
+    ]
+
+
+def get_transformers_usage_counts(*, input_tokens: int, output_tokens: int) -> dict[str, int]:
+    return {
+        "input_tokens": input_tokens,
+        "cached_input_tokens": 0,
+        "output_tokens": output_tokens,
+        "total_tokens": input_tokens + output_tokens,
+    }
+
+
+def load_local_generation_model(model_name: str, device: str):
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token_id is None and tokenizer.eos_token is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model_kwargs: dict[str, Any] = {}
+    if device == "cuda":
+        if torch.cuda.is_bf16_supported():
+            model_kwargs["torch_dtype"] = torch.bfloat16
+        else:
+            model_kwargs["torch_dtype"] = torch.float16
+
+    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs).to(device)
+    model.eval()
+    return tokenizer, model
+
+
+def generate_neutral_response_transformers(
+    *,
+    tokenizer,
+    model,
+    query: str,
+    device: str,
+    max_new_tokens: int,
+) -> tuple[str, dict[str, int]]:
+    import torch
+
+    if not hasattr(tokenizer, "apply_chat_template"):
+        raise RuntimeError("Tokenizer does not support chat templates for local generation.")
+
+    prompt_text = tokenizer.apply_chat_template(
+        build_chat_messages(query),
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    tokenized = tokenizer(prompt_text, return_tensors="pt")
+    inputs = {key: value.to(device) for key, value in tokenized.items()}
+    input_length = int(inputs["input_ids"].shape[-1])
+    autocast_context = (
+        torch.autocast(device_type="cuda", dtype=model.dtype)
+        if device == "cuda" and isinstance(model.dtype, torch.dtype)
+        else nullcontext()
+    )
+    with torch.inference_mode():
+        with autocast_context:
+            generated = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+    generated_ids = generated[:, input_length:]
+    output_length = int(generated_ids.shape[-1])
+    text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+    if not text:
+        raise RuntimeError("Empty model output.")
+    return text, get_transformers_usage_counts(
+        input_tokens=input_length,
+        output_tokens=output_length,
+    )
 
 
 def _openai_compatible_text(payload: dict[str, Any]) -> str:

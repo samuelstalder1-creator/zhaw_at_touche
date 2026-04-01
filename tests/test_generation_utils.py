@@ -5,9 +5,11 @@ import unittest
 from zhaw_at_touche.cli.generate_neutral import build_parser, resolve_backend, resolve_model
 from zhaw_at_touche.generation_utils import (
     _openai_compatible_text,
+    build_chat_messages,
     clean_response_text,
     default_backend_for_provider,
     get_openai_compatible_usage_counts,
+    get_transformers_usage_counts,
     model_alias,
 )
 
@@ -25,7 +27,22 @@ class GenerationUtilsTests(unittest.TestCase):
 
     def test_default_backend_for_provider(self) -> None:
         self.assertEqual(default_backend_for_provider("gemini"), "gemini")
-        self.assertEqual(default_backend_for_provider("qwen"), "openai_compatible")
+        self.assertEqual(default_backend_for_provider("qwen"), "transformers")
+
+    def test_transformers_generation_helpers(self) -> None:
+        messages = build_chat_messages("What is a dehumidifier?")
+        self.assertEqual(messages[0]["role"], "system")
+        self.assertIn("Write a helpful, factual answer", messages[0]["content"])
+        self.assertEqual(messages[1], {"role": "user", "content": "What is a dehumidifier?"})
+        self.assertEqual(
+            get_transformers_usage_counts(input_tokens=13, output_tokens=21),
+            {
+                "input_tokens": 13,
+                "cached_input_tokens": 0,
+                "output_tokens": 21,
+                "total_tokens": 34,
+            },
+        )
 
     def test_openai_compatible_response_helpers(self) -> None:
         payload = {
@@ -60,7 +77,7 @@ class GenerationUtilsTests(unittest.TestCase):
     def test_generate_neutral_cli_defaults_for_qwen(self) -> None:
         args = build_parser().parse_args(["--provider", "qwen", "--split", "validation"])
 
-        self.assertEqual(resolve_backend(args), "openai_compatible")
+        self.assertEqual(resolve_backend(args), "transformers")
         self.assertEqual(resolve_model(args), "Qwen/Qwen2.5-1.5B-Instruct")
 
 
