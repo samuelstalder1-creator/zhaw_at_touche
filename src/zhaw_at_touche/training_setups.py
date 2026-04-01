@@ -31,6 +31,7 @@ ALLOWED_SETUP_FIELDS = {
     "reference_label",
     "score_granularity",
     "sentence_agg",
+    "sentence_delta_agg",
     "threshold_metric",
     "train_file",
     "trainer_type",

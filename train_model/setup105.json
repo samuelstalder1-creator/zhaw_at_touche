@@ -1,0 +1,19 @@
+{
+  "description": "Cross-encoder fine-tuned on (response, neutral) pairs. Both texts are fed jointly — the model attends across them and detects subtle phrasing shifts that bi-encoder cosine distance misses entirely. No query included: the signal is purely the divergence between what was said and what a neutral version would say. Uses DeBERTa-v3-base hyperparameters (eps, grad clipping, warmup) known to stabilize training. Trainer type: cross_encoder.",
+  "trainer_type": "cross_encoder",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "microsoft/deberta-v3-base",
+  "neutral_field": "gemini25flashlite",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "optimizer_eps": 1e-06,
+  "max_grad_norm": 1.0,
+  "lr_scheduler": "cosine_with_warmup",
+  "warmup_ratio": 0.06,
+  "weight_decay": 0.01,
+  "device": "cuda"
+}
