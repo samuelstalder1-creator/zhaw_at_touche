@@ -197,7 +197,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     )
     parser.add_argument(
         "--threshold-metric",
-        choices=("positive_f1", "accuracy"),
+        choices=("positive_f1", "macro_f1", "accuracy"),
         default=defaults["threshold_metric"],
         help="Metric used to fit the embedding-divergence threshold.",
     )

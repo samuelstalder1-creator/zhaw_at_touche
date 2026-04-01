@@ -87,11 +87,11 @@ Overall confusion counts for committed `setup6` results:
 - Train command: `uv run touche-train --setup-name setup100`
 - Eval command: `uv run touche-validate --setup-name setup100` or `uv run touche-embed-divergence --setup-name setup100`
 - Type: embedding-space divergence baseline with a saved threshold/state phase
-- Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
+- Embedding model: `sentence-transformers/all-mpnet-base-v2`
 - Reference field: `gemini25flashlite`
-- Score: sentence-level cosine divergence with greedy alignment and `max` aggregation
+- Score: sentence-level cosine divergence with greedy alignment and `mean` aggregation
 - Training artifact: `models/setup100/embedding_state.json`
-- Thresholding: `touche-train` fits the threshold on validation by default and `touche-embed-divergence` reuses that saved threshold unless you override it or force recalibration by omitting the saved state
+- Thresholding: `touche-train` fits the threshold on validation with `macro_f1` by default, and evaluation reuses the saved threshold and scoring config unless you override them on the CLI
 
 The goal is to treat the neutral response as a semantic anchor and score how far
 the RAG response drifts away from it, rather than training a classifier on the

@@ -154,8 +154,8 @@ class TrainingSetupsTests(unittest.TestCase):
                         "neutral_field": "gemini25flashlite",
                         "distance_metric": "cosine",
                         "score_granularity": "sentence",
-                        "sentence_agg": "max",
-                        "threshold_metric": "positive_f1",
+                        "sentence_agg": "mean",
+                        "threshold_metric": "macro_f1",
                         "batch_size": 32,
                         "max_length": 256,
                     }
@@ -177,8 +177,8 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.neutral_field, "gemini25flashlite")
             self.assertEqual(args.distance_metric, "cosine")
             self.assertEqual(args.score_granularity, "sentence")
-            self.assertEqual(args.sentence_agg, "max")
-            self.assertEqual(args.threshold_metric, "positive_f1")
+            self.assertEqual(args.sentence_agg, "mean")
+            self.assertEqual(args.threshold_metric, "macro_f1")
             self.assertEqual(args.batch_size, 32)
             self.assertEqual(args.max_length, 256)
 

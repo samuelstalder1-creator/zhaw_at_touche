@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 from typing import Sequence
@@ -108,6 +109,40 @@ def base_defaults() -> dict[str, object]:
     }
 
 
+def cli_option_was_provided(raw_argv: Sequence[str], option_name: str) -> bool:
+    return any(
+        token == option_name or token.startswith(f"{option_name}=")
+        for token in raw_argv
+    )
+
+
+def apply_saved_state_defaults(
+    args: argparse.Namespace,
+    raw_argv: Sequence[str],
+    saved_state: dict[str, Any] | None,
+) -> argparse.Namespace:
+    if saved_state is None:
+        return args
+
+    state_field_map = {
+        "--embedding-model-name": "embedding_model_name",
+        "--neutral-field": "neutral_field",
+        "--distance-metric": "distance_metric",
+        "--score-granularity": "score_granularity",
+        "--sentence-agg": "sentence_agg",
+        "--threshold-metric": "threshold_metric",
+        "--batch-size": "batch_size",
+        "--max-length": "max_length",
+    }
+    for option_name, state_key in state_field_map.items():
+        if cli_option_was_provided(raw_argv, option_name):
+            continue
+        state_value = saved_state.get(state_key)
+        if state_value is not None:
+            setattr(args, state_key, state_value)
+    return args
+
+
 def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.ArgumentParser:
     defaults = base_defaults()
     if setup_defaults:
@@ -155,7 +190,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--threshold", type=float, default=defaults["threshold"])
     parser.add_argument(
         "--threshold-metric",
-        choices=("positive_f1", "accuracy"),
+        choices=("positive_f1", "macro_f1", "accuracy"),
         default=defaults["threshold_metric"],
         help="Metric used to fit the threshold when --threshold is not provided.",
     )
@@ -180,12 +215,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    args = parse_args(argv)
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
+    args = parse_args(raw_argv)
     results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
     results_dir.mkdir(parents=True, exist_ok=True)
     model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
     device = resolve_device(args.device)
     saved_state = load_embedding_state(model_dir)
+    args = apply_saved_state_defaults(args, raw_argv, saved_state)
 
     threshold = args.threshold
     calibration_summary = None

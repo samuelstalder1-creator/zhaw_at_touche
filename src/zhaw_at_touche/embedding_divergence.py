@@ -218,12 +218,18 @@ def calibrate_threshold(
         predictions = [1 if score >= threshold else 0 for score in scores]
         summary = metrics_dict(labels, predictions)
         positive_label = summary.get("positive_label")
+        macro = summary.get("macro")
         positive_f1 = 0.0
         if isinstance(positive_label, dict):
             positive_f1 = float(positive_label["f1"])
+        macro_f1 = 0.0
+        if isinstance(macro, dict):
+            macro_f1 = float(macro["f1"])
 
         if threshold_metric == "positive_f1":
             metric_value = positive_f1
+        elif threshold_metric == "macro_f1":
+            metric_value = macro_f1
         elif threshold_metric == "accuracy":
             metric_value = float(summary["accuracy"])
         else:
@@ -374,6 +380,8 @@ def train_embedding_divergence(config: EmbeddingDivergenceTrainingConfig) -> dic
         "score_granularity": config.score_granularity,
         "sentence_agg": config.sentence_agg,
         "threshold_metric": config.threshold_metric,
+        "batch_size": config.batch_size,
+        "max_length": config.max_length,
         "threshold_source": threshold_source,
         "threshold": threshold,
         "train_rows": len(train_records),

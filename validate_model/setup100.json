@@ -1,5 +1,5 @@
 {
-  "description": "Embedding-space divergence validation preset that loads the saved threshold/state from models/setup100 when available.",
+  "description": "Embedding-space divergence validation preset aligned with setup100 training and able to reuse the saved threshold/state from models/setup100.",
   "scoring_backend": "embedding_divergence",
   "model_dir": "models/setup100",
   "results_dir": "results/setup100",
@@ -12,12 +12,12 @@
   "calibration_input_files": [
     "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
   ],
-  "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
   "neutral_field": "gemini25flashlite",
   "distance_metric": "cosine",
   "score_granularity": "sentence",
-  "sentence_agg": "max",
-  "threshold_metric": "positive_f1",
+  "sentence_agg": "mean",
+  "threshold_metric": "macro_f1",
   "batch_size": 32,
   "max_length": 256,
   "device": "cuda"

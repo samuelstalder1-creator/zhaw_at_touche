@@ -8,6 +8,7 @@ from pathlib import Path
 import torch
 
 from zhaw_at_touche.cli.embedding_divergence import parse_args
+from zhaw_at_touche.cli.embedding_divergence import apply_saved_state_defaults
 from zhaw_at_touche.embedding_divergence import (
     aggregate_sentence_distances,
     calibrate_threshold,
@@ -55,6 +56,17 @@ class EmbeddingDivergenceHelpersTests(unittest.TestCase):
         self.assertLess(threshold, 0.8)
         self.assertEqual(summary["accuracy"], 1.0)
 
+    def test_calibrate_threshold_supports_macro_f1(self) -> None:
+        threshold, summary = calibrate_threshold(
+            scores=[0.1, 0.2, 0.8, 0.9],
+            labels=[0, 0, 1, 1],
+            threshold_metric="macro_f1",
+        )
+
+        self.assertGreater(threshold, 0.2)
+        self.assertLess(threshold, 0.8)
+        self.assertEqual(summary["accuracy"], 1.0)
+
 
 class EmbeddingDivergenceCliTests(unittest.TestCase):
     def test_parse_args_uses_setup_defaults(self) -> None:
@@ -63,11 +75,11 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
             (setups_dir / "setup100.json").write_text(
                 json.dumps(
                     {
-                        "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+                        "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
                         "neutral_field": "gemini25flashlite",
                         "score_granularity": "sentence",
-                        "sentence_agg": "max",
-                        "threshold_metric": "positive_f1",
+                        "sentence_agg": "mean",
+                        "threshold_metric": "macro_f1",
                         "batch_size": 64,
                         "model_dir": "models/setup100",
                     }
@@ -84,11 +96,11 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
                 ]
             )
 
-            self.assertEqual(args.embedding_model_name, "sentence-transformers/all-MiniLM-L6-v2")
+            self.assertEqual(args.embedding_model_name, "sentence-transformers/all-mpnet-base-v2")
             self.assertEqual(args.neutral_field, "gemini25flashlite")
             self.assertEqual(args.score_granularity, "sentence")
-            self.assertEqual(args.sentence_agg, "max")
-            self.assertEqual(args.threshold_metric, "positive_f1")
+            self.assertEqual(args.sentence_agg, "mean")
+            self.assertEqual(args.threshold_metric, "macro_f1")
             self.assertEqual(args.batch_size, 64)
             self.assertEqual(args.model_dir, "models/setup100")
 
@@ -108,6 +120,53 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
             state = load_embedding_state(model_dir)
 
             self.assertEqual(state, payload)
+
+    def test_saved_state_defaults_override_stale_setup_values(self) -> None:
+        args = parse_args(
+            [
+                "--setup-name",
+                "setup100",
+            ]
+        )
+        args.embedding_model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        args.sentence_agg = "max"
+        args.threshold_metric = "positive_f1"
+        args.max_length = 256
+
+        updated = apply_saved_state_defaults(
+            args,
+            [],
+            {
+                "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+                "sentence_agg": "mean",
+                "threshold_metric": "macro_f1",
+                "max_length": 384,
+            },
+        )
+
+        self.assertEqual(updated.embedding_model_name, "sentence-transformers/all-mpnet-base-v2")
+        self.assertEqual(updated.sentence_agg, "mean")
+        self.assertEqual(updated.threshold_metric, "macro_f1")
+        self.assertEqual(updated.max_length, 384)
+
+    def test_cli_values_beat_saved_state_defaults(self) -> None:
+        args = parse_args(
+            [
+                "--setup-name",
+                "setup100",
+                "--sentence-agg",
+                "max",
+            ]
+        )
+        updated = apply_saved_state_defaults(
+            args,
+            ["--sentence-agg", "max"],
+            {
+                "sentence_agg": "mean",
+            },
+        )
+
+        self.assertEqual(updated.sentence_agg, "max")
 
 
 if __name__ == "__main__":
