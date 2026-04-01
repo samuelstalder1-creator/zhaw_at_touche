@@ -10,7 +10,7 @@ Unified `uv`-managed tooling for the Touché ad-detection workflow in one shared
 │   ├── task/                     # official Touché task files
 │   └── generated/
 │       ├── gemini/              # generated neutral responses from Gemini
-│       ├── qwen/                # generated neutral responses from a self-hosted Qwen backend
+│       ├── qwen/                # generated neutral responses from a local Qwen2.5 backend
 │       └── chatgpt/             # reserved for future hosted OpenAI outputs
 ├── train_model/                 # named training setup defaults
 ├── validate_model/              # evaluation-only setup defaults
@@ -70,20 +70,29 @@ Default outputs:
 - `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl`
 - `data/generated/gemini/responses-test-with-neutral_gemini.jsonl`
 
-Self-hosted Qwen generation uses an OpenAI-compatible local endpoint. Example for the validation split:
+Local Qwen2.5 generation now loads the model directly through `transformers`, so no API key is needed. Example for the validation split:
 
 ```bash
-export QWEN_API_BASE="http://127.0.0.1:8000/v1"
-export QWEN_API_KEY="EMPTY"
 uv run touche-generate-neutral \
   --provider qwen \
   --split validation \
-  --model Qwen/Qwen2.5-1.5B-Instruct
+  --model Qwen/Qwen2.5-1.5B-Instruct \
+  --device cuda
 ```
 
 This writes:
 
 - `data/generated/qwen/responses-validation-with-neutral_qwen.jsonl`
+
+If you still want to use a self-hosted OpenAI-compatible endpoint instead of loading the model locally:
+
+```bash
+export QWEN_API_BASE="http://127.0.0.1:8000/v1"
+uv run touche-generate-neutral \
+  --provider qwen \
+  --backend openai_compatible \
+  --split validation
+```
 
 ### 3. Train a model
 
@@ -335,7 +344,7 @@ uv run touche-eval-matrix results/setupX
 ## Notes
 
 - `data/task/README.md` contains the original dataset description.
-- `data/generated/qwen/` is used for self-hosted Qwen neutral-response runs.
+- `data/generated/qwen/` is used for local Qwen2.5 neutral-response runs.
 - `data/generated/chatgpt/` is included so future hosted OpenAI-generated files can follow the same layout later.
 - `validate_model/` stores evaluation-only presets for already-trained models such as `teamCMU`.
 - Use the root CLI entry points in `src/zhaw_at_touche/` for generation, training, validation, and analysis tasks.

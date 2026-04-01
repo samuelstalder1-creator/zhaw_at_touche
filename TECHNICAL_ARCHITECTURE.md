@@ -252,10 +252,10 @@ This step turns the raw paired-file format into a more convenient single-file fo
 Implementation characteristics:
 
 - resolves default paths from the requested split
-- supports Gemini plus self-hosted OpenAI-compatible generation backends such as Qwen
+- supports Gemini plus a local Qwen2.5 `transformers` backend, with optional OpenAI-compatible mode for Qwen
 - loads labels so generated rows can preserve label metadata
 - supports resumable generation by skipping IDs already written to the output file
-- uses `ThreadPoolExecutor` for parallel API calls
+- uses `ThreadPoolExecutor` for parallel API calls and falls back to a single worker for shared local-model generation
 - appends rows incrementally instead of buffering all output in memory
 
 This is designed for long-running generation jobs that may be interrupted and resumed.
@@ -405,6 +405,10 @@ Input files originate in `data/task/`, for example:
 The output is written under `data/generated/<provider>/`, for example
 `data/generated/gemini/` or `data/generated/qwen/`.
 
+For `provider=qwen`, the default path loads a local Qwen2.5 instruct model
+through `transformers`. An explicit OpenAI-compatible backend can still be used
+when needed.
+
 ### 4. Training
 
 `touche-train` reads one JSONL dataset, tokenizes `Query + Response`, trains a binary classifier, and writes:
@@ -509,7 +513,7 @@ This gives quick coverage over the logic most likely to regress while avoiding h
 
 ## Current Limitations
 
-- Neutral-response generation is implemented for Gemini plus self-hosted OpenAI-compatible providers such as Qwen.
+- Neutral-response generation is implemented for Gemini plus local Qwen2.5 loading, with optional OpenAI-compatible Qwen mode.
 - The repository is strongly file-based and does not include experiment tracking, dataset versioning, or a service layer.
 - Validation and reporting are batch-oriented rather than online or interactive.
 - Large dataset files are stored directly in the repository, which creates repository-size pressure and GitHub large-file warnings.
