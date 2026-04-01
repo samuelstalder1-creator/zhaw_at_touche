@@ -1,0 +1,11 @@
+rows: 6220
+matrix: rows=gold_label, cols=response_label
+gold\\pred         0         1
+        0      4306        10
+        1        35      1869
+metrics:
+       label precision    recall        f1 support
+           0    0.9919    0.9977    0.9948    4316
+           1    0.9947    0.9816    0.9881    1904
+   macro avg    0.9933    0.9897    0.9915    6220
+weighted avg    0.9928    0.9928    0.9928    6220
