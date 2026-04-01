@@ -21,4 +21,4 @@
 8. `touche-check-overlap` reports split leakage across train, validation, and test response files.
 9. `touche-eval-matrix` generates a confusion-matrix summary from existing prediction files.
 
-The current named experiment family covers RoBERTa, Longformer, several DeBERTa-v3 variants, ALBERT, ELECTRA, DistilRoBERTa, and the embedding-divergence setups `setup100` and `setup101`.
+The current named experiment family covers RoBERTa, Longformer, several DeBERTa-v3 variants, ALBERT, ELECTRA, DistilRoBERTa, and the embedding-divergence setups `setup100`, `setup101`, and `setup102`.

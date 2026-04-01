@@ -80,14 +80,15 @@ Overall confusion counts for committed `setup6` results:
 - `setup7` is the outlier: longest context, smallest per-device batch, and reference-aware input
 - The repository does not yet contain committed results for `setup4`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, or `setup12`, so any real performance comparison still requires training and validation for those setups
 
-## Experimental Setup100 And Setup101
+## Experimental Setup100, Setup101, And Setup102
 
-`setup100` and `setup101` are intentionally not part of the classifier training table above because they do not fine-tune transformer classifiers.
+`setup100`, `setup101`, and `setup102` are intentionally not part of the classifier training table above because they do not fine-tune transformer classifiers.
 
 | Setup | Train command | Eval command | Embedding model | Sentence aggregation | Threshold metric | Intent |
 | --- | --- | --- | --- | --- | --- | --- |
 | `setup100` | `uv run touche-train --setup-name setup100` | `uv run touche-validate --setup-name setup100` | `sentence-transformers/all-mpnet-base-v2` | `mean` | `macro_f1` | balanced baseline |
 | `setup101` | `uv run touche-train --setup-name setup101` | `uv run touche-validate --setup-name setup101` | `sentence-transformers/all-mpnet-base-v2` | `top3_mean` | `positive_f1` | stronger ad-insertion recall |
+| `setup102` | `uv run touche-train --setup-name setup102` | `uv run touche-validate --setup-name setup102` | `BAAI/bge-large-en-v1.5` | `top3_mean` | `positive_f1` | stronger encoder variant of `setup101` |
 
 Both setups:
 

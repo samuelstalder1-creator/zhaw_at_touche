@@ -68,6 +68,10 @@ uv run touche-embed-divergence --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-validate --setup-name setup101
 uv run touche-embed-divergence --setup-name setup101
+
+uv run touche-train --setup-name setup102
+uv run touche-validate --setup-name setup102
+uv run touche-embed-divergence --setup-name setup102
 ```
 
 `setup100` uses `train_model/setup100.json` plus `validate_model/setup100.json`.
@@ -80,6 +84,10 @@ saved threshold or manual `--threshold` is available.
 `setup101` is the higher-recall variant for the same idea. It uses top-3
 sentence aggregation and a `positive_f1` threshold target to better surface
 localized ad insertions.
+
+`setup102` is the higher-capacity encoder variant. It keeps the `setup101`
+scoring recipe but swaps in `BAAI/bge-large-en-v1.5` and uses a smaller batch
+size for the larger model footprint.
 
 By default the validator evaluates only the `test` split. To evaluate both
 validation and test data, either set `eval_splits` in the setup JSON or pass:

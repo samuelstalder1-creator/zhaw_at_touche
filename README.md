@@ -229,12 +229,14 @@ Default validation artifacts:
 
 ### 4b. Run the embedding-divergence baseline
 
-`setup100` and `setup101` are two-stage embedding-divergence experiments.
+`setup100`, `setup101`, and `setup102` are two-stage embedding-divergence experiments.
 `setup100` is the baseline mean-aggregation recipe. `setup101` is the more
 aggressive follow-up: it uses top-3 sentence drift aggregation and positive-F1
 threshold fitting so localized ad insertions are less likely to be averaged
-away. Both save an `embedding_state.json` bundle during training and can then
-be validated through either `touche-validate` or `touche-embed-divergence`.
+away. `setup102` keeps the `setup101` recipe but upgrades the encoder to
+`BAAI/bge-large-en-v1.5` and reduces batch size for the larger model. All three
+save an `embedding_state.json` bundle during training and can then be validated
+through either `touche-validate` or `touche-embed-divergence`.
 
 ```bash
 uv run touche-train --setup-name setup100
@@ -244,6 +246,10 @@ uv run touche-embed-divergence --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-validate --setup-name setup101
 uv run touche-embed-divergence --setup-name setup101
+
+uv run touche-train --setup-name setup102
+uv run touche-validate --setup-name setup102
+uv run touche-embed-divergence --setup-name setup102
 ```
 
 Default artifacts:

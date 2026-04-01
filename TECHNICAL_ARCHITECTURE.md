@@ -141,7 +141,7 @@ This is separate from `training_setups.py` on purpose. It allows evaluation-only
 
 ### `embedding_setups.py`
 
-[`src/zhaw_at_touche/embedding_setups.py`](src/zhaw_at_touche/embedding_setups.py) loads optional defaults for embedding-divergence baselines such as `setup100` and `setup101`, including the saved-state `model_dir`.
+[`src/zhaw_at_touche/embedding_setups.py`](src/zhaw_at_touche/embedding_setups.py) loads optional defaults for embedding-divergence baselines such as `setup100`, `setup101`, and `setup102`, including the saved-state `model_dir`.
 
 It keeps the experiment idea lightweight: a named JSON setup can define the embedding model, neutral-reference field, score granularity, thresholding behavior, and output paths without introducing another configuration system.
 
@@ -173,7 +173,7 @@ The training code intentionally avoids a larger trainer abstraction. The advanta
 
 ### `embedding_divergence.py`
 
-[`src/zhaw_at_touche/embedding_divergence.py`](src/zhaw_at_touche/embedding_divergence.py) implements the semantic-drift baselines used by `setup100` and `setup101` for both threshold fitting and evaluation.
+[`src/zhaw_at_touche/embedding_divergence.py`](src/zhaw_at_touche/embedding_divergence.py) implements the semantic-drift baselines used by `setup100`, `setup101`, and `setup102` for both threshold fitting and evaluation.
 
 It is responsible for:
 

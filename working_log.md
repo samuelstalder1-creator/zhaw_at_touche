@@ -38,6 +38,9 @@
 - Added `setup101`, a stronger embedding-divergence follow-up that uses top-k
   sentence drift aggregation and positive-class threshold fitting to better
   catch localized promotional insertions.
+- Added `setup102`, a higher-capacity embedding-divergence variant that keeps
+  the stronger `setup101` scoring recipe but upgrades the encoder to
+  `BAAI/bge-large-en-v1.5`.
 - Implemented validation/export tooling for metrics, confusion matrices,
   prediction files, and misclassification analysis.
 - Added utility/test coverage for configuration loading, metrics, overlap

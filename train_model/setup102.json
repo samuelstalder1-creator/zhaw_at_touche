@@ -1,0 +1,15 @@
+{
+  "description": "Higher-capacity embedding-space divergence setup. Uses BAAI/bge-large-en-v1.5 with top-3 sentence drift aggregation and positive-class threshold fitting. Batch size is reduced to keep the larger encoder practical on GPU.",
+  "trainer_type": "embedding_divergence",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "BAAI/bge-large-en-v1.5",
+  "neutral_field": "gemini25flashlite",
+  "distance_metric": "cosine",
+  "score_granularity": "sentence",
+  "sentence_agg": "top3_mean",
+  "threshold_metric": "positive_f1",
+  "batch_size": 16,
+  "max_length": 384,
+  "device": "cuda"
+}
