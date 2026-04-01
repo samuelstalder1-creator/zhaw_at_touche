@@ -30,7 +30,7 @@
 - `data/generated/gemini/` stores generated neutral-response datasets.
 - `data/generated/qwen/` stores generated neutral-response datasets from the self-hosted Qwen backend.
 - `data/generated/chatgpt/` is intentionally present even though no hosted OpenAI generation backend is implemented yet.
-- `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, and the embedding-divergence `setup100`.
+- `train_model/<setup-name>.json` stores reusable defaults for named training experiments such as `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, and the embedding-divergence setups `setup100` and `setup101`.
 - The current setup family covers RoBERTa, Longformer, DeBERTa-v3, ALBERT, ELECTRA, and DistilRoBERTa variants.
 - `validate_model/<setup-name>.json` stores reusable defaults for evaluation-only experiments such as `teamCMU`.
 - `validate_model/setup4.json` and `validate_model/setup7.json` mirror the reference-aware local training setups.
@@ -47,7 +47,7 @@
 - Validation can include both `validation` and `test` through `--eval-splits validation test`.
 - Validation can load either a local saved model directory or a remote Hugging Face model name.
 - Input formatting is configurable; `setup7` uses a long-context prompt with `gemini25flashlite` as a neutral reference, `setup4` uses an unbiased-reference / RAG-response prompt, and `setup6`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12` stay on the default query-response prompt.
-- The embedding-divergence baseline in `setup100` defaults to fitting its threshold during `touche-train` and reusing the saved state during `touche-embed-divergence`, with validation-based calibration as a fallback.
+- The embedding-divergence baseline family in `setup100` and `setup101` defaults to fitting its threshold during `touche-train` and reusing the saved state during `touche-embed-divergence`, with validation-based calibration as a fallback.
 - Device resolution order is `cuda -> mps -> cpu`, unless the user explicitly forces a device.
 
 ## Output Contracts
@@ -97,7 +97,7 @@
 - The classification task remains binary: `0 = no ad`, `1 = ad`.
 - The default training text format remains `Query: ... Response: ... Answer:`. `setup7` uses a long-context neutral-reference format, `setup4` uses an unbiased-reference / RAG-response format, and the other current local setups stay on the default prompt.
 - The local setup matrix currently spans RoBERTa, Longformer, DeBERTa-v3 variants, ALBERT, ELECTRA, and DistilRoBERTa.
-- `setup100` is a saved-state semantic-drift baseline rather than a fine-tuned classifier setup.
+- `setup100` and `setup101` are saved-state semantic-drift baselines rather than fine-tuned classifier setups.
 - Neutral-response generation currently supports Gemini plus a self-hosted OpenAI-compatible Qwen backend.
 
 ## Known Gaps

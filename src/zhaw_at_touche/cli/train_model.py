@@ -191,7 +191,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     )
     parser.add_argument(
         "--sentence-agg",
-        choices=("max", "mean"),
+        choices=("max", "mean", "top2_mean", "top3_mean"),
         default=defaults["sentence_agg"],
         help="Sentence-score aggregation used by embedding-divergence training.",
     )

@@ -95,11 +95,16 @@ classifier checkpoint:
 
 ```bash
 uv run touche-train --setup-name setup100
+uv run touche-train --setup-name setup101
 ```
 
 `setup100` uses `trainer_type=embedding_divergence`. Its training output is
 `models/setup100/embedding_state.json` plus `models/setup100/training_summary.json`.
 It does not write a Hugging Face classifier bundle.
+
+`setup101` is the stronger follow-up to `setup100`: it uses top-3 sentence
+drift aggregation plus `positive_f1` threshold fitting to reduce dilution from
+mostly-neutral passages that contain only a few promotional sentences.
 
 By default `touche-train` uses the full training file. To train on only a
 subset, pass for example:

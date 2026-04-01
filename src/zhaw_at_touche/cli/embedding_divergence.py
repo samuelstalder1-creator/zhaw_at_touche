@@ -186,7 +186,11 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         choices=("response", "sentence"),
         default=defaults["score_granularity"],
     )
-    parser.add_argument("--sentence-agg", choices=("max", "mean"), default=defaults["sentence_agg"])
+    parser.add_argument(
+        "--sentence-agg",
+        choices=("max", "mean", "top2_mean", "top3_mean"),
+        default=defaults["sentence_agg"],
+    )
     parser.add_argument("--threshold", type=float, default=defaults["threshold"])
     parser.add_argument(
         "--threshold-metric",

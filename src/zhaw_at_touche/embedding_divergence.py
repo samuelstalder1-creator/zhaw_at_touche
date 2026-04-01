@@ -178,6 +178,12 @@ def aggregate_sentence_distances(alignment: Sequence[dict[str, Any]], sentence_a
         return max(distances)
     if sentence_agg == "mean":
         return sum(distances) / len(distances)
+    if sentence_agg == "top2_mean":
+        top_distances = sorted(distances, reverse=True)[:2]
+        return sum(top_distances) / len(top_distances)
+    if sentence_agg == "top3_mean":
+        top_distances = sorted(distances, reverse=True)[:3]
+        return sum(top_distances) / len(top_distances)
     raise ValueError(f"Unsupported sentence aggregation '{sentence_agg}'.")
 
 

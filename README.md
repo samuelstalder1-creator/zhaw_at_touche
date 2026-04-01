@@ -229,18 +229,21 @@ Default validation artifacts:
 
 ### 4b. Run the embedding-divergence baseline
 
-`setup100` is a two-stage experiment. `touche-train --setup-name setup100`
-fits and saves an embedding-divergence threshold/state bundle in
-`models/setup100/embedding_state.json`. You can then validate it either with
-`touche-validate --setup-name setup100` or directly with
-`touche-embed-divergence --setup-name setup100`. Both routes load the saved
-threshold by default and fall back to validation calibration only if no saved
-state or manual threshold is available.
+`setup100` and `setup101` are two-stage embedding-divergence experiments.
+`setup100` is the baseline mean-aggregation recipe. `setup101` is the more
+aggressive follow-up: it uses top-3 sentence drift aggregation and positive-F1
+threshold fitting so localized ad insertions are less likely to be averaged
+away. Both save an `embedding_state.json` bundle during training and can then
+be validated through either `touche-validate` or `touche-embed-divergence`.
 
 ```bash
 uv run touche-train --setup-name setup100
 uv run touche-validate --setup-name setup100
 uv run touche-embed-divergence --setup-name setup100
+
+uv run touche-train --setup-name setup101
+uv run touche-validate --setup-name setup101
+uv run touche-embed-divergence --setup-name setup101
 ```
 
 Default artifacts:

@@ -45,6 +45,17 @@ class EmbeddingDivergenceHelpersTests(unittest.TestCase):
         self.assertAlmostEqual(float(alignment[1]["distance"]), 1.0)
         self.assertAlmostEqual(aggregate_sentence_distances(alignment, "max"), 1.0)
 
+    def test_aggregate_sentence_distances_supports_topk_mean(self) -> None:
+        alignment = [
+            {"distance": 0.1},
+            {"distance": 0.4},
+            {"distance": 0.8},
+            {"distance": 1.0},
+        ]
+
+        self.assertAlmostEqual(aggregate_sentence_distances(alignment, "top2_mean"), 0.9)
+        self.assertAlmostEqual(aggregate_sentence_distances(alignment, "top3_mean"), 0.7333333333333334)
+
     def test_calibrate_threshold_finds_perfect_split(self) -> None:
         threshold, summary = calibrate_threshold(
             scores=[0.1, 0.2, 0.8, 0.9],
@@ -167,6 +178,34 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
         )
 
         self.assertEqual(updated.sentence_agg, "max")
+
+    def test_parse_args_accepts_topk_sentence_agg(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup101.json").write_text(
+                json.dumps(
+                    {
+                        "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+                        "neutral_field": "gemini25flashlite",
+                        "score_granularity": "sentence",
+                        "sentence_agg": "top3_mean",
+                        "threshold_metric": "positive_f1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            args = parse_args(
+                [
+                    "--setup-name",
+                    "setup101",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(args.sentence_agg, "top3_mean")
+            self.assertEqual(args.threshold_metric, "positive_f1")
 
 
 if __name__ == "__main__":

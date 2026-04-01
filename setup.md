@@ -80,18 +80,20 @@ Overall confusion counts for committed `setup6` results:
 - `setup7` is the outlier: longest context, smallest per-device batch, and reference-aware input
 - The repository does not yet contain committed results for `setup4`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, or `setup12`, so any real performance comparison still requires training and validation for those setups
 
-## Experimental Setup100
+## Experimental Setup100 And Setup101
 
-`setup100` is intentionally not part of the classifier training table above because it does not fine-tune a transformer classifier.
+`setup100` and `setup101` are intentionally not part of the classifier training table above because they do not fine-tune transformer classifiers.
 
-- Train command: `uv run touche-train --setup-name setup100`
-- Eval command: `uv run touche-validate --setup-name setup100` or `uv run touche-embed-divergence --setup-name setup100`
-- Type: embedding-space divergence baseline with a saved threshold/state phase
-- Embedding model: `sentence-transformers/all-mpnet-base-v2`
-- Reference field: `gemini25flashlite`
-- Score: sentence-level cosine divergence with greedy alignment and `mean` aggregation
-- Training artifact: `models/setup100/embedding_state.json`
-- Thresholding: `touche-train` fits the threshold on validation with `macro_f1` by default, and evaluation reuses the saved threshold and scoring config unless you override them on the CLI
+| Setup | Train command | Eval command | Embedding model | Sentence aggregation | Threshold metric | Intent |
+| --- | --- | --- | --- | --- | --- | --- |
+| `setup100` | `uv run touche-train --setup-name setup100` | `uv run touche-validate --setup-name setup100` | `sentence-transformers/all-mpnet-base-v2` | `mean` | `macro_f1` | balanced baseline |
+| `setup101` | `uv run touche-train --setup-name setup101` | `uv run touche-validate --setup-name setup101` | `sentence-transformers/all-mpnet-base-v2` | `top3_mean` | `positive_f1` | stronger ad-insertion recall |
+
+Both setups:
+
+- Use sentence-level cosine divergence against `gemini25flashlite`
+- Save a threshold/state bundle under `models/<setup-name>/embedding_state.json`
+- Can also be evaluated with `uv run touche-embed-divergence --setup-name <setup-name>`
 
 The goal is to treat the neutral response as a semantic anchor and score how far
 the RAG response drifts away from it, rather than training a classifier on the

@@ -182,6 +182,43 @@ class TrainingSetupsTests(unittest.TestCase):
             self.assertEqual(args.batch_size, 32)
             self.assertEqual(args.max_length, 256)
 
+    def test_parse_args_supports_topk_embedding_divergence_setup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup101.json").write_text(
+                json.dumps(
+                    {
+                        "trainer_type": "embedding_divergence",
+                        "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+                        "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+                        "model_name": "sentence-transformers/all-mpnet-base-v2",
+                        "neutral_field": "gemini25flashlite",
+                        "distance_metric": "cosine",
+                        "score_granularity": "sentence",
+                        "sentence_agg": "top3_mean",
+                        "threshold_metric": "positive_f1",
+                        "batch_size": 32,
+                        "max_length": 384,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            args = parse_args(
+                [
+                    "--setup-name",
+                    "setup101",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(args.trainer_type, "embedding_divergence")
+            self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
+            self.assertEqual(args.sentence_agg, "top3_mean")
+            self.assertEqual(args.threshold_metric, "positive_f1")
+            self.assertEqual(args.max_length, 384)
+
 
 if __name__ == "__main__":
     unittest.main()
