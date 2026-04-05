@@ -40,6 +40,12 @@ Local validation preset for the Longformer training setup:
 uv run touche-validate --setup-name setup7
 ```
 
+Qwen-source variant of the Longformer validation preset:
+
+```bash
+uv run touche-validate --setup-name setup7-qwen
+```
+
 Local validation preset for the DeBERTa-v3 `setup4` training setup:
 
 ```bash
@@ -56,11 +62,11 @@ uv run touche-validate --setup-name setup11
 uv run touche-validate --setup-name setup12
 ```
 
-`setup6-qwen` uses a dedicated validation JSON so evaluation reads the Qwen
-generated test split by default. Setups such as `setup6` and `setup8` do not
-need a dedicated validation JSON. They fall back to the default local paths
-`models/<setup-name>/` and `results/<setup-name>/` when you pass
-`--setup-name`.
+`setup6-qwen` and `setup7-qwen` use dedicated validation JSON files so
+evaluation reads the Qwen-generated test split by default. Setups such as
+`setup6` and `setup8` do not need a dedicated validation JSON. They fall back
+to the default local paths `models/<setup-name>/` and `results/<setup-name>/`
+when you pass `--setup-name`.
 
 To evaluate the same trained model on a different generated test set without
 creating a new preset, pass `--generated-provider`. Example:

@@ -139,6 +139,12 @@ Longformer setup with Gemini neutral-reference context:
 uv run touche-train --setup-name setup7
 ```
 
+Qwen-source variant of setup7:
+
+```bash
+uv run touche-train --setup-name setup7-qwen
+```
+
 DeBERTa-v3 setup with the unbiased-reference / RAG-response prompt:
 
 ```bash
@@ -235,6 +241,12 @@ The local Longformer training preset also has a matching validation preset:
 
 ```bash
 uv run touche-validate --setup-name setup7
+```
+
+The Qwen-source Longformer variant also has a matching validation preset:
+
+```bash
+uv run touche-validate --setup-name setup7-qwen
 ```
 
 Additional local validation presets are available for `setup4`, `setup6-qwen`,

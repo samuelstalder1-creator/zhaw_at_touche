@@ -124,6 +124,20 @@ class TrainingSetupsTests(unittest.TestCase):
         )
         self.assertEqual(args.model_name, "FacebookAI/roberta-base")
 
+    def test_repo_setup7_qwen_uses_qwen_neutral_reference(self) -> None:
+        args = parse_args(["--setup-name", "setup7-qwen"])
+
+        self.assertEqual(args.train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+        )
+        self.assertEqual(args.model_name, "allenai/longformer-base-4096")
+        self.assertEqual(args.input_format, "query_neutral_response")
+        self.assertEqual(args.reference_field, "qwen")
+        self.assertEqual(args.reference_label, "QWEN")
+        self.assertTrue(args.pad_to_max_length)
+
     def test_parse_args_accepts_linear_scheduler(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             setups_dir = Path(tmp_dir)

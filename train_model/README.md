@@ -66,6 +66,12 @@ Longformer neutral-reference setup:
 uv run touche-train --setup-name setup7
 ```
 
+Qwen-source variant of setup7:
+
+```bash
+uv run touche-train --setup-name setup7-qwen
+```
+
 DeBERTa-v3 setup with unbiased reference + RAG-response prompt:
 
 ```bash
