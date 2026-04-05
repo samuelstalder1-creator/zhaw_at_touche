@@ -16,6 +16,7 @@ Supported JSON fields:
 - `results_dir`
 - `eval_splits`
 - `input_files`
+- `generated_provider`
 - `text_field`
 - `input_format`
 - `reference_field`
@@ -48,15 +49,32 @@ uv run touche-validate --setup-name setup4
 Additional local validation presets for the newer query-response baselines:
 
 ```bash
+uv run touche-validate --setup-name setup6-qwen
 uv run touche-validate --setup-name setup9
 uv run touche-validate --setup-name setup10
 uv run touche-validate --setup-name setup11
 uv run touche-validate --setup-name setup12
 ```
 
-Setups such as `setup6` and `setup8` do not need a dedicated validation JSON.
-They fall back to the default local paths `models/<setup-name>/` and
-`results/<setup-name>/` when you pass `--setup-name`.
+`setup6-qwen` uses a dedicated validation JSON so evaluation reads the Qwen
+generated test split by default. Setups such as `setup6` and `setup8` do not
+need a dedicated validation JSON. They fall back to the default local paths
+`models/<setup-name>/` and `results/<setup-name>/` when you pass
+`--setup-name`.
+
+To evaluate the same trained model on a different generated test set without
+creating a new preset, pass `--generated-provider`. Example:
+
+```bash
+uv run touche-validate --setup-name setup6
+uv run touche-validate --setup-name setup6 --generated-provider qwen
+```
+
+When `--generated-provider qwen` is used and `--results-dir` is omitted, the
+validator writes to `results/<setup-name>-qwen/` so the Qwen run does not
+overwrite the default Gemini artifacts. For reference-aware setups such as
+`setup7`, the validator also switches the default reference field from
+`gemini25flashlite` to `qwen` unless you override `--reference-field`.
 
 Embedding-divergence baseline:
 

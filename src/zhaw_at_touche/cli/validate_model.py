@@ -11,6 +11,15 @@ from typing import Sequence
 
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
 from zhaw_at_touche.datasets import DEFAULT_INPUT_FORMAT, SUPPORTED_INPUT_FORMATS, detect_generated_text_field
+from zhaw_at_touche.eval_inputs import (
+    PROVIDER_GENERATED_FIELDS,
+    PROVIDER_REFERENCE_LABELS,
+    SUPPORTED_GENERATED_PROVIDERS,
+    generated_field_for_provider,
+    reference_label_for_provider,
+    resolve_default_eval_paths,
+    with_provider_results_dir,
+)
 from zhaw_at_touche.evaluation_utils import (
     compute_metrics,
     counts_from_pairs,
@@ -21,21 +30,6 @@ from zhaw_at_touche.evaluation_utils import (
 )
 from zhaw_at_touche.jsonl import read_jsonl, write_jsonl
 from zhaw_at_touche.validation_setups import DEFAULT_VALIDATION_SETUPS_DIR, load_setup_defaults
-
-
-def resolve_default_eval_paths(eval_splits: Sequence[str] | None = None) -> list[Path]:
-    splits = list(eval_splits) if eval_splits else ["test"]
-    generated_paths = [
-        Path(f"data/generated/gemini/responses-{split}-with-neutral_gemini.jsonl")
-        for split in splits
-    ]
-    if all(path.exists() for path in generated_paths):
-        return generated_paths
-
-    return [
-        Path(f"data/task/preprocessed/responses-{split}-merged.jsonl")
-        for split in splits
-    ]
 
 
 def save_confusion_matrix_image(
@@ -85,6 +79,13 @@ def write_csv_rows(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]
         writer.writerows(rows)
 
 
+def cli_option_was_provided(raw_argv: Sequence[str], option_name: str) -> bool:
+    return any(
+        token == option_name or token.startswith(f"{option_name}=")
+        for token in raw_argv
+    )
+
+
 def base_defaults() -> dict[str, object]:
     return {
         "model_name": None,
@@ -92,6 +93,7 @@ def base_defaults() -> dict[str, object]:
         "results_dir": None,
         "eval_splits": ["test"],
         "input_files": None,
+        "generated_provider": None,
         "text_field": "response",
         "generated_field": None,
         "batch_size": 16,
@@ -111,7 +113,10 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         defaults.update(setup_defaults)
     input_file_defaults = defaults["input_files"]
     if input_file_defaults is None:
-        input_file_defaults = [str(path) for path in resolve_default_eval_paths(defaults["eval_splits"])]
+        input_file_defaults = [
+            str(path)
+            for path in resolve_default_eval_paths(defaults["eval_splits"], defaults["generated_provider"])
+        ]
 
     parser = argparse.ArgumentParser(description="Validate a trained model and write evaluation artifacts.")
     parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
@@ -135,6 +140,15 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Default evaluation splits when --input-files is not passed. Defaults to test only.",
     )
     parser.add_argument("--input-files", nargs="+", default=input_file_defaults)
+    parser.add_argument(
+        "--generated-provider",
+        choices=SUPPORTED_GENERATED_PROVIDERS,
+        default=defaults["generated_provider"],
+        help=(
+            "Optional generated-response provider used to resolve default input files. "
+            "When omitted, validation uses Gemini-generated files if present, otherwise task-preprocessed files."
+        ),
+    )
     parser.add_argument("--text-field", default=defaults["text_field"], help="Text field used for the main prediction.")
     parser.add_argument("--input-format", choices=SUPPORTED_INPUT_FORMATS, default=defaults["input_format"])
     parser.add_argument(
@@ -190,26 +204,54 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = build_parser(setup_defaults)
     args = parser.parse_args(raw_argv)
 
-    provided_model_name = any(
-        token == "--model-name" or token.startswith("--model-name=")
-        for token in raw_argv
-    )
-    provided_model_dir = any(
-        token == "--model-dir" or token.startswith("--model-dir=")
-        for token in raw_argv
-    )
+    provided_model_name = cli_option_was_provided(raw_argv, "--model-name")
+    provided_model_dir = cli_option_was_provided(raw_argv, "--model-dir")
     if provided_model_name and provided_model_dir:
         parser.error("Pass only one of --model-name or --model-dir.")
     if provided_model_name:
         args.model_dir = None
     if provided_model_dir:
         args.model_name = None
-    provided_input_files = any(
-        token == "--input-files" or token.startswith("--input-files=")
-        for token in raw_argv
-    )
-    if not provided_input_files and not setup_provided_input_files:
-        args.input_files = [str(path) for path in resolve_default_eval_paths(args.eval_splits)]
+
+    provided_input_files = cli_option_was_provided(raw_argv, "--input-files")
+    provided_generated_provider = cli_option_was_provided(raw_argv, "--generated-provider")
+    provided_generated_field = cli_option_was_provided(raw_argv, "--generated-field")
+    provided_reference_field = cli_option_was_provided(raw_argv, "--reference-field")
+    provided_reference_label = cli_option_was_provided(raw_argv, "--reference-label")
+    provided_results_dir = cli_option_was_provided(raw_argv, "--results-dir")
+
+    if (not provided_input_files and not setup_provided_input_files) or (
+        provided_generated_provider and not provided_input_files
+    ):
+        args.input_files = [
+            str(path)
+            for path in resolve_default_eval_paths(args.eval_splits, args.generated_provider)
+        ]
+
+    if args.generated_provider is not None and not provided_generated_field:
+        if args.generated_field is None or args.generated_field in PROVIDER_GENERATED_FIELDS.values():
+            args.generated_field = generated_field_for_provider(args.generated_provider)
+
+    if (
+        args.generated_provider is not None
+        and args.input_format != DEFAULT_INPUT_FORMAT
+        and not provided_reference_field
+    ):
+        if args.reference_field is None or args.reference_field in PROVIDER_GENERATED_FIELDS.values():
+            args.reference_field = generated_field_for_provider(args.generated_provider)
+
+    if (
+        args.generated_provider is not None
+        and args.input_format != DEFAULT_INPUT_FORMAT
+        and not provided_reference_label
+    ):
+        if str(args.reference_label).upper() in PROVIDER_REFERENCE_LABELS.values():
+            args.reference_label = reference_label_for_provider(args.generated_provider)
+
+    if args.generated_provider is not None and not provided_results_dir:
+        base_results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
+        args.results_dir = str(with_provider_results_dir(base_results_dir, args.generated_provider))
+
     return args
 
 
@@ -347,6 +389,7 @@ def main() -> None:
     summary_payload = {
         "model_source": str(model_source),
         "results_dir": str(results_dir),
+        "generated_provider": args.generated_provider,
         "device": device,
         "text_field": args.text_field,
         "input_format": args.input_format,

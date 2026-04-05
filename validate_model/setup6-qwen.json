@@ -1,0 +1,9 @@
+{
+  "description": "Validation preset for the RoBERTa setup6-qwen model on Qwen-generated neutral-response data.",
+  "model_dir": "models/setup6-qwen",
+  "results_dir": "results/setup6-qwen",
+  "generated_provider": "qwen",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

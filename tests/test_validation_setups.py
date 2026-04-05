@@ -114,6 +114,56 @@ class ValidationSetupsTests(unittest.TestCase):
             [str(path) for path in resolve_default_eval_paths(["test"])],
         )
 
+    def test_generated_provider_switches_default_eval_input_and_results_dir(self) -> None:
+        args = parse_args(["--setup-name", "setup6", "--generated-provider", "qwen"])
+
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(args.generated_field, "qwen")
+        self.assertEqual(args.results_dir, "results/setup6-qwen")
+
+    def test_generated_provider_updates_reference_aware_setup_defaults(self) -> None:
+        args = parse_args(["--setup-name", "setup7", "--generated-provider", "qwen"])
+
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(args.reference_field, "qwen")
+        self.assertEqual(args.reference_label, "QWEN")
+        self.assertEqual(args.results_dir, "results/setup7-qwen")
+
+    def test_generated_provider_overrides_setup_input_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "custom.json").write_text(
+                json.dumps(
+                    {
+                        "input_files": ["custom-a.jsonl"],
+                        "results_dir": "results/custom",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            args = parse_args(
+                [
+                    "--setup-name",
+                    "custom",
+                    "--setups-dir",
+                    str(setups_dir),
+                    "--generated-provider",
+                    "qwen",
+                ]
+            )
+
+            self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+            self.assertEqual(args.results_dir, "results/custom-qwen")
+
+    def test_repo_setup6_qwen_uses_qwen_test_file(self) -> None:
+        args = parse_args(["--setup-name", "setup6-qwen"])
+
+        self.assertEqual(resolve_model_source(args), Path("models/setup6-qwen"))
+        self.assertEqual(args.results_dir, "results/setup6-qwen")
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(args.generated_field, "qwen")
+
     def test_eval_splits_can_include_validation_and_test(self) -> None:
         args = parse_args(["--eval-splits", "validation", "test"])
 

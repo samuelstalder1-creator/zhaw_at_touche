@@ -48,6 +48,12 @@ Example:
 uv run touche-train --setup-name setup6
 ```
 
+Qwen-source variant of setup6:
+
+```bash
+uv run touche-train --setup-name setup6-qwen
+```
+
 DeBERTa-v3 variant of setup6:
 
 ```bash

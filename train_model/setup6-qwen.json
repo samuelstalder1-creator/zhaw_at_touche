@@ -1,0 +1,11 @@
+{
+  "description": "RoBERTa training defaults for setup6 using Qwen-generated neutral responses.",
+  "train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "FacebookAI/roberta-base",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05
+}

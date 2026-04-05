@@ -10,6 +10,14 @@ from typing import Any
 from typing import Sequence
 
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
+from zhaw_at_touche.eval_inputs import (
+    PROVIDER_GENERATED_FIELDS,
+    SUPPORTED_GENERATED_PROVIDERS,
+    generated_field_for_provider,
+    resolve_default_calibration_paths,
+    resolve_default_eval_paths,
+    with_provider_results_dir,
+)
 from zhaw_at_touche.embedding_divergence import (
     calibrate_threshold,
     load_embedding_model,
@@ -28,28 +36,6 @@ from zhaw_at_touche.evaluation_utils import (
 )
 from zhaw_at_touche.jsonl import read_jsonl, write_jsonl
 from zhaw_at_touche.modeling import resolve_device
-
-
-def resolve_default_eval_paths(eval_splits: Sequence[str] | None = None) -> list[Path]:
-    splits = list(eval_splits) if eval_splits else ["test"]
-    generated_paths = [
-        Path(f"data/generated/gemini/responses-{split}-with-neutral_gemini.jsonl")
-        for split in splits
-    ]
-    if all(path.exists() for path in generated_paths):
-        return generated_paths
-
-    return [
-        Path(f"data/task/preprocessed/responses-{split}-merged.jsonl")
-        for split in splits
-    ]
-
-
-def resolve_default_calibration_paths() -> list[Path]:
-    generated_path = Path("data/generated/gemini/responses-validation-with-neutral_gemini.jsonl")
-    if generated_path.exists():
-        return [generated_path]
-    return [Path("data/task/preprocessed/responses-validation-merged.jsonl")]
 
 
 def save_confusion_matrix_image(
@@ -96,6 +82,7 @@ def base_defaults() -> dict[str, object]:
         "eval_splits": ["test"],
         "input_files": None,
         "calibration_input_files": None,
+        "generated_provider": None,
         "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
         "neutral_field": "gemini25flashlite",
         "distance_metric": "cosine",
@@ -149,10 +136,16 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         defaults.update(setup_defaults)
     input_file_defaults = defaults["input_files"]
     if input_file_defaults is None:
-        input_file_defaults = [str(path) for path in resolve_default_eval_paths(defaults["eval_splits"])]
+        input_file_defaults = [
+            str(path)
+            for path in resolve_default_eval_paths(defaults["eval_splits"], defaults["generated_provider"])
+        ]
     calibration_defaults = defaults["calibration_input_files"]
     if calibration_defaults is None:
-        calibration_defaults = [str(path) for path in resolve_default_calibration_paths()]
+        calibration_defaults = [
+            str(path)
+            for path in resolve_default_calibration_paths(defaults["generated_provider"])
+        ]
 
     parser = argparse.ArgumentParser(
         description="Evaluate embedding-space divergence against a neutral reference response."
@@ -178,6 +171,15 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     )
     parser.add_argument("--input-files", nargs="+", default=input_file_defaults)
     parser.add_argument("--calibration-input-files", nargs="+", default=calibration_defaults)
+    parser.add_argument(
+        "--generated-provider",
+        choices=SUPPORTED_GENERATED_PROVIDERS,
+        default=defaults["generated_provider"],
+        help=(
+            "Optional generated-response provider used to resolve default evaluation and calibration files. "
+            "When omitted, evaluation uses Gemini-generated files if present, otherwise task-preprocessed files."
+        ),
+    )
     parser.add_argument("--embedding-model-name", default=defaults["embedding_model_name"])
     parser.add_argument("--neutral-field", default=defaults["neutral_field"])
     parser.add_argument("--distance-metric", choices=("cosine",), default=defaults["distance_metric"])
@@ -205,17 +207,52 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
     pre_parser.add_argument("--setups-dir", default=str(DEFAULT_EMBEDDING_SETUPS_DIR))
-    pre_args, _ = pre_parser.parse_known_args(argv)
+    pre_args, _ = pre_parser.parse_known_args(raw_argv)
 
     setup_defaults = load_setup_defaults(
         setup_name=pre_args.setup_name,
         setups_dir=Path(pre_args.setups_dir),
     )
+    setup_provided_input_files = "input_files" in setup_defaults
+    setup_provided_calibration_input_files = "calibration_input_files" in setup_defaults
     parser = build_parser(setup_defaults)
-    return parser.parse_args(argv)
+    args = parser.parse_args(raw_argv)
+
+    provided_generated_provider = cli_option_was_provided(raw_argv, "--generated-provider")
+    provided_input_files = cli_option_was_provided(raw_argv, "--input-files")
+    provided_calibration_input_files = cli_option_was_provided(raw_argv, "--calibration-input-files")
+    provided_neutral_field = cli_option_was_provided(raw_argv, "--neutral-field")
+    provided_results_dir = cli_option_was_provided(raw_argv, "--results-dir")
+
+    if (not provided_input_files and not setup_provided_input_files) or (
+        provided_generated_provider and not provided_input_files
+    ):
+        args.input_files = [
+            str(path)
+            for path in resolve_default_eval_paths(args.eval_splits, args.generated_provider)
+        ]
+
+    if (not provided_calibration_input_files and not setup_provided_calibration_input_files) or (
+        provided_generated_provider and not provided_calibration_input_files
+    ):
+        args.calibration_input_files = [
+            str(path)
+            for path in resolve_default_calibration_paths(args.generated_provider)
+        ]
+
+    if args.generated_provider is not None and not provided_neutral_field:
+        if args.neutral_field is None or args.neutral_field in PROVIDER_GENERATED_FIELDS.values():
+            args.neutral_field = generated_field_for_provider(args.generated_provider)
+
+    if args.generated_provider is not None and not provided_results_dir:
+        base_results_dir = Path(args.results_dir) if args.results_dir else DEFAULT_RESULTS_DIR / args.setup_name
+        args.results_dir = str(with_provider_results_dir(base_results_dir, args.generated_provider))
+
+    return args
 
 
 def main(argv: Sequence[str] | None = None) -> None:

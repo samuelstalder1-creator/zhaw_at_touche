@@ -13,6 +13,7 @@ ALLOWED_SETUP_FIELDS = {
     "distance_metric",
     "embedding_model_name",
     "eval_splits",
+    "generated_provider",
     "generated_field",
     "input_format",
     "input_files",

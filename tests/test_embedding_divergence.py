@@ -207,6 +207,24 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
             self.assertEqual(args.sentence_agg, "top3_mean")
             self.assertEqual(args.threshold_metric, "positive_f1")
 
+    def test_generated_provider_switches_eval_and_calibration_defaults(self) -> None:
+        args = parse_args(
+            [
+                "--setup-name",
+                "setup100",
+                "--generated-provider",
+                "qwen",
+            ]
+        )
+
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(
+            args.calibration_input_files,
+            ["data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"],
+        )
+        self.assertEqual(args.neutral_field, "qwen")
+        self.assertEqual(args.results_dir, "results/setup100-qwen")
+
 
 if __name__ == "__main__":
     unittest.main()

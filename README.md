@@ -121,6 +121,12 @@ Merged Dagmar setup:
 uv run touche-train --setup-name setup6
 ```
 
+Qwen-source variant of setup6:
+
+```bash
+uv run touche-train --setup-name setup6-qwen
+```
+
 DeBERTa-v3 variant of setup6:
 
 ```bash
@@ -207,6 +213,16 @@ validation and test data:
 uv run touche-validate --setup-name setupX --eval-splits validation test
 ```
 
+To evaluate the same trained model on the Qwen-generated split instead of the
+default Gemini-generated split:
+
+```bash
+uv run touche-validate --setup-name setupX --generated-provider qwen
+```
+
+Unless you pass `--results-dir`, Qwen-backed validation writes to
+`results/<setup-name>-qwen/` so both evaluations can coexist.
+
 The validator also supports evaluation-only presets for already-trained remote models:
 
 ```bash
@@ -221,9 +237,9 @@ The local Longformer training preset also has a matching validation preset:
 uv run touche-validate --setup-name setup7
 ```
 
-Additional local validation presets are available for `setup4`, `setup9`,
-`setup10`, `setup11`, and `setup12`. Setups such as `setup6` and `setup8`
-still validate through the default `models/<setup-name>/` and
+Additional local validation presets are available for `setup4`, `setup6-qwen`,
+`setup9`, `setup10`, `setup11`, and `setup12`. Setups such as `setup6` and
+`setup8` still validate through the default `models/<setup-name>/` and
 `results/<setup-name>/` path resolution.
 
 Default validation artifacts:
