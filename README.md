@@ -85,12 +85,17 @@ uv run touche-train --setup-name setup12
 uv run touche-train --setup-name setup7
 ```
 
-Embedding-divergence examples:
+Embedding-based examples:
 
 ```bash
 uv run touche-train --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-train --setup-name setup102
+```
+
+Anchor-distance example:
+
+```bash
 uv run touche-train --setup-name setup110
 ```
 
@@ -100,6 +105,7 @@ uv run touche-train --setup-name setup110
 uv run touche-validate --setup-name setup6
 uv run touche-validate --setup-name setup12
 uv run touche-validate --setup-name setup7
+uv run touche-validate --setup-name setup110
 ```
 
 Provider-specific evaluation:
@@ -155,6 +161,7 @@ trainer backends.
 - Best committed Gemini-backed classifier: `setup12`
 - Best committed Qwen-backed classifier: `setup6-qwen`
 - Best committed archived embedding-feature idea: `setup104`
+- New runnable multi-anchor embedding baseline: `setup110`
 - Current semantic-drift baselines (`setup100` to `setup102`) are clearly below
   the classifier family
 

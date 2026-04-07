@@ -14,6 +14,9 @@
   - `src/zhaw_at_touche/embedding_divergence.py`
   - `src/zhaw_at_touche/embedding_setups.py`
   - `src/zhaw_at_touche/cli/embedding_divergence.py`
+- Anchor-distance baseline:
+  - `src/zhaw_at_touche/anchor_distance_classifier.py`
+  - `src/zhaw_at_touche/cli/anchor_distance_classifier.py`
 - Pairwise distance analysis:
   - `src/zhaw_at_touche/pairwise_distance.py`
   - `src/zhaw_at_touche/cli/pairwise_distances.py`
@@ -44,6 +47,7 @@
 - Classifier setups: `setup4`, `setup6`, `setup6-qwen`, `setup7`,
   `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
 - Embedding-divergence setups: `setup100`, `setup101`, `setup102`
+- Anchor-distance setup: `setup110`
 
 ### Documented but archived
 
@@ -51,8 +55,9 @@
 
 Those archived setup descriptors remain in `train_model/` because they explain
 historical experiments and some committed result directories, but the current
-`touche-train` parser only accepts `trainer_type=classifier` and
-`trainer_type=embedding_divergence`.
+`touche-train` parser only accepts `trainer_type=classifier`,
+`trainer_type=embedding_divergence`, and
+`trainer_type=anchor_distance_classifier`.
 
 ## CLI Defaults
 
@@ -74,6 +79,8 @@ historical experiments and some committed result directories, but the current
   `training_metrics.jsonl`, and optional W&B run files.
 - Embedding-divergence runs write `embedding_state.json` plus
   `training_summary.json`.
+- Anchor-distance runs write `anchor_distance_classifier.pkl`,
+  `embedding_state.json`, and `training_summary.json`.
 
 ### `touche-validate`
 
@@ -81,6 +88,8 @@ historical experiments and some committed result directories, but the current
   standardized CSV exports, and misclassification exports.
 - Delegates `setup100` to `setup102` to the embedding-divergence backend when
   the validation preset sets `scoring_backend=embedding_divergence`.
+- Delegates `setup110` to the anchor-distance backend when the validation
+  preset sets `scoring_backend=anchor_distance_classifier`.
 
 ### `touche-pairwise-distances`
 
@@ -99,6 +108,8 @@ historical experiments and some committed result directories, but the current
   layerwise LR decay, temporary embedding freezing
 - Embedding scoring controls: distance metric, score granularity, sentence
   aggregation, threshold metric
+- Multi-anchor distance features: query-vs-Gemini, query-vs-Qwen,
+  Gemini-vs-Qwen, and response-vs-anchor distances used by `setup110`
 
 `setup.md` is the canonical explanation of how those concepts map onto each
 named setup.

@@ -314,6 +314,9 @@ are reintroduced.
 - Interpretation: this is the runnable version of the user's multi-anchor
   delta idea. It is closer in spirit to archived `setup103` than to the
   sentence-drift baselines, but it stays compact and directly interpretable.
+- Operational concept: training runs now show separate progress bars for the
+  `query`, `response`, Gemini-neutral, and Qwen-neutral embedding passes,
+  because those four full-column embedding sweeps are the expensive part.
 - Current repo state: fully wired into `touche-train` and `touche-validate`,
   but no committed evaluation artifacts exist yet.
 

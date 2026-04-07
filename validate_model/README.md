@@ -134,6 +134,9 @@ This preset merges the Gemini and Qwen files by `id`, computes six pairwise
 response-level distances, and applies the saved logistic-regression bundle plus
 the calibrated threshold from `models/setup110/`.
 
+Unlike `--generated-provider qwen` on the classifier path, `setup110` does not
+swap between providers. It needs both paired file families at the same time.
+
 ## Output Contracts
 
 Validation writes to `results/<setup-name>/` unless a preset or CLI override

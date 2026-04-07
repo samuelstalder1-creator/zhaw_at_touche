@@ -3,9 +3,11 @@
 > Local repository note: this file is the upstream dataset card. In this
 > repository, the binary-classification and neutral-response experiments operate
 > on the `responses` split plus the derived provider-enriched JSONL files under
-> `data/generated/gemini/` and `data/generated/qwen/`. The canonical local
-> setup reference is [`setup.md`](../../setup.md), and the committed local
-> evaluation summary is [`results.md`](../../results.md).
+> `data/generated/gemini/` and `data/generated/qwen/`. The active `setup110`
+> baseline merges those two generated file families by `id` to compare query,
+> Gemini neutral, Qwen neutral, and response in one feature space. The
+> canonical local setup reference is [`setup.md`](../../setup.md), and the
+> committed local evaluation summary is [`results.md`](../../results.md).
 
 ## Table of Contents
 - [Dataset Description](#dataset-description)

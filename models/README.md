@@ -21,6 +21,15 @@ Embedding-divergence runs usually create `models/<setup-name>/` containing:
 - `embedding_state.json`
 - `training_summary.json`
 
+### Anchor-distance setup
+
+The active anchor-distance baseline `setup110` usually creates
+`models/setup110/` containing:
+
+- `anchor_distance_classifier.pkl`
+- `embedding_state.json`
+- `training_summary.json`
+
 ### Archived experimental setups
 
 Some documented setups such as `setup103` to `setup106` are currently archived

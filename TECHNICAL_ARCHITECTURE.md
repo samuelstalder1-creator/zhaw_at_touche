@@ -110,6 +110,18 @@ Implements the semantic-drift baselines:
 
 This module powers `setup100`, `setup101`, and `setup102`.
 
+### `anchor_distance_classifier.py`
+
+Implements the multi-anchor embedding baseline:
+
+- merge Gemini and Qwen JSONL rows by `id`
+- embed `query`, `response`, Gemini neutral, and Qwen neutral
+- derive six response-level cosine-distance features
+- fit a logistic regression over those distances
+- save a reusable classifier bundle plus threshold/state metadata
+
+This module powers `setup110`.
+
 ### `pairwise_distance.py`
 
 Implements field-pair distance analysis:
@@ -119,6 +131,8 @@ Implements field-pair distance analysis:
   `qwen`
 - compute response-level or sentence-level distances
 - summarize pairwise score distributions
+
+Its row-merging helper is also reused by `setup110`.
 
 ## CLI Entry Points
 
@@ -142,6 +156,7 @@ The root `pyproject.toml` exposes these command-line tools:
 
 - `trainer_type=classifier`
 - `trainer_type=embedding_divergence`
+- `trainer_type=anchor_distance_classifier`
 
 ### Present as archived setup descriptors
 
@@ -178,6 +193,15 @@ first-class runtime options.
 4. score response-level or sentence-level drift
 5. fit a threshold and save `embedding_state.json`
 6. evaluate with `touche-validate` or `touche-embed-divergence`
+
+### Anchor-distance path
+
+1. load paired Gemini and Qwen generated JSONL data
+2. merge rows by `id`
+3. embed `query`, `response`, Gemini neutral, and Qwen neutral
+4. derive the six pairwise anchor-distance features
+5. fit the logistic regression and calibrated threshold
+6. evaluate with `touche-validate`
 
 ### Pairwise-analysis path
 

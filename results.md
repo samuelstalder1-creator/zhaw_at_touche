@@ -37,6 +37,7 @@ No committed evaluation artifacts currently exist for:
 - `setup7-qwen`
 - `setup9`
 - `setup11`
+- `setup110`
 - `setup105`
 - `setup106`
 
@@ -64,6 +65,14 @@ No committed evaluation artifacts currently exist for:
 - `setup101` and `setup102` push positive recall high by overpredicting the
   positive class.
 
+### Active but not yet committed
+
+- `setup110` is now a runnable multi-anchor embedding baseline, but there are
+  no committed evaluation artifacts for it yet.
+- Its purpose is different from `setup100` to `setup102`: it learns from six
+  pairwise query/Gemini/Qwen/response distances instead of thresholding a
+  single drift score.
+
 ### Failed or unstable run
 
 - The committed `setup8` artifact is a collapse case: every example was
@@ -79,5 +88,8 @@ No committed evaluation artifacts currently exist for:
 - If you are exploring neutral-vs-response modeling ideas, read `setup103` and
   `setup104` in `setup.md` before spending more time on `setup100` to
   `setup102`.
+- If you want a runnable multi-anchor embedding baseline today, start with
+  `setup110`, then compare it against the archived `setup103` and `setup104`
+  ideas conceptually.
 - If you want to revisit DeBERTa-v3, rerun `setup8` or `setup9` with the
   current stabilized settings rather than relying on the old collapsed artifact.

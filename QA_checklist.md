@@ -22,6 +22,7 @@
   - classifier: `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`,
     `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
   - embedding divergence: `setup100`, `setup101`, `setup102`
+  - anchor distance: `setup110`
 - Archived setup descriptors still documented in the repo:
   - `setup103`, `setup104`, `setup105`, `setup106`
 - Full integration testing still depends on a synced `uv` environment plus

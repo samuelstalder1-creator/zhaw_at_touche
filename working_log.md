@@ -14,6 +14,10 @@
 - Expanded the classifier family across RoBERTa, Longformer, DeBERTa-v3,
   ALBERT, ELECTRA, and DistilRoBERTa experiments.
 - Added semantic-drift baselines `setup100`, `setup101`, and `setup102`.
+- Added the active multi-anchor embedding baseline `setup110`, which merges
+  Gemini and Qwen rows by `id` and learns over six pairwise distance features.
+- Added visible batch-level progress reporting for the long embedding passes
+  used by `setup110`.
 - Preserved archived experiment descriptors `setup103` to `setup106` plus the
   committed `setup103` and `setup104` result artifacts.
 - Added pairwise distance tooling to compare fields such as `response`,
@@ -30,6 +34,8 @@
 - Decide whether to restore first-class training support for archived setup
   ideas `setup103` to `setup106` or remove those JSON descriptors from the
   active experiment surface.
+- Compare `setup110` empirically against the archived `setup103` and
+  `setup104` ideas once stable local results are available.
 - Retrain the DeBERTa-v3 variants with the stabilized settings and compare them
   against the strongest committed classifier baselines.
 - Archive final submission-ready model bundles and validation artifacts.

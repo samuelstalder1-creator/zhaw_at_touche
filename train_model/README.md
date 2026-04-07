@@ -119,6 +119,10 @@ uv run touche-train --setup-name setup102
 uv run touche-train --setup-name setup110
 ```
 
+This setup merges the Gemini and Qwen training files by `id` and now reports
+separate progress bars for the `query`, `response`, Gemini-neutral, and
+Qwen-neutral embedding passes.
+
 ### Subset training
 
 ```bash
@@ -151,6 +155,14 @@ Embedding-divergence runs write to `models/<setup-name>/`:
 
 They do not write a Hugging Face classifier bundle, `training_metrics.jsonl`,
 or a W&B run.
+
+### Anchor-distance setup
+
+The active anchor-distance baseline `setup110` writes to `models/setup110/`:
+
+- `anchor_distance_classifier.pkl`
+- `embedding_state.json`
+- `training_summary.json`
 
 ## Notes About Providers
 
