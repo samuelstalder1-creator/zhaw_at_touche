@@ -1,0 +1,183 @@
+{
+  "scoring_backend": "anchor_distance_classifier",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "model_dir": "models/setup110",
+  "results_dir": "results/setup110",
+  "device": "cuda",
+  "query_field": "query",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold": 0.5016664458019133,
+  "threshold_source": "saved_state",
+  "threshold_metric": "macro_f1",
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "aux_calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "calibration_summary": {
+    "samples": 5780,
+    "accuracy": 0.6321799307958478,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 2869,
+        "1": 1130
+      },
+      "1": {
+        "0": 996,
+        "1": 785
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.7423027166882277,
+        "recall": 0.7174293573393349,
+        "f1": 0.7296541200406919,
+        "support": 3999
+      },
+      {
+        "label": 1,
+        "precision": 0.40992167101827676,
+        "recall": 0.4407636159460977,
+        "f1": 0.4247835497835498,
+        "support": 1781
+      }
+    ],
+    "positive_label": {
+      "precision": 0.40992167101827676,
+      "recall": 0.4407636159460977,
+      "f1": 0.4247835497835498,
+      "support": 1781
+    },
+    "macro": {
+      "precision": 0.5761121938532522,
+      "recall": 0.5790964866427163,
+      "f1": 0.5772188349121208,
+      "support": 5780
+    },
+    "weighted": {
+      "precision": 0.6398856505397531,
+      "recall": 0.6321799307958478,
+      "f1": 0.6357138976137074,
+      "support": 5780
+    }
+  },
+  "files": {
+    "responses-test-with-neutral_gemini.jsonl": {
+      "samples": 6220,
+      "accuracy": 0.5990353697749197,
+      "labels": [
+        0,
+        1
+      ],
+      "matrix": {
+        "0": {
+          "0": 2729,
+          "1": 1587
+        },
+        "1": {
+          "0": 907,
+          "1": 997
+        }
+      },
+      "per_label": [
+        {
+          "label": 0,
+          "precision": 0.7505500550055005,
+          "recall": 0.6322984244670992,
+          "f1": 0.6863682092555332,
+          "support": 4316
+        },
+        {
+          "label": 1,
+          "precision": 0.3858359133126935,
+          "recall": 0.5236344537815126,
+          "f1": 0.44429590017825316,
+          "support": 1904
+        }
+      ],
+      "positive_label": {
+        "precision": 0.3858359133126935,
+        "recall": 0.5236344537815126,
+        "f1": 0.44429590017825316,
+        "support": 1904
+      },
+      "macro": {
+        "precision": 0.568192984159097,
+        "recall": 0.5779664391243059,
+        "f1": 0.5653320547168932,
+        "support": 6220
+      },
+      "weighted": {
+        "precision": 0.6389076553619145,
+        "recall": 0.5990353697749197,
+        "f1": 0.6122676181810732,
+        "support": 6220
+      },
+      "query_field": "query",
+      "response_field": "response",
+      "neutral_field": "gemini25flashlite",
+      "aux_neutral_field": "qwen"
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "accuracy": 0.5990353697749197,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 2729,
+        "1": 1587
+      },
+      "1": {
+        "0": 907,
+        "1": 997
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.7505500550055005,
+        "recall": 0.6322984244670992,
+        "f1": 0.6863682092555332,
+        "support": 4316
+      },
+      {
+        "label": 1,
+        "precision": 0.3858359133126935,
+        "recall": 0.5236344537815126,
+        "f1": 0.44429590017825316,
+        "support": 1904
+      }
+    ],
+    "positive_label": {
+      "precision": 0.3858359133126935,
+      "recall": 0.5236344537815126,
+      "f1": 0.44429590017825316,
+      "support": 1904
+    },
+    "macro": {
+      "precision": 0.568192984159097,
+      "recall": 0.5779664391243059,
+      "f1": 0.5653320547168932,
+      "support": 6220
+    },
+    "weighted": {
+      "precision": 0.6389076553619145,
+      "recall": 0.5990353697749197,
+      "f1": 0.6122676181810732,
+      "support": 6220
+    }
+  }
+}
