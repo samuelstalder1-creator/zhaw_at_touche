@@ -1,13 +1,24 @@
 # Data Layout
 
-- `task/`: official Touché dataset files plus `preprocessed/` outputs from `touche-preprocess`
-- `generated/gemini/`: Gemini-generated neutral response files
-- `generated/qwen/`: local Qwen2.5-generated neutral response files
-- `generated/chatgpt/`: reserved for the same file format if hosted OpenAI-generated data is added later
+- `task/`: official Touché dataset files plus `preprocessed/` outputs from
+  `touche-preprocess`
+- `generated/gemini/`: Gemini-generated neutral-response files
+- `generated/qwen/`: Qwen-generated neutral-response files
+- `generated/chatgpt/`: reserved for a future hosted OpenAI-style provider
 
-The original dataset description is in `task/README.md`.
+The upstream dataset card is in `task/README.md`.
 
-The current named training setups use the Gemini-generated `responses-*-with-neutral_gemini.jsonl`
-files as their default training, validation, and evaluation inputs when those
-files are present. Qwen-generated files follow the same layout under
-`data/generated/qwen/`.
+## How The Setup Matrix Uses These Files
+
+- `setup6`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12` use the
+  plain `query_response` prompt, so they only consume `query` and `response`
+  even when the JSONL file also contains a neutral field.
+- `setup6-qwen` still uses `query_response`; it mainly exists so training and
+  evaluation are aligned on the Qwen-enriched file family.
+- `setup7` and `setup7-qwen` use the neutral field directly as part of the
+  prompt.
+- `setup4` uses the Gemini neutral field as an explicitly labeled reference.
+- `setup100` to `setup106` are neutral-vs-response experiments; they depend on
+  having a valid neutral field such as `gemini25flashlite` or `qwen`.
+
+See `../setup.md` for the full per-setup explanation.

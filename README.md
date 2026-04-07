@@ -1,28 +1,26 @@
 # zhaw_at_touche
 
-Unified `uv`-managed tooling for the Touché ad-detection workflow in one shared Python 3.12 project with CLI entry points.
+Unified `uv`-managed tooling for the Touché ad-detection workflow.
+
+The repository is organized around one Python package, reusable experiment
+setups, and file-based artifacts for training and evaluation.
 
 ## Repository Layout
 
 ```text
 .
-├── data
-│   ├── task/                     # official Touché task files
-│   └── generated/
-│       ├── gemini/              # generated neutral responses from Gemini
-│       ├── qwen/                # generated neutral responses from a local Qwen2.5 backend
-│       └── chatgpt/             # reserved for future hosted OpenAI outputs
-├── train_model/                 # named training setup defaults
-├── validate_model/              # evaluation-only setup defaults
-├── models/
-│   ├── setupX/                  # saved model bundle for one experiment
-│   ├── setupY/                  # saved model bundle for another experiment
-│   └── setup6/                  # saved model bundle for the merged Dagmar setup
-├── results/
-│   ├── setupX/                  # validation outputs, confusion matrix, prediction files
-│   └── setup6/                  # validation outputs for the merged Dagmar setup
-├── src/zhaw_at_touche/          # shared package code and CLIs
-├── tests/                       # lightweight unit tests for pure utility code
+├── data/
+│   ├── task/                  # official Touché files and labels
+│   └── generated/             # neutral-response files by provider
+├── train_model/               # named training setup defaults
+├── validate_model/            # named validation setup defaults
+├── models/                    # trained bundles and saved state
+├── results/                   # evaluation artifacts
+├── src/zhaw_at_touche/        # package code and CLI entry points
+├── tests/                     # lightweight unit tests
+├── setup.md                   # canonical setup reference
+├── results.md                 # committed result summary
+├── TECHNICAL_ARCHITECTURE.md  # code-level architecture
 ├── Implementation.md
 ├── Implementation_details.md
 └── QA_checklist.md
@@ -32,30 +30,30 @@ Unified `uv`-managed tooling for the Touché ad-detection workflow in one shared
 
 - Python: `3.12`
 - Package manager: `uv`
-- Local validation target: Apple Silicon / M2 Mac
-- Remote training + inference target: Ubuntu host with L4 GPU
+- Device resolution order: `cuda -> mps -> cpu`
+- Typical local validation target: Apple Silicon / M2 Mac
+- Typical remote training target: Ubuntu host with an L4 GPU
 
-`uv sync` is the default setup command. The project auto-selects `cuda`, then `mps`, then `cpu`. If the Ubuntu host needs a CUDA-specific PyTorch wheel, install the current PyTorch build that matches that machine before training.
-
-## Setup
+Setup:
 
 ```bash
 uv sync
 ```
 
-## Main Commands
+## Workflow
 
 ### 1. Preprocess the raw task data
-
-Merges `responses-<split>.jsonl` with the corresponding label file and writes easier-to-consume JSONL files into `data/task/preprocessed/`.
 
 ```bash
 uv run touche-preprocess
 ```
 
+This merges the raw response files with their label files and writes easier to
+consume JSONL files into `data/task/preprocessed/`.
+
 ### 2. Generate neutral responses
 
-Gemini generation requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+Gemini:
 
 ```bash
 export GEMINI_API_KEY="..."
@@ -64,13 +62,7 @@ uv run touche-generate-neutral --split validation
 uv run touche-generate-neutral --split test
 ```
 
-Default outputs:
-
-- `data/generated/gemini/responses-train-with-neutral_gemini.jsonl`
-- `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl`
-- `data/generated/gemini/responses-test-with-neutral_gemini.jsonl`
-
-Local Qwen2.5 generation now loads the model directly through `transformers`, so no API key is needed. Example for the validation split:
+Qwen:
 
 ```bash
 uv run touche-generate-neutral \
@@ -80,299 +72,88 @@ uv run touche-generate-neutral \
   --device cuda
 ```
 
-This writes:
+Gemini writes `data/generated/gemini/*.jsonl`. Qwen writes
+`data/generated/qwen/*.jsonl`.
 
-- `data/generated/qwen/responses-validation-with-neutral_qwen.jsonl`
+### 3. Train a setup
 
-If you still want to use a self-hosted OpenAI-compatible endpoint instead of loading the model locally:
-
-```bash
-export QWEN_API_BASE="http://127.0.0.1:8000/v1"
-uv run touche-generate-neutral \
-  --provider qwen \
-  --backend openai_compatible \
-  --split validation
-```
-
-### 3. Train a model
-
-```bash
-uv run touche-train --setup-name setupX
-```
-
-The CLI also reads optional defaults from `train_model/<setup-name>.json`.
-
-Default training output directory:
-
-- `models/setupX/`
-
-You can override the dataset or model name:
-
-```bash
-uv run touche-train \
-  --setup-name setupY \
-  --train-file data/task/preprocessed/responses-train-merged.jsonl \
-  --model-name FacebookAI/roberta-base
-```
-
-Merged Dagmar setup:
+Classifier examples:
 
 ```bash
 uv run touche-train --setup-name setup6
-```
-
-Qwen-source variant of setup6:
-
-```bash
-uv run touche-train --setup-name setup6-qwen
-```
-
-DeBERTa-v3 variant of setup6:
-
-```bash
-uv run touche-train --setup-name setup8
-```
-
-Longformer setup with Gemini neutral-reference context:
-
-```bash
+uv run touche-train --setup-name setup12
 uv run touche-train --setup-name setup7
 ```
 
-Qwen-source variant of setup7:
-
-```bash
-uv run touche-train --setup-name setup7-qwen
-```
-
-DeBERTa-v3 setup with the unbiased-reference / RAG-response prompt:
-
-```bash
-uv run touche-train --setup-name setup4
-```
-
-Stabilized DeBERTa-v3 setup with lower LR and optimizer safeguards:
-
-```bash
-uv run touche-train --setup-name setup9
-```
-
-ALBERT-base-v2 setup with linear warmup/decay scheduling:
-
-```bash
-uv run touche-train --setup-name setup10
-```
-
-ELECTRA-base discriminator setup with linear warmup/decay scheduling:
-
-```bash
-uv run touche-train --setup-name setup11
-```
-
-DistilRoBERTa setup with linear warmup/decay scheduling:
-
-```bash
-uv run touche-train --setup-name setup12
-```
-
-Embedding-divergence setup that fits and saves a threshold/state bundle instead
-of a classifier checkpoint:
+Embedding-divergence examples:
 
 ```bash
 uv run touche-train --setup-name setup100
+uv run touche-train --setup-name setup101
+uv run touche-train --setup-name setup102
 ```
 
-Classifier training writes local monitoring artifacts next to the model bundle:
-
-- `training_summary.json`
-- `training_metrics.jsonl`
-- W&B run files in `models/<setup-name>/wandb/` by default
-
-`setup100` instead writes `embedding_state.json` plus `training_summary.json`.
-
-For online monitoring, log in to W&B first:
+### 4. Validate a setup
 
 ```bash
-uv run wandb login
-```
-
-Then train as usual and open the run in the configured W&B project.
-When a validation file is available, training evaluates it at the end of each epoch and logs validation loss, accuracy, precision, recall, F1, and confusion-count monitoring to W&B.
-You can disable W&B logging with `--no-wandb`.
-
-By default training uses the full training dataset. To train on a subset:
-
-```bash
-uv run touche-train --setup-name setup6 --max-train-rows 1000
-```
-
-### 4. Validate a trained model
-
-```bash
-uv run touche-validate --setup-name setupX
-```
-
-By default validation evaluates only the `test` split. To evaluate both
-validation and test data:
-
-```bash
-uv run touche-validate --setup-name setupX --eval-splits validation test
-```
-
-To evaluate the same trained model on the Qwen-generated split instead of the
-default Gemini-generated split:
-
-```bash
-uv run touche-validate --setup-name setupX --generated-provider qwen
-```
-
-Unless you pass `--results-dir`, Qwen-backed validation writes to
-`results/<setup-name>-qwen/` so both evaluations can coexist.
-
-The validator also supports evaluation-only presets for already-trained remote models:
-
-```bash
-uv run touche-validate --setup-name teamCMU
-```
-
-`teamCMU` is defined in `validate_model/teamCMU.json` and evaluates the published Hugging Face model `teknology/ad-classifier-v0.4` without using `train_model/`. It also defaults to test-only evaluation unless you pass `--eval-splits validation test`.
-
-The local Longformer training preset also has a matching validation preset:
-
-```bash
+uv run touche-validate --setup-name setup6
+uv run touche-validate --setup-name setup12
 uv run touche-validate --setup-name setup7
 ```
 
-The Qwen-source Longformer variant also has a matching validation preset:
+Provider-specific evaluation:
 
 ```bash
+uv run touche-validate --setup-name setup6 --generated-provider qwen
 uv run touche-validate --setup-name setup7-qwen
 ```
 
-Additional local validation presets are available for `setup4`, `setup6-qwen`,
-`setup9`, `setup10`, `setup11`, and `setup12`. Setups such as `setup6` and
-`setup8` still validate through the default `models/<setup-name>/` and
-`results/<setup-name>/` path resolution.
-
-Default validation artifacts:
-
-- `results/setupX/metrics_summary.json`
-- `results/setupX/response_metrics.txt`
-- `results/setupX/confusion_matrix.csv`
-- `results/setupX/confusion_matrix.png`
-- `results/setupX/standardized_results.csv`
-- `results/setupX/misclassified_analysis.csv`
-- `results/setupX/*-predictions.jsonl`
-
-### 4b. Run the embedding-divergence baseline
-
-`setup100`, `setup101`, and `setup102` are two-stage embedding-divergence experiments.
-`setup100` is the baseline mean-aggregation recipe. `setup101` is the more
-aggressive follow-up: it uses top-3 sentence drift aggregation and positive-F1
-threshold fitting so localized ad insertions are less likely to be averaged
-away. `setup102` keeps the `setup101` recipe but upgrades the encoder to
-`BAAI/bge-large-en-v1.5` and reduces batch size for the larger model. All three
-save an `embedding_state.json` bundle during training and can then be validated
-through either `touche-validate` or `touche-embed-divergence`.
+### 5. Inspect pairwise distances between response fields
 
 ```bash
-uv run touche-train --setup-name setup100
-uv run touche-validate --setup-name setup100
-uv run touche-embed-divergence --setup-name setup100
-
-uv run touche-train --setup-name setup101
-uv run touche-validate --setup-name setup101
-uv run touche-embed-divergence --setup-name setup101
-
-uv run touche-train --setup-name setup102
-uv run touche-validate --setup-name setup102
-uv run touche-embed-divergence --setup-name setup102
+uv run touche-pairwise-distances \
+  --input-files \
+    data/generated/gemini/responses-test-with-neutral_gemini.jsonl \
+    data/generated/qwen/responses-test-with-neutral_qwen.jsonl \
+  --pair gemini25flashlite:qwen \
+  --pair response:gemini25flashlite \
+  --pair response:qwen \
+  --results-dir results/pairwise-test
 ```
 
-Default artifacts:
+This merges rows by `id` and writes pairwise distance summaries for the
+requested field pairs.
 
-- `models/setup100/embedding_state.json`
-- `models/setup100/training_summary.json`
-- `results/setup100/metrics_summary.json`
-- `results/setup100/response_metrics.txt`
-- `results/setup100/confusion_matrix.csv`
-- `results/setup100/confusion_matrix.png`
-- `results/setup100/standardized_results.csv`
-- `results/setup100/misclassified_analysis.csv`
-- `results/setup100/*-predictions.jsonl`
+## Setup Families
 
-### 5. Manually test a model with custom text
+### Supported by the current training CLI
 
-Single example:
+| Family | Setup names | Summary |
+| --- | --- | --- |
+| Fine-tuned classifier | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | transformer classifiers over prompt-formatted inputs |
+| Embedding divergence | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines over response vs neutral embeddings |
 
-```bash
-uv run touche-predict --setup-name setupX --query "..." --response "..."
-```
+### Present as archived descriptors
 
-Interactive mode:
+`setup103`, `setup104`, `setup105`, and `setup106` are still documented in
+`setup.md` because their JSON descriptors and some committed results remain in
+the repository, but the current `touche-train` parser does not expose their
+trainer backends.
 
-```bash
-uv run touche-predict --setup-name setupX
-```
+## Where To Read More
 
-### 6. Get statistics from the task data
+- `setup.md`: canonical explanation of every setup and every concept used
+- `train_model/README.md`: how training setup JSON files work
+- `validate_model/README.md`: how validation setup JSON files work
+- `results.md`: committed metrics and selection guidance
+- `TECHNICAL_ARCHITECTURE.md`: package and module architecture
 
-```bash
-uv run touche-stats-data
-```
+## Current Result Headlines
 
-Optional JSON export:
+- Best committed Gemini-backed classifier: `setup12`
+- Best committed Qwen-backed classifier: `setup6-qwen`
+- Best committed archived embedding-feature idea: `setup104`
+- Current semantic-drift baselines (`setup100` to `setup102`) are clearly below
+  the classifier family
 
-```bash
-uv run touche-stats-data --json-out results/setupX/data_stats.json
-```
-
-### 7. Get statistics from generated neutral responses
-
-Basic length statistics:
-
-```bash
-uv run touche-stats-generated
-```
-
-With Gemini tokenizer-based counts and SVG histograms:
-
-```bash
-uv run touche-stats-generated \
-  --tokenizer-model gemini-2.5-flash-lite \
-  --histogram-dir results/generated_stats/histograms \
-  --json-out results/setupX/generated_stats.json
-```
-
-Default histogram output:
-
-- `results/generated_stats/histograms/<input-stem>-token-histogram.svg`
-
-Legacy aliases are also accepted:
-
-- `--model` for `--tokenizer-model`
-- `--neutral-field` for `--generated-field`
-
-### 8. Check split overlap before training
-
-```bash
-uv run touche-check-overlap
-```
-
-Useful override:
-
-- `uv run touche-check-overlap --sample-limit 5`
-
-### 9. Generate a confusion-matrix summary from prediction files
-
-```bash
-uv run touche-eval-matrix results/setupX
-```
-
-## Notes
-
-- `data/task/README.md` contains the original dataset description.
-- `data/generated/qwen/` is used for local Qwen2.5 neutral-response runs.
-- `data/generated/chatgpt/` is included so future hosted OpenAI-generated files can follow the same layout later.
-- `validate_model/` stores evaluation-only presets for already-trained models such as `teamCMU`.
-- Use the root CLI entry points in `src/zhaw_at_touche/` for generation, training, validation, and analysis tasks.
+See `results.md` for the exact numbers and caveats.

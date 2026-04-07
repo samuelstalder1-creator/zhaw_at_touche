@@ -1,18 +1,40 @@
-# Models
+# Models Directory
 
-This directory stores trained Hugging Face model bundles.
+This directory stores training outputs.
 
-Suggested convention:
+## Output Shapes
 
+### Classifier setups
+
+Classifier runs usually create `models/<setup-name>/` containing:
+
+- the Hugging Face model bundle
+- the tokenizer files
+- `training_summary.json`
+- `training_metrics.jsonl`
+- optional `wandb/` run files
+
+### Embedding-divergence setups
+
+Embedding-divergence runs usually create `models/<setup-name>/` containing:
+
+- `embedding_state.json`
+- `training_summary.json`
+
+### Archived experimental setups
+
+Some documented setups such as `setup103` to `setup106` are currently archived
+rather than first-class runnable backends. Their concepts are still documented
+in `../setup.md`, but the corresponding model directories are not guaranteed to
+exist locally.
+
+## Current Repository State
+
+The repository only commits placeholder or scaffold directories here:
+
+- `models/setup6/`
 - `models/setupX/`
 - `models/setupY/`
-- `models/setup6/`
-- `models/setup9/`
-- `models/setup10/`
-- `models/setup11/`
-- `models/setup12/`
 
-Each setup directory is created automatically by `uv run touche-train --setup-name <name>`.
-
-Only `models/setup6/` is currently committed in the repository. The newer setup
-directories appear after local training runs.
+Most real model bundles are expected to be produced locally and kept out of
+version control.

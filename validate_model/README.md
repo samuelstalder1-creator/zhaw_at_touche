@@ -1,121 +1,131 @@
-# Validation Setups
+# Validation Setup Files
 
 This directory stores reusable defaults for evaluation-only runs.
 
-Use it for already-trained models that should be evaluated through
-`touche-validate`, including remote Hugging Face models that are not part of
-the local training pipeline.
+Use these files when you want `touche-validate` to know where the model lives,
+which files to evaluate, and whether the run should stay on the normal
+classifier path or delegate to the embedding-divergence backend.
 
-Each setup is a JSON file named `<setup-name>.json`. The `touche-validate` CLI
-loads the matching file automatically when you pass `--setup-name <setup-name>`.
+The deep explanation of each experiment lives in `../setup.md`.
 
-Supported JSON fields:
+## How Loading Works
+
+Each file is named `<setup-name>.json`.
+
+```bash
+uv run touche-validate --setup-name teamCMU
+```
+
+The CLI loads the matching JSON file first and then applies explicit CLI
+overrides.
+
+## Supported JSON Fields
 
 - `model_name`
 - `model_dir`
 - `results_dir`
 - `eval_splits`
 - `input_files`
+- `calibration_input_files`
 - `generated_provider`
+- `generated_field`
 - `text_field`
 - `input_format`
 - `reference_field`
 - `reference_label`
 - `pad_to_max_length`
-- `generated_field`
 - `max_length`
 - `batch_size`
 - `threshold`
+- `threshold_metric`
 - `device`
+- `scoring_backend`
+- `embedding_model_name`
+- `neutral_field`
+- `distance_metric`
+- `score_granularity`
+- `sentence_agg`
 
-Example:
+## Current Preset Inventory
 
-```bash
-uv run touche-validate --setup-name teamCMU
-```
+| Preset | Purpose | Notes |
+| --- | --- | --- |
+| `teamCMU` | remote evaluation-only preset | loads a published Hugging Face model |
+| `setup4` | reference-aware classifier validation | mirrors the DeBERTa reference + RAG prompt |
+| `setup6-qwen` | provider-specific classifier validation | defaults to the Qwen-enriched test file |
+| `setup7` | reference-aware long-context validation | uses Gemini neutral context |
+| `setup7-qwen` | provider-specific long-context validation | uses Qwen neutral context |
+| `setup9` | stabilized DeBERTa validation | plain classifier path |
+| `setup10` | ALBERT validation | plain classifier path |
+| `setup11` | ELECTRA validation | plain classifier path |
+| `setup12` | DistilRoBERTa validation | plain classifier path |
+| `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
+| `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
+| `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 
-Local validation preset for the Longformer training setup:
+`setup6` and `setup8` do not need dedicated validation JSON files. They still
+validate correctly through the default `models/<setup-name>/` and
+`results/<setup-name>/` resolution path.
 
-```bash
-uv run touche-validate --setup-name setup7
-```
+## Common Commands
 
-Qwen-source variant of the Longformer validation preset:
-
-```bash
-uv run touche-validate --setup-name setup7-qwen
-```
-
-Local validation preset for the DeBERTa-v3 `setup4` training setup:
-
-```bash
-uv run touche-validate --setup-name setup4
-```
-
-Additional local validation presets for the newer query-response baselines:
-
-```bash
-uv run touche-validate --setup-name setup6-qwen
-uv run touche-validate --setup-name setup9
-uv run touche-validate --setup-name setup10
-uv run touche-validate --setup-name setup11
-uv run touche-validate --setup-name setup12
-```
-
-`setup6-qwen` and `setup7-qwen` use dedicated validation JSON files so
-evaluation reads the Qwen-generated test split by default. Setups such as
-`setup6` and `setup8` do not need a dedicated validation JSON. They fall back
-to the default local paths `models/<setup-name>/` and `results/<setup-name>/`
-when you pass `--setup-name`.
-
-To evaluate the same trained model on a different generated test set without
-creating a new preset, pass `--generated-provider`. Example:
+### Local classifier evaluation
 
 ```bash
 uv run touche-validate --setup-name setup6
+uv run touche-validate --setup-name setup12
+```
+
+### Reference-aware evaluation
+
+```bash
+uv run touche-validate --setup-name setup4
+uv run touche-validate --setup-name setup7
+uv run touche-validate --setup-name setup7-qwen
+```
+
+### Provider-specific evaluation on Qwen-generated files
+
+```bash
 uv run touche-validate --setup-name setup6 --generated-provider qwen
+uv run touche-validate --setup-name setup6-qwen
 ```
 
 When `--generated-provider qwen` is used and `--results-dir` is omitted, the
-validator writes to `results/<setup-name>-qwen/` so the Qwen run does not
-overwrite the default Gemini artifacts. For reference-aware setups such as
-`setup7`, the validator also switches the default reference field from
-`gemini25flashlite` to `qwen` unless you override `--reference-field`.
+validator writes to `results/<setup-name>-qwen/` so the Qwen-backed evaluation
+does not overwrite the default Gemini-backed artifacts.
 
-Embedding-divergence baseline:
+For reference-aware setups such as `setup7`, the validator also switches the
+default `reference_field` and `reference_label` from Gemini to Qwen unless you
+override them manually.
+
+### Embedding-divergence validation
 
 ```bash
 uv run touche-train --setup-name setup100
 uv run touche-validate --setup-name setup100
-uv run touche-embed-divergence --setup-name setup100
 
 uv run touche-train --setup-name setup101
 uv run touche-validate --setup-name setup101
-uv run touche-embed-divergence --setup-name setup101
 
 uv run touche-train --setup-name setup102
 uv run touche-validate --setup-name setup102
-uv run touche-embed-divergence --setup-name setup102
 ```
 
-`setup100` uses `train_model/setup100.json` plus `validate_model/setup100.json`.
-The train step saves `models/setup100/embedding_state.json` with the fitted
-threshold and summary. `touche-validate --setup-name setup100` now delegates to
-the embedding-divergence backend automatically, and the evaluation step loads
-the saved state by default. It only recalibrates on the validation split if no
-saved threshold or manual `--threshold` is available.
+These presets delegate to the embedding-divergence backend automatically. The
+validator reuses the saved `embedding_state.json` threshold when it exists and
+only recalibrates on validation data if no saved or manual threshold is
+available.
 
-`setup101` is the higher-recall variant for the same idea. It uses top-3
-sentence aggregation and a `positive_f1` threshold target to better surface
-localized ad insertions.
+## Output Contracts
 
-`setup102` is the higher-capacity encoder variant. It keeps the `setup101`
-scoring recipe but swaps in `BAAI/bge-large-en-v1.5` and uses a smaller batch
-size for the larger model footprint.
+Validation writes to `results/<setup-name>/` unless a preset or CLI override
+changes the directory. Typical outputs are:
 
-By default the validator evaluates only the `test` split. To evaluate both
-validation and test data, either set `eval_splits` in the setup JSON or pass:
-
-```bash
-uv run touche-validate --setup-name teamCMU --eval-splits validation test
-```
+- `metrics_summary.json`
+- `response_metrics.txt`
+- `confusion_matrix.csv`
+- `confusion_matrix.png`
+- `standardized_results.csv`
+- `misclassified_analysis.csv`
+- `*-predictions.jsonl`

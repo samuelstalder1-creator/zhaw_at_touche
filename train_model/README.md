@@ -1,14 +1,44 @@
-# Training Setups
+# Training Setup Files
 
-This directory stores reusable training defaults for named experiment setups.
+This directory stores reusable JSON defaults for named training experiments.
 
-Each setup is a JSON file named `<setup-name>.json`. The `touche-train` CLI
-loads the matching file automatically when you pass `--setup-name <setup-name>`.
+The deep explanation of every setup and every concept lives in `../setup.md`.
+This file focuses on how the JSON files interact with `touche-train`.
 
-Supported JSON fields:
+## How Loading Works
+
+Each file is named `<setup-name>.json`.
+
+```bash
+uv run touche-train --setup-name setup6
+```
+
+The CLI first loads `train_model/setup6.json`, then applies any explicit CLI
+overrides on top of it.
+
+## Current Backend Support
+
+### Supported By The Current CLI
+
+| Trainer type | Setup names | Notes |
+| --- | --- | --- |
+| `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | fine-tuned transformer classifiers |
+| `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
+
+### Archived JSON Descriptors
+
+`setup103`, `setup104`, `setup105`, and `setup106` are documented in
+`../setup.md`, but the current `touche-train` parser does not expose their
+trainer backends. Their JSON files remain useful as research notes and for
+explaining the committed `results/setup103/` and `results/setup104/` artifacts.
+
+## Supported JSON Fields
+
+The loader accepts these fields:
 
 - `trainer_type`
 - `train_file`
+- `validation_file`
 - `model_name`
 - `model_dir`
 - `max_length`
@@ -31,79 +61,45 @@ Supported JSON fields:
 - `reference_label`
 - `pad_to_max_length`
 - `positive_class_weight_scale`
-- `validation_file`
 - `neutral_field`
 - `distance_metric`
 - `score_granularity`
 - `sentence_agg`
+- `sentence_delta_agg`
 - `threshold_metric`
 - `wandb_enabled`
 - `wandb_project`
 - `wandb_dir`
 - `wandb_run_name`
 
-Example:
+Not every field is used by every backend.
+
+## Common Commands
+
+### Plain classifier baselines
 
 ```bash
 uv run touche-train --setup-name setup6
-```
-
-Qwen-source variant of setup6:
-
-```bash
-uv run touche-train --setup-name setup6-qwen
-```
-
-DeBERTa-v3 variant of setup6:
-
-```bash
-uv run touche-train --setup-name setup8
-```
-
-Longformer neutral-reference setup:
-
-```bash
-uv run touche-train --setup-name setup7
-```
-
-Qwen-source variant of setup7:
-
-```bash
-uv run touche-train --setup-name setup7-qwen
-```
-
-DeBERTa-v3 setup with unbiased reference + RAG-response prompt:
-
-```bash
-uv run touche-train --setup-name setup4
-```
-
-Stabilized DeBERTa-v3 setup with lower LR, more warmup, weight decay, layerwise LR decay, and one frozen-embedding epoch:
-
-```bash
-uv run touche-train --setup-name setup9
-```
-
-ALBERT-base-v2 setup with linear warmup/decay scheduling:
-
-```bash
 uv run touche-train --setup-name setup10
-```
-
-ELECTRA-base discriminator setup with linear warmup/decay scheduling:
-
-```bash
-uv run touche-train --setup-name setup11
-```
-
-DistilRoBERTa setup with linear warmup/decay scheduling:
-
-```bash
 uv run touche-train --setup-name setup12
 ```
 
-Embedding-divergence setup that saves a threshold/state bundle instead of a
-classifier checkpoint:
+### Reference-aware classifiers
+
+```bash
+uv run touche-train --setup-name setup4
+uv run touche-train --setup-name setup7
+uv run touche-train --setup-name setup7-qwen
+```
+
+### DeBERTa stabilization experiments
+
+```bash
+uv run touche-train --setup-name setup8
+uv run touche-train --setup-name setup9
+```
+
+### Embedding-divergence baselines
 
 ```bash
 uv run touche-train --setup-name setup100
@@ -111,47 +107,44 @@ uv run touche-train --setup-name setup101
 uv run touche-train --setup-name setup102
 ```
 
-`setup100` uses `trainer_type=embedding_divergence`. Its training output is
-`models/setup100/embedding_state.json` plus `models/setup100/training_summary.json`.
-It does not write a Hugging Face classifier bundle.
-
-`setup101` is the stronger follow-up to `setup100`: it uses top-3 sentence
-drift aggregation plus `positive_f1` threshold fitting to reduce dilution from
-mostly-neutral passages that contain only a few promotional sentences.
-
-`setup102` keeps the `setup101` aggregation recipe but upgrades the embedding
-model to `BAAI/bge-large-en-v1.5`. It also reduces batch size to `16` to make
-the larger encoder more practical on GPU memory.
-
-By default `touche-train` uses the full training file. To train on only a
-subset, pass for example:
+### Subset training
 
 ```bash
 uv run touche-train --setup-name setup6 --max-train-rows 1000
 ```
 
-Classifier training also writes local monitoring artifacts:
-
-- `training_summary.json`
-- `training_metrics.jsonl`
-- W&B run files under `<model-dir>/wandb/` by default
-
-`setup100` is different: it writes `embedding_state.json` plus
-`training_summary.json`, with no classifier checkpoint, no training-metrics log,
-and no W&B run.
-
-W&B logging uses the online service. Authenticate first:
-
-```bash
-uv run wandb login
-```
-
-You can disable it:
+### Disable W&B
 
 ```bash
 uv run touche-train --setup-name setup7 --no-wandb
 ```
 
-If a validation file is configured, `touche-train` evaluates that split at the
-end of every epoch and logs the validation metrics plus confusion-count
-monitoring to W&B.
+## Output Contracts
+
+### Classifier setups
+
+Classifier runs write to `models/<setup-name>/`:
+
+- Hugging Face model/tokenizer bundle
+- `training_summary.json`
+- `training_metrics.jsonl`
+- `wandb/` run files by default
+
+### Embedding-divergence setups
+
+Embedding-divergence runs write to `models/<setup-name>/`:
+
+- `embedding_state.json`
+- `training_summary.json`
+
+They do not write a Hugging Face classifier bundle, `training_metrics.jsonl`,
+or a W&B run.
+
+## Notes About Providers
+
+- Gemini-backed files are the default source for most setups.
+- `setup6-qwen` and `setup7-qwen` switch the training and validation files to
+  `data/generated/qwen/`.
+- Only the reference-aware and embedding-based setups actually consume the
+  neutral field as part of the model logic. Plain `query_response` classifiers
+  still train on just the query and the response text.
