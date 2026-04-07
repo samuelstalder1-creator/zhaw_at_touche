@@ -1,0 +1,91 @@
+{
+  "records": 6220,
+  "pairs": {
+    "gemini25flashlite__qwen": {
+      "left_field": "gemini25flashlite",
+      "right_field": "qwen",
+      "count": 6220,
+      "mean": 0.2396163090512492,
+      "median": 0.21233072876930237,
+      "min": 0.025672554969787598,
+      "max": 0.9011654555797577,
+      "by_label": {
+        "0": {
+          "count": 4316,
+          "mean": 0.23809326919653662,
+          "median": 0.21191522479057312,
+          "min": 0.025672554969787598,
+          "max": 0.8769326210021973
+        },
+        "1": {
+          "count": 1904,
+          "mean": 0.24306874603283504,
+          "median": 0.21330758929252625,
+          "min": 0.03349101543426514,
+          "max": 0.9011654555797577
+        }
+      },
+      "pair": "gemini25flashlite:qwen"
+    },
+    "response__gemini25flashlite": {
+      "left_field": "response",
+      "right_field": "gemini25flashlite",
+      "count": 6220,
+      "mean": 0.24470354694950955,
+      "median": 0.2188212275505066,
+      "min": 0.03047645092010498,
+      "max": 1.0189291071146727,
+      "by_label": {
+        "0": {
+          "count": 4316,
+          "mean": 0.23861255661383327,
+          "median": 0.2121221125125885,
+          "min": 0.03047645092010498,
+          "max": 1.0189291071146727
+        },
+        "1": {
+          "count": 1904,
+          "mean": 0.2585106447902547,
+          "median": 0.23464524745941162,
+          "min": 0.041869282722473145,
+          "max": 0.8735560476779938
+        }
+      },
+      "pair": "response:gemini25flashlite"
+    },
+    "response__qwen": {
+      "left_field": "response",
+      "right_field": "qwen",
+      "count": 6220,
+      "mean": 0.21370080838944175,
+      "median": 0.1917281448841095,
+      "min": 0.02935636043548584,
+      "max": 1.0611897930502892,
+      "by_label": {
+        "0": {
+          "count": 4316,
+          "mean": 0.20791617419960823,
+          "median": 0.185771644115448,
+          "min": 0.02935636043548584,
+          "max": 1.0611897930502892
+        },
+        "1": {
+          "count": 1904,
+          "mean": 0.22681345605925352,
+          "median": 0.20654574036598206,
+          "min": 0.04501640796661377,
+          "max": 0.7948371469974518
+        }
+      },
+      "pair": "response:qwen"
+    }
+  },
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl",
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "score_granularity": "response",
+  "sentence_agg": "max",
+  "device": "cuda"
+}
