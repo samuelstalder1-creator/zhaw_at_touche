@@ -1,0 +1,19 @@
+{
+  "description": "Cross-encoder retry with a stable backbone. Feeds (response, neutral) jointly as two segments so the model can attend across both texts. Switches from DeBERTa-v3-base (collapsed to all-positive in setup105) to roberta-base (stable in this repo). Adds positive_class_weight_scale=1.5 to compensate for 70/30 class imbalance. Uses linear scheduler and grad clipping instead of cosine warmup. max_length=512 packs both texts into one sequence (~256 tokens each after special tokens). Trainer type: cross_encoder.",
+  "trainer_type": "cross_encoder",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "FacebookAI/roberta-base",
+  "neutral_field": "gemini25flashlite",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "weight_decay": 0.01,
+  "max_grad_norm": 1.0,
+  "positive_class_weight_scale": 1.5,
+  "device": "cuda"
+}

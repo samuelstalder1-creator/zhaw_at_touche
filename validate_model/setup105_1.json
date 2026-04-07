@@ -1,0 +1,17 @@
+{
+  "description": "Validation preset for the setup105_1 cross-encoder. Reuses the saved model bundle and threshold from models/setup105_1. Scores (response, neutral) pairs jointly using the cross-encoder scoring backend — the neutral reference must be passed here, unlike the standard classifier validator.",
+  "scoring_backend": "cross_encoder",
+  "model_dir": "models/setup105_1",
+  "results_dir": "results/setup105_1",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "neutral_field": "gemini25flashlite",
+  "threshold_metric": "macro_f1",
+  "max_length": 512,
+  "batch_size": 16,
+  "device": "cuda"
+}
