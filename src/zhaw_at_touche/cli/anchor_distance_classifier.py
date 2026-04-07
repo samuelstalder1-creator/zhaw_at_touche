@@ -257,6 +257,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             device=device,
             batch_size=args.batch_size,
             max_length=args.max_length,
+            progress_prefix="setup110 calibration",
         )
         calibration_scores = [prediction.score for prediction in calibration_predictions]
         calibration_labels = [int(record["label"]) for record in calibration_records]
@@ -294,6 +295,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             device=device,
             batch_size=args.batch_size,
             max_length=args.max_length,
+            progress_prefix=f"setup110 eval {primary.stem}",
         )
 
         file_gold_labels: list[int] = []

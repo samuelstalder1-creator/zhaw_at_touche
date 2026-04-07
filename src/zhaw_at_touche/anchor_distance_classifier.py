@@ -116,10 +116,15 @@ def embed_record_fields(
     device: str,
     batch_size: int,
     max_length: int,
+    progress_prefix: str | None = None,
 ) -> dict[str, torch.Tensor]:
     embeddings_by_field: dict[str, torch.Tensor] = {}
-    for field_name in fields:
+    total_fields = len(fields)
+    for index, field_name in enumerate(fields, start=1):
         texts = [_require_text_field(record, field_name) for record in records]
+        progress_label = None
+        if progress_prefix:
+            progress_label = f"{progress_prefix} [{index}/{total_fields}] {field_name}"
         embeddings_by_field[field_name] = embed_texts(
             tokenizer=tokenizer,
             model=model,
@@ -127,6 +132,7 @@ def embed_record_fields(
             device=device,
             batch_size=batch_size,
             max_length=max_length,
+            progress_label=progress_label,
         )
     return embeddings_by_field
 
@@ -211,6 +217,7 @@ def build_feature_dataset(
     device: str,
     batch_size: int,
     max_length: int,
+    progress_prefix: str | None = None,
 ) -> tuple[list[str], list[list[float]], dict[str, torch.Tensor]]:
     fields = [query_field, response_field, neutral_field, aux_neutral_field]
     embeddings_by_field = embed_record_fields(
@@ -221,6 +228,7 @@ def build_feature_dataset(
         device=device,
         batch_size=batch_size,
         max_length=max_length,
+        progress_prefix=progress_prefix,
     )
     pairs = feature_pairs(
         query_field=query_field,
@@ -266,6 +274,7 @@ def train_anchor_distance_classifier(config: AnchorDistanceTrainingConfig) -> di
         device=config.device,
         batch_size=config.batch_size,
         max_length=config.max_length,
+        progress_prefix="setup110 train",
     )
     train_labels = [int(record["label"]) for record in train_records]
 
@@ -310,6 +319,7 @@ def train_anchor_distance_classifier(config: AnchorDistanceTrainingConfig) -> di
             device=config.device,
             batch_size=config.batch_size,
             max_length=config.max_length,
+            progress_prefix="setup110 validation",
         )
         validation_labels = [int(record["label"]) for record in validation_records]
         validation_scores = [
@@ -407,6 +417,7 @@ def score_records(
     device: str,
     batch_size: int,
     max_length: int,
+    progress_prefix: str | None = None,
 ) -> list[AnchorDistancePrediction]:
     feature_names, feature_rows, feature_columns = build_feature_dataset(
         tokenizer=tokenizer,
@@ -419,6 +430,7 @@ def score_records(
         device=device,
         batch_size=batch_size,
         max_length=max_length,
+        progress_prefix=progress_prefix,
     )
     scores = [float(score) for score in classifier.predict_proba(feature_rows)[:, 1]]
     column_values = {feature_name: feature_columns[feature_name].tolist() for feature_name in feature_names}

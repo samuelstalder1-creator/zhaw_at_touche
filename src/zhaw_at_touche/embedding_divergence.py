@@ -76,6 +76,7 @@ def embed_texts(
     device: str,
     batch_size: int,
     max_length: int,
+    progress_label: str | None = None,
 ) -> torch.Tensor:
     if not texts:
         hidden_size = getattr(model.config, "hidden_size", None)
@@ -85,8 +86,12 @@ def embed_texts(
 
     embeddings: list[torch.Tensor] = []
     model.eval()
+    batch_starts = range(0, len(texts), batch_size)
+    iterator = batch_starts
+    if progress_label:
+        iterator = tqdm(batch_starts, desc=progress_label, unit="batch")
     with torch.inference_mode():
-        for start in range(0, len(texts), batch_size):
+        for start in iterator:
             batch = list(texts[start : start + batch_size])
             tokenized = tokenizer(
                 batch,
