@@ -1,0 +1,119 @@
+{
+  "model_source": "models/setup7-qwen",
+  "results_dir": "results/setup7-qwen",
+  "generated_provider": "qwen",
+  "device": "cuda",
+  "text_field": "response",
+  "input_format": "query_neutral_response",
+  "reference_field": "qwen",
+  "reference_label": "QWEN",
+  "pad_to_max_length": true,
+  "threshold": 0.5,
+  "files": {
+    "responses-test-with-neutral_qwen.jsonl": {
+      "samples": 6220,
+      "accuracy": 0.9969453376205788,
+      "labels": [
+        0,
+        1
+      ],
+      "matrix": {
+        "0": {
+          "0": 4311,
+          "1": 5
+        },
+        "1": {
+          "0": 14,
+          "1": 1890
+        }
+      },
+      "per_label": [
+        {
+          "label": 0,
+          "precision": 0.9967630057803468,
+          "recall": 0.9988415199258572,
+          "f1": 0.997801180418933,
+          "support": 4316
+        },
+        {
+          "label": 1,
+          "precision": 0.9973614775725593,
+          "recall": 0.9926470588235294,
+          "f1": 0.9949986838641748,
+          "support": 1904
+        }
+      ],
+      "positive_label": {
+        "precision": 0.9973614775725593,
+        "recall": 0.9926470588235294,
+        "f1": 0.9949986838641748,
+        "support": 1904
+      },
+      "macro": {
+        "precision": 0.9970622416764531,
+        "recall": 0.9957442893746933,
+        "f1": 0.9963999321415539,
+        "support": 6220
+      },
+      "weighted": {
+        "precision": 0.9969462035765483,
+        "recall": 0.9969453376205788,
+        "f1": 0.9969433100909169,
+        "support": 6220
+      },
+      "generated_field": null
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "accuracy": 0.9969453376205788,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 4311,
+        "1": 5
+      },
+      "1": {
+        "0": 14,
+        "1": 1890
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.9967630057803468,
+        "recall": 0.9988415199258572,
+        "f1": 0.997801180418933,
+        "support": 4316
+      },
+      {
+        "label": 1,
+        "precision": 0.9973614775725593,
+        "recall": 0.9926470588235294,
+        "f1": 0.9949986838641748,
+        "support": 1904
+      }
+    ],
+    "positive_label": {
+      "precision": 0.9973614775725593,
+      "recall": 0.9926470588235294,
+      "f1": 0.9949986838641748,
+      "support": 1904
+    },
+    "macro": {
+      "precision": 0.9970622416764531,
+      "recall": 0.9957442893746933,
+      "f1": 0.9963999321415539,
+      "support": 6220
+    },
+    "weighted": {
+      "precision": 0.9969462035765483,
+      "recall": 0.9969453376205788,
+      "f1": 0.9969433100909169,
+      "support": 6220
+    }
+  }
+}
