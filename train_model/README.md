@@ -24,6 +24,7 @@ overrides on top of it.
 | --- | --- | --- |
 | `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | fine-tuned transformer classifiers |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
+| `anchor_distance_classifier` | `setup110` | saved-state logistic regression over six pairwise anchor distances |
 
 ### Archived JSON Descriptors
 
@@ -38,7 +39,9 @@ The loader accepts these fields:
 
 - `trainer_type`
 - `train_file`
+- `aux_train_file`
 - `validation_file`
+- `aux_validation_file`
 - `model_name`
 - `model_dir`
 - `max_length`
@@ -61,7 +64,10 @@ The loader accepts these fields:
 - `reference_label`
 - `pad_to_max_length`
 - `positive_class_weight_scale`
+- `query_field`
+- `response_field`
 - `neutral_field`
+- `aux_neutral_field`
 - `distance_metric`
 - `score_granularity`
 - `sentence_agg`
@@ -105,6 +111,12 @@ uv run touche-train --setup-name setup9
 uv run touche-train --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-train --setup-name setup102
+```
+
+### Anchor-distance baseline
+
+```bash
+uv run touche-train --setup-name setup110
 ```
 
 ### Subset training

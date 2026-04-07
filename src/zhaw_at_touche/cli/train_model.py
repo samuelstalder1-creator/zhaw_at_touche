@@ -35,6 +35,7 @@ def base_defaults() -> dict[str, object]:
     return {
         "trainer_type": "classifier",
         "train_file": str(resolve_default_train_path()),
+        "aux_train_file": None,
         "model_name": "FacebookAI/roberta-base",
         "model_dir": None,
         "max_length": 512,
@@ -58,7 +59,11 @@ def base_defaults() -> dict[str, object]:
         "pad_to_max_length": False,
         "positive_class_weight_scale": 2.0,
         "validation_file": str(resolve_default_validation_path()) if resolve_default_validation_path() else None,
+        "aux_validation_file": None,
+        "query_field": "query",
+        "response_field": "response",
         "neutral_field": "gemini25flashlite",
+        "aux_neutral_field": "qwen",
         "distance_metric": "cosine",
         "score_granularity": "sentence",
         "sentence_agg": "max",
@@ -79,7 +84,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
     parser.add_argument(
         "--trainer-type",
-        choices=("classifier", "embedding_divergence"),
+        choices=("classifier", "embedding_divergence", "anchor_distance_classifier"),
         default=defaults["trainer_type"],
         help="Training backend selected by the setup.",
     )
@@ -89,6 +94,11 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Directory containing optional <setup-name>.json training defaults.",
     )
     parser.add_argument("--train-file", default=defaults["train_file"])
+    parser.add_argument(
+        "--aux-train-file",
+        default=defaults["aux_train_file"],
+        help="Optional auxiliary training JSONL file merged by id for embedding-feature backends.",
+    )
     parser.add_argument("--model-name", default=defaults["model_name"])
     parser.add_argument(
         "--model-dir",
@@ -149,6 +159,11 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         default=defaults["validation_file"],
         help="Optional validation JSONL file used for epoch-end monitoring.",
     )
+    parser.add_argument(
+        "--aux-validation-file",
+        default=defaults["aux_validation_file"],
+        help="Optional auxiliary validation JSONL file merged by id for embedding-feature backends.",
+    )
     parser.add_argument("--input-format", choices=SUPPORTED_INPUT_FORMATS, default=defaults["input_format"])
     parser.add_argument(
         "--reference-field",
@@ -173,9 +188,24 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Multiplier used when computing the positive-class loss weight.",
     )
     parser.add_argument(
+        "--query-field",
+        default=defaults["query_field"],
+        help="Query text field used by anchor-distance training.",
+    )
+    parser.add_argument(
+        "--response-field",
+        default=defaults["response_field"],
+        help="Primary response field used by anchor-distance training.",
+    )
+    parser.add_argument(
         "--neutral-field",
         default=defaults["neutral_field"],
         help="Reference/neutral text field used by embedding-divergence training.",
+    )
+    parser.add_argument(
+        "--aux-neutral-field",
+        default=defaults["aux_neutral_field"],
+        help="Secondary neutral/reference field used by anchor-distance training.",
     )
     parser.add_argument(
         "--distance-metric",
@@ -246,6 +276,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
+    from zhaw_at_touche.anchor_distance_classifier import (
+        AnchorDistanceTrainingConfig,
+        train_anchor_distance_classifier,
+    )
     from zhaw_at_touche.embedding_divergence import (
         EmbeddingDivergenceTrainingConfig,
         train_embedding_divergence,
@@ -254,6 +288,34 @@ def main() -> None:
 
     args = parse_args()
     model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
+    if args.trainer_type == "anchor_distance_classifier":
+        if not args.aux_train_file:
+            raise ValueError("anchor_distance_classifier requires --aux-train-file.")
+        if args.validation_file and not args.aux_validation_file:
+            raise ValueError(
+                "anchor_distance_classifier requires --aux-validation-file when --validation-file is set."
+            )
+        config = AnchorDistanceTrainingConfig(
+            embedding_model_name=args.model_name,
+            train_path=Path(args.train_file),
+            aux_train_path=Path(args.aux_train_file),
+            output_dir=model_dir,
+            max_length=args.max_length,
+            batch_size=args.batch_size,
+            device=resolve_device(args.device),
+            query_field=args.query_field,
+            response_field=args.response_field,
+            neutral_field=args.neutral_field,
+            aux_neutral_field=args.aux_neutral_field,
+            threshold_metric=args.threshold_metric,
+            score_granularity=args.score_granularity,
+            validation_path=Path(args.validation_file) if args.validation_file else None,
+            aux_validation_path=Path(args.aux_validation_file) if args.aux_validation_file else None,
+        )
+        summary = train_anchor_distance_classifier(config)
+        print(f"trained anchor-distance classifier state saved to {model_dir}")
+        print(f"training rows: {summary['train_rows']}")
+        return
     if args.trainer_type == "embedding_divergence":
         config = EmbeddingDivergenceTrainingConfig(
             embedding_model_name=args.model_name,

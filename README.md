@@ -91,6 +91,7 @@ Embedding-divergence examples:
 uv run touche-train --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-train --setup-name setup102
+uv run touche-train --setup-name setup110
 ```
 
 ### 4. Validate a setup
@@ -132,6 +133,7 @@ requested field pairs.
 | --- | --- | --- |
 | Fine-tuned classifier | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | transformer classifiers over prompt-formatted inputs |
 | Embedding divergence | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines over response vs neutral embeddings |
+| Anchor distance | `setup110` | saved-state logistic regression over six pairwise query/Gemini/Qwen/response embedding distances |
 
 ### Present as archived descriptors
 

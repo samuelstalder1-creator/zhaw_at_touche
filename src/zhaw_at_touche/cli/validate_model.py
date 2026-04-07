@@ -282,6 +282,11 @@ def main() -> None:
 
         embedding_divergence_main(raw_argv)
         return
+    if resolve_scoring_backend(raw_argv) == "anchor_distance_classifier":
+        from zhaw_at_touche.cli.anchor_distance_classifier import main as anchor_distance_main
+
+        anchor_distance_main(raw_argv)
+        return
 
     from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
 

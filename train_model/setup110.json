@@ -1,0 +1,18 @@
+{
+  "description": "Anchor-distance embedding classifier. Merges Gemini and Qwen neutral files by id, embeds query/response/Gemini/Qwen once each, then trains a logistic regression over six response-level cosine-distance features: query-Gemini, query-Qwen, Gemini-Qwen, query-response, Gemini-response, and Qwen-response. The first three should stay small for clean paraphrases; injected ads should push the response farther away from that neutral cluster.",
+  "trainer_type": "anchor_distance_classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "aux_train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "aux_validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "query_field": "query",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

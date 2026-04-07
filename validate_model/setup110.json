@@ -1,0 +1,28 @@
+{
+  "description": "Validation preset for the setup110 anchor-distance classifier. It reuses the saved logistic-regression bundle and threshold from models/setup110, and scores the six pairwise query/Gemini/Qwen/response distances on merged Gemini+Qwen test rows.",
+  "scoring_backend": "anchor_distance_classifier",
+  "model_dir": "models/setup110",
+  "results_dir": "results/setup110",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "aux_input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "aux_calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "query_field": "query",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

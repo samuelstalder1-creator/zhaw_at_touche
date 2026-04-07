@@ -7,6 +7,9 @@ from typing import Any
 DEFAULT_TRAINING_SETUPS_DIR = Path("train_model")
 
 ALLOWED_SETUP_FIELDS = {
+    "aux_neutral_field",
+    "aux_train_file",
+    "aux_validation_file",
     "batch_size",
     "device",
     "distance_metric",
@@ -27,8 +30,10 @@ ALLOWED_SETUP_FIELDS = {
     "optimizer_eps",
     "pad_to_max_length",
     "positive_class_weight_scale",
+    "query_field",
     "reference_field",
     "reference_label",
+    "response_field",
     "score_granularity",
     "sentence_agg",
     "sentence_delta_agg",

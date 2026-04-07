@@ -7,6 +7,9 @@ from typing import Any
 DEFAULT_VALIDATION_SETUPS_DIR = Path("validate_model")
 
 ALLOWED_SETUP_FIELDS = {
+    "aux_calibration_input_files",
+    "aux_input_files",
+    "aux_neutral_field",
     "batch_size",
     "calibration_input_files",
     "device",
@@ -22,8 +25,10 @@ ALLOWED_SETUP_FIELDS = {
     "model_name",
     "neutral_field",
     "pad_to_max_length",
+    "query_field",
     "reference_field",
     "reference_label",
+    "response_field",
     "results_dir",
     "score_granularity",
     "scoring_backend",

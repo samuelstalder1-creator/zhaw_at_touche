@@ -260,6 +260,58 @@ class ValidationSetupsTests(unittest.TestCase):
 
             self.assertEqual(backend, "embedding_divergence")
 
+    def test_load_setup_defaults_accepts_anchor_distance_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup110.json").write_text(
+                json.dumps(
+                    {
+                        "scoring_backend": "anchor_distance_classifier",
+                        "model_dir": "models/setup110",
+                        "results_dir": "results/setup110",
+                        "input_files": ["gemini-test.jsonl"],
+                        "aux_input_files": ["qwen-test.jsonl"],
+                        "calibration_input_files": ["gemini-validation.jsonl"],
+                        "aux_calibration_input_files": ["qwen-validation.jsonl"],
+                        "query_field": "query",
+                        "response_field": "response",
+                        "neutral_field": "gemini25flashlite",
+                        "aux_neutral_field": "qwen",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            defaults = load_setup_defaults("setup110", setups_dir)
+
+            self.assertEqual(defaults["scoring_backend"], "anchor_distance_classifier")
+            self.assertEqual(defaults["aux_input_files"], ["qwen-test.jsonl"])
+            self.assertEqual(defaults["aux_neutral_field"], "qwen")
+
+    def test_resolve_scoring_backend_detects_anchor_distance_setup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup110.json").write_text(
+                json.dumps(
+                    {
+                        "scoring_backend": "anchor_distance_classifier",
+                        "model_dir": "models/setup110",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            backend = resolve_scoring_backend(
+                [
+                    "--setup-name",
+                    "setup110",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(backend, "anchor_distance_classifier")
+
 
 if __name__ == "__main__":
     unittest.main()

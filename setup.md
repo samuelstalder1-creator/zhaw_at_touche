@@ -30,11 +30,13 @@ The authoritative sources behind this summary are:
 | `setup100` | semantic-drift baseline | `embedding_divergence` | sentence-level cosine drift with mean aggregation | Gemini-enriched JSONL |
 | `setup101` | higher-recall drift baseline | `embedding_divergence` | sentence-level cosine drift with top-3 aggregation | Gemini-enriched JSONL |
 | `setup102` | larger-encoder drift baseline | `embedding_divergence` | same idea as `setup101`, but with BGE-large | Gemini-enriched JSONL |
+| `setup110` | anchor-distance baseline | `anchor_distance_classifier` | logistic regression over six pairwise query/Gemini/Qwen/response cosine distances | merged Gemini + Qwen JSONL |
 
 ### Present In `train_model/`, But Not Currently Runnable Through The Current CLI
 
-The current parser only accepts `trainer_type=classifier` and
-`trainer_type=embedding_divergence`. The JSON files below are therefore best
+The current parser accepts `trainer_type=classifier`,
+`trainer_type=embedding_divergence`, and
+`trainer_type=anchor_distance_classifier`. The JSON files below are therefore best
 treated as archived research descriptors unless the missing training backends
 are reintroduced.
 
@@ -148,6 +150,9 @@ are reintroduced.
   neutral rewrite removed.
 - `full embedding feature stack`: `[response_emb | neutral_emb | residual]`.
   This is the representation used in `setup104`.
+- `anchor-distance feature stack`: six response-level cosine distances between
+  `(query, Gemini neutral, Qwen neutral, response)`. This is the active idea
+  used by `setup110`.
 - `cross-encoder`: a model that jointly attends over two texts instead of
   encoding them independently and comparing vectors after the fact. This is the
   idea behind archived `setup105`.
@@ -296,6 +301,22 @@ are reintroduced.
 - Result status: modestly different numbers, but still far behind the
   classifier baselines.
 
+### `setup110`
+
+- Trainer concept: `anchor_distance_classifier`.
+- Representation concept: embed `query`, `response`, Gemini neutral, and Qwen
+  neutral at response level, then compute six cosine distances:
+  `query-Gemini`, `query-Qwen`, `Gemini-Qwen`, `query-response`,
+  `Gemini-response`, and `Qwen-response`.
+- Modeling concept: a lightweight logistic regression learns how much those
+  "small neutral triangle, larger response drift" signals correlate with the
+  ad label.
+- Interpretation: this is the runnable version of the user's multi-anchor
+  delta idea. It is closer in spirit to archived `setup103` than to the
+  sentence-drift baselines, but it stays compact and directly interpretable.
+- Current repo state: fully wired into `touche-train` and `touche-validate`,
+  but no committed evaluation artifacts exist yet.
+
 ### `setup103`
 
 - Archived trainer concept: `embedding_residual_classifier`.
@@ -360,13 +381,15 @@ The table below reflects the committed `metrics_summary.json` files in
 | `setup8` | Gemini-enriched test file | 0.3061 | 0.2344 | 0.4687 | committed run collapsed to all-positive predictions |
 
 No committed evaluation artifacts currently exist for `setup4`, `setup7`,
-`setup7-qwen`, `setup9`, `setup11`, `setup105`, or `setup106`.
+`setup7-qwen`, `setup9`, `setup11`, `setup105`, `setup106`, or `setup110`.
 
 ## Practical Takeaways
 
 - If you want the strongest committed Gemini-backed classifier today, start
   with `setup12` and keep `setup6` as the best-recall alternative.
 - If you want the strongest committed Qwen-backed run, use `setup6-qwen`.
+- If you want a compact, interpretable multi-reference embedding baseline, use
+  `setup110`.
 - If you want the most interesting archived neutral-vs-response ideas, look at
   `setup103` and `setup104`, but treat them as historical designs until their
   training backends are restored.

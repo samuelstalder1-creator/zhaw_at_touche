@@ -4,7 +4,7 @@ This directory stores reusable defaults for evaluation-only runs.
 
 Use these files when you want `touche-validate` to know where the model lives,
 which files to evaluate, and whether the run should stay on the normal
-classifier path or delegate to the embedding-divergence backend.
+classifier path or delegate to one of the saved-state embedding backends.
 
 The deep explanation of each experiment lives in `../setup.md`.
 
@@ -26,7 +26,9 @@ overrides.
 - `results_dir`
 - `eval_splits`
 - `input_files`
+- `aux_input_files`
 - `calibration_input_files`
+- `aux_calibration_input_files`
 - `generated_provider`
 - `generated_field`
 - `text_field`
@@ -41,7 +43,10 @@ overrides.
 - `device`
 - `scoring_backend`
 - `embedding_model_name`
+- `query_field`
+- `response_field`
 - `neutral_field`
+- `aux_neutral_field`
 - `distance_metric`
 - `score_granularity`
 - `sentence_agg`
@@ -62,6 +67,7 @@ overrides.
 | `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
+| `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
 
 `setup6` and `setup8` do not need dedicated validation JSON files. They still
 validate correctly through the default `models/<setup-name>/` and
@@ -116,6 +122,17 @@ These presets delegate to the embedding-divergence backend automatically. The
 validator reuses the saved `embedding_state.json` threshold when it exists and
 only recalibrates on validation data if no saved or manual threshold is
 available.
+
+### Anchor-distance validation
+
+```bash
+uv run touche-train --setup-name setup110
+uv run touche-validate --setup-name setup110
+```
+
+This preset merges the Gemini and Qwen files by `id`, computes six pairwise
+response-level distances, and applies the saved logistic-regression bundle plus
+the calibrated threshold from `models/setup110/`.
 
 ## Output Contracts
 
