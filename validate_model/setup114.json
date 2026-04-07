@@ -1,0 +1,27 @@
+{
+  "description": "Validation preset for the setup114 full dual embedding classifier. Reuses the saved logistic-regression bundle and threshold from models/setup114, and scores the concatenated [R | G | Q | delta_G | delta_Q] features on merged Gemini+Qwen test rows.",
+  "scoring_backend": "dual_embedding_classifier",
+  "model_dir": "models/setup114",
+  "results_dir": "results/setup114",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "aux_input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "aux_calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

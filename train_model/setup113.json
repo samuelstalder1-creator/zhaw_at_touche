@@ -1,0 +1,17 @@
+{
+  "description": "Dual residual classifier. Merges Gemini and Qwen neutral files by id, embeds response/Gemini/Qwen once each, then trains a logistic regression over the concatenation of two delta vectors: [response_emb - gemini_emb | response_emb - qwen_emb] (1536-dim). Each delta encodes what the neutral rewrite removed; having two independent neutrals gives the classifier two witnesses to the same ad signal. Frozen encoder, no fine-tuning. Extends setup103 to dual-provider residuals.",
+  "trainer_type": "dual_residual_classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "aux_train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "aux_validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}
