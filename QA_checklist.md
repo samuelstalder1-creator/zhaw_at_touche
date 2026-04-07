@@ -1,18 +1,28 @@
-# QA checklist
+# QA Checklist
 
-- Functionality: Code implementation is functionally correct. Does the code handle path and edge cases correctly?
-- Completeness: Is the solution for this phase complete?
-- Consistency: Code and documentation style is consistent with the existing code/documentation. Is there anything hacky going on?
-- Clarity: Does the solution include anything that could be removed? Is it overly complex? Are there reusable components anywhere we should be using?
-- Guesswork: Is the implementation free of unverified assumptions? Check for guessed data schemas, file naming, or hidden dependencies.
-- Documentation: Does documentation accurately reflect the code implementation?
-- Testing: Do tests have adequate coverage? Do they cover the primary use cases, edge cases, and likely failure modes?
-- Security: Are there any security related concerns?
-- Review: What are the most likely things in this implementation to get flagged during code review?
+- Functionality: Does the implementation handle the expected paths and edge
+  cases correctly?
+- Completeness: Is the requested work complete for this phase?
+- Consistency: Are code, configs, results, and docs aligned with one another?
+- Clarity: Is there unnecessary complexity or duplication?
+- Guesswork: Are there any unverified assumptions about schemas, files, or
+  setup support?
+- Documentation: Do the Markdown files reflect the current code and artifact
+  state?
+- Testing: Do the relevant unit tests cover the changed behavior?
+- Security: Are there any obvious security concerns?
+- Review: What is most likely to get flagged during code review?
 
 ## Current Notes
 
-- The migration keeps the current Gemini generation behavior and the current binary classifier behavior.
-- Utility-level tests cover merge logic, text cleanup, generated-field detection, and metric computation.
-- Named setup documentation now spans `setup4`, `setup6`, `setup7`, `setup8`, `setup9`, `setup10`, `setup11`, and `setup12`; keep `README.md`, `train_model/README.md`, `validate_model/README.md`, and `setup.md` synchronized when adding or removing presets.
-- Full integration testing still depends on a synced `uv` environment plus model/API access.
+- The repo now treats `setup.md` as the canonical setup reference.
+- Documentation now explicitly distinguishes between currently supported setup
+  families and archived experimental descriptors.
+- Current runnable training families are:
+  - classifier: `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`,
+    `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
+  - embedding divergence: `setup100`, `setup101`, `setup102`
+- Archived setup descriptors still documented in the repo:
+  - `setup103`, `setup104`, `setup105`, `setup106`
+- Full integration testing still depends on a synced `uv` environment plus
+  model and API access.
