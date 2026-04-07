@@ -23,7 +23,19 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 
 ## No Committed Results Yet
 
-`setup4`, `setup7`, `setup9`, `setup11`, `setup105_1`, `setup111`, `setup113`, `setup114`
+Active but still uncommitted:
+
+- `setup4`
+- `setup7`
+- `setup9`
+- `setup11`
+- `setup111`
+
+Documented or retry variants without committed artifacts:
+
+- `setup105_1`
+- `setup113`
+- `setup114`
 
 ## Key Findings
 
@@ -32,5 +44,9 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 - Learned embedding features (`setup103`, `setup104`) are far stronger than raw cosine thresholding (`setup100`–`setup102`)
 - Both collapse cases (`setup8`, `setup105`) predict everything as positive; root cause is DeBERTa instability
 - `setup110` fails because 6 cosine scalars discard the directional information that makes `setup103` work
-- `setup111` is the no-classifier counterpart to `setup110`; it is now runnable
-  but has no committed test artifact yet
+- `setup111` is the no-classifier control for `setup110`: it uses the same six
+  cosine scalars, but scores rows with `response_drift - anchor_cohesion`
+  instead of fitting a logistic regression
+- Because `setup111` has no committed test artifact yet, the repo still cannot
+  answer from committed evidence alone whether the main failure in `setup110`
+  is the learned classifier layer or the scalar feature bottleneck itself
