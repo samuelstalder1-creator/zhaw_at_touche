@@ -287,6 +287,11 @@ def main() -> None:
 
         anchor_distance_main(raw_argv)
         return
+    if resolve_scoring_backend(raw_argv) == "anchor_distance_threshold":
+        from zhaw_at_touche.cli.anchor_distance_threshold import main as anchor_distance_threshold_main
+
+        anchor_distance_threshold_main(raw_argv)
+        return
 
     from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
 

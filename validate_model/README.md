@@ -68,6 +68,7 @@ overrides.
 | `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
+| `setup111` | anchor-distance threshold validation | delegates to the handcrafted anchor-distance backend and merges Gemini + Qwen rows by `id` |
 
 `setup6` and `setup8` do not need dedicated validation JSON files. They still
 validate correctly through the default `models/<setup-name>/` and
@@ -128,14 +129,20 @@ available.
 ```bash
 uv run touche-train --setup-name setup110
 uv run touche-validate --setup-name setup110
+
+uv run touche-train --setup-name setup111
+uv run touche-validate --setup-name setup111
 ```
 
-This preset merges the Gemini and Qwen files by `id`, computes six pairwise
-response-level distances, and applies the saved logistic-regression bundle plus
-the calibrated threshold from `models/setup110/`.
+These presets merge the Gemini and Qwen files by `id` and compute the same six
+pairwise response-level distances. `setup110` applies the saved
+logistic-regression bundle plus calibrated threshold from `models/setup110/`.
+`setup111` uses the handcrafted score `response_drift - anchor_cohesion` and
+reuses the calibrated threshold from `models/setup111/`.
 
-Unlike `--generated-provider qwen` on the classifier path, `setup110` does not
-swap between providers. It needs both paired file families at the same time.
+Unlike `--generated-provider qwen` on the classifier path, `setup110` and
+`setup111` do not swap between providers. They need both paired file families
+at the same time.
 
 ## Output Contracts
 

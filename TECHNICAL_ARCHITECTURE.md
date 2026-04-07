@@ -122,6 +122,18 @@ Implements the multi-anchor embedding baseline:
 
 This module powers `setup110`.
 
+### `anchor_distance_threshold.py`
+
+Implements the no-classifier multi-anchor baseline:
+
+- merge Gemini and Qwen JSONL rows by `id`
+- embed `query`, `response`, Gemini neutral, and Qwen neutral
+- derive the same six response-level cosine-distance features as `setup110`
+- compute `response_drift - anchor_cohesion`
+- calibrate and save only a threshold/state bundle
+
+This module powers `setup111`.
+
 ### `pairwise_distance.py`
 
 Implements field-pair distance analysis:
@@ -132,7 +144,7 @@ Implements field-pair distance analysis:
 - compute response-level or sentence-level distances
 - summarize pairwise score distributions
 
-Its row-merging helper is also reused by `setup110`.
+Its row-merging helper is also reused by `setup110` and `setup111`.
 
 ## CLI Entry Points
 
@@ -157,6 +169,7 @@ The root `pyproject.toml` exposes these command-line tools:
 - `trainer_type=classifier`
 - `trainer_type=embedding_divergence`
 - `trainer_type=anchor_distance_classifier`
+- `trainer_type=anchor_distance_threshold`
 
 ### Present as archived setup descriptors
 
@@ -200,8 +213,10 @@ first-class runtime options.
 2. merge rows by `id`
 3. embed `query`, `response`, Gemini neutral, and Qwen neutral
 4. derive the six pairwise anchor-distance features
-5. fit the logistic regression and calibrated threshold
-6. evaluate with `touche-validate`
+5. either fit a logistic regression (`setup110`) or use the handcrafted score
+   `response_drift - anchor_cohesion` (`setup111`)
+6. fit or reuse the calibrated threshold
+7. evaluate with `touche-validate`
 
 ### Pairwise-analysis path
 

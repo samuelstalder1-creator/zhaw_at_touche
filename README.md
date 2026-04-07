@@ -97,6 +97,7 @@ Anchor-distance example:
 
 ```bash
 uv run touche-train --setup-name setup110
+uv run touche-train --setup-name setup111
 ```
 
 ### 4. Validate a setup
@@ -106,6 +107,7 @@ uv run touche-validate --setup-name setup6
 uv run touche-validate --setup-name setup12
 uv run touche-validate --setup-name setup7
 uv run touche-validate --setup-name setup110
+uv run touche-validate --setup-name setup111
 ```
 
 Provider-specific evaluation:
@@ -139,7 +141,7 @@ requested field pairs.
 | --- | --- | --- |
 | Fine-tuned classifier | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | transformer classifiers over prompt-formatted inputs |
 | Embedding divergence | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines over response vs neutral embeddings |
-| Anchor distance | `setup110` | saved-state logistic regression over six pairwise query/Gemini/Qwen/response embedding distances |
+| Anchor distance | `setup110`, `setup111` | multi-anchor Gemini+Qwen baselines over six pairwise query/Gemini/Qwen/response distances; `setup110` learns weights, `setup111` uses a handcrafted score |
 
 ### Present as archived descriptors
 
@@ -161,7 +163,7 @@ trainer backends.
 - Best committed Gemini-backed classifier: `setup12`
 - Best committed Qwen-backed classifier: `setup6-qwen`
 - Best committed archived embedding-feature idea: `setup104`
-- New runnable multi-anchor embedding baseline: `setup110`
+- New runnable multi-anchor embedding baselines: `setup110`, `setup111`
 - Current semantic-drift baselines (`setup100` to `setup102`) are clearly below
   the classifier family
 

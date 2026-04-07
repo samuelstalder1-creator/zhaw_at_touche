@@ -312,6 +312,30 @@ class ValidationSetupsTests(unittest.TestCase):
 
             self.assertEqual(backend, "anchor_distance_classifier")
 
+    def test_resolve_scoring_backend_detects_anchor_distance_threshold_setup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            setups_dir = Path(tmp_dir)
+            (setups_dir / "setup111.json").write_text(
+                json.dumps(
+                    {
+                        "scoring_backend": "anchor_distance_threshold",
+                        "model_dir": "models/setup111",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            backend = resolve_scoring_backend(
+                [
+                    "--setup-name",
+                    "setup111",
+                    "--setups-dir",
+                    str(setups_dir),
+                ]
+            )
+
+            self.assertEqual(backend, "anchor_distance_threshold")
+
 
 if __name__ == "__main__":
     unittest.main()

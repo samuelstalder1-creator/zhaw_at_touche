@@ -28,7 +28,7 @@
 - Fine-tuned classifier setups: `setup4`, `setup6`, `setup6-qwen`, `setup7`,
   `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
 - Embedding-divergence setups: `setup100`, `setup101`, `setup102`
-- Anchor-distance setup: `setup110`
+- Anchor-distance setups: `setup110`, `setup111`
 - Archived experimental descriptors kept for documentation and historical
   results: `setup103`, `setup104`, `setup105`, `setup106`
 

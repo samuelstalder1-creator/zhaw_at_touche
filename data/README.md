@@ -20,7 +20,7 @@ The upstream dataset card is in `task/README.md`.
 - `setup4` uses the Gemini neutral field as an explicitly labeled reference.
 - `setup100` to `setup106` are neutral-vs-response experiments; they depend on
   having a valid neutral field such as `gemini25flashlite` or `qwen`.
-- `setup110` is the multi-anchor embedding baseline. It depends on both the
-  Gemini and Qwen generated files and merges them by `id`.
+- `setup110` and `setup111` are the multi-anchor embedding baselines. They
+  depend on both the Gemini and Qwen generated files and merge them by `id`.
 
 See `../setup.md` for the full per-setup explanation.

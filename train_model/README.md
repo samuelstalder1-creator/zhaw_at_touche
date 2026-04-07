@@ -25,6 +25,7 @@ overrides on top of it.
 | `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | fine-tuned transformer classifiers |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
 | `anchor_distance_classifier` | `setup110` | saved-state logistic regression over six pairwise anchor distances |
+| `anchor_distance_threshold` | `setup111` | saved-state handcrafted multi-anchor score with calibrated threshold |
 
 ### Archived JSON Descriptors
 
@@ -117,11 +118,14 @@ uv run touche-train --setup-name setup102
 
 ```bash
 uv run touche-train --setup-name setup110
+uv run touche-train --setup-name setup111
 ```
 
-This setup merges the Gemini and Qwen training files by `id` and now reports
+These setups merge the Gemini and Qwen training files by `id` and report
 separate progress bars for the `query`, `response`, Gemini-neutral, and
-Qwen-neutral embedding passes.
+Qwen-neutral embedding passes. `setup110` learns a logistic regression over
+the six cosine-distance features, while `setup111` uses a handcrafted score
+and calibrates only the threshold.
 
 ### Subset training
 
@@ -156,11 +160,16 @@ Embedding-divergence runs write to `models/<setup-name>/`:
 They do not write a Hugging Face classifier bundle, `training_metrics.jsonl`,
 or a W&B run.
 
-### Anchor-distance setup
+### Anchor-distance setups
 
-The active anchor-distance baseline `setup110` writes to `models/setup110/`:
+`setup110` writes to `models/setup110/`:
 
 - `anchor_distance_classifier.pkl`
+- `embedding_state.json`
+- `training_summary.json`
+
+`setup111` writes to `models/setup111/`:
+
 - `embedding_state.json`
 - `training_summary.json`
 

@@ -263,6 +263,26 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertEqual(args.aux_neutral_field, "qwen")
         self.assertEqual(args.score_granularity, "response")
 
+    def test_repo_setup111_uses_anchor_distance_threshold_training_files(self) -> None:
+        args = parse_args(["--setup-name", "setup111"])
+
+        self.assertEqual(args.trainer_type, "anchor_distance_threshold")
+        self.assertEqual(args.train_file, "data/generated/gemini/responses-train-with-neutral_gemini.jsonl")
+        self.assertEqual(args.aux_train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+        )
+        self.assertEqual(
+            args.aux_validation_file,
+            "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+        )
+        self.assertEqual(args.query_field, "query")
+        self.assertEqual(args.response_field, "response")
+        self.assertEqual(args.neutral_field, "gemini25flashlite")
+        self.assertEqual(args.aux_neutral_field, "qwen")
+        self.assertEqual(args.score_granularity, "response")
+
 
 if __name__ == "__main__":
     unittest.main()

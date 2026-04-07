@@ -84,7 +84,12 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
     parser.add_argument("--setup-name", default=DEFAULT_SETUP_NAME)
     parser.add_argument(
         "--trainer-type",
-        choices=("classifier", "embedding_divergence", "anchor_distance_classifier"),
+        choices=(
+            "classifier",
+            "embedding_divergence",
+            "anchor_distance_classifier",
+            "anchor_distance_threshold",
+        ),
         default=defaults["trainer_type"],
         help="Training backend selected by the setup.",
     )
@@ -280,6 +285,10 @@ def main() -> None:
         AnchorDistanceTrainingConfig,
         train_anchor_distance_classifier,
     )
+    from zhaw_at_touche.anchor_distance_threshold import (
+        AnchorDistanceThresholdTrainingConfig,
+        train_anchor_distance_threshold,
+    )
     from zhaw_at_touche.embedding_divergence import (
         EmbeddingDivergenceTrainingConfig,
         train_embedding_divergence,
@@ -288,6 +297,34 @@ def main() -> None:
 
     args = parse_args()
     model_dir = Path(args.model_dir) if args.model_dir else DEFAULT_MODELS_DIR / args.setup_name
+    if args.trainer_type == "anchor_distance_threshold":
+        if not args.aux_train_file:
+            raise ValueError("anchor_distance_threshold requires --aux-train-file.")
+        if args.validation_file and not args.aux_validation_file:
+            raise ValueError(
+                "anchor_distance_threshold requires --aux-validation-file when --validation-file is set."
+            )
+        config = AnchorDistanceThresholdTrainingConfig(
+            embedding_model_name=args.model_name,
+            train_path=Path(args.train_file),
+            aux_train_path=Path(args.aux_train_file),
+            output_dir=model_dir,
+            max_length=args.max_length,
+            batch_size=args.batch_size,
+            device=resolve_device(args.device),
+            query_field=args.query_field,
+            response_field=args.response_field,
+            neutral_field=args.neutral_field,
+            aux_neutral_field=args.aux_neutral_field,
+            threshold_metric=args.threshold_metric,
+            score_granularity=args.score_granularity,
+            validation_path=Path(args.validation_file) if args.validation_file else None,
+            aux_validation_path=Path(args.aux_validation_file) if args.aux_validation_file else None,
+        )
+        summary = train_anchor_distance_threshold(config)
+        print(f"trained anchor-distance threshold state saved to {model_dir}")
+        print(f"training rows: {summary['train_rows']}")
+        return
     if args.trainer_type == "anchor_distance_classifier":
         if not args.aux_train_file:
             raise ValueError("anchor_distance_classifier requires --aux-train-file.")
