@@ -26,12 +26,9 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 
 ## No Committed Results Yet
 
-Active but still uncommitted:
+Core research-question runs still missing:
 
-- `setup4`
 - `setup7`
-- `setup9`
-- `setup11`
 - `setup114`
 - `setup115`
 - `setup116`
@@ -39,19 +36,28 @@ Active but still uncommitted:
 - `setup118`
 - `setup119`
 
+Secondary or backbone-comparison runs still missing:
+
+- `setup4`
+- `setup9`
+- `setup11`
+
 ## Key Findings
 
 - Best classifier overall remains `setup6-qwen` (Qwen) and `setup12` (Gemini)
 - The stable cross-encoder retry `setup105_1` is competitive with the best
-  plain classifiers and avoids the collapse seen in `setup105`
+  plain classifiers, avoids the collapse seen in `setup105`, and is currently
+  the strongest committed neutral-aware fine-tuned model
 - Learned embedding features (`setup103`, `setup104`, `setup113`) are far
   stronger than raw cosine thresholding (`setup100`–`setup102`)
 - `setup104` slightly beats `setup103` on Macro F1, but the tradeoff is mostly
   precision vs recall, not a step-change in quality
 - `setup113` shows that a dual-neutral residual is viable, but it still trails
-  the strongest single-neutral learned embedding setups
+  the strongest single-neutral learned embedding setups; the second neutral has
+  not yet shown a clear committed Macro-F1 gain
 - `setup110` and `setup111` show that collapsing the comparison down to six
   cosine scalars loses too much directional information to compete with the
-  vector-delta family
+  vector-delta family; `setup111` only marginally exceeds `setup110`, so the
+  main failure is the representation bottleneck, not the learned layer
 - Both collapse cases (`setup8`, `setup105`) predict everything as positive;
   the shared theme is DeBERTa instability in this repo

@@ -17,6 +17,7 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 |---|---|
 | response | setup115 (run pending) |
 | query + response | setup6 ✓, setup12 ✓ |
+| response + 1 neutral (joint cross-encoder) | setup105_1 ✓ |
 | query + response + 1 neutral | setup7-qwen ✓, setup7 (run pending) |
 | query + response + 2 neutrals | setup116 (run pending) |
 
@@ -24,7 +25,7 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 | Input | Setup |
 |---|---|
-| response − 1 neutral | setup103 ✓, setup119 (run pending, Qwen counterpart) |
+| response − 1 neutral | setup103 ✓, setup104 ✓, setup119 (run pending, Qwen counterpart) |
 | response − 1 neutral + query | setup117 (run pending) |
 | response − 2 neutrals | setup113 ✓, setup114 (run pending, full stack) |
 | response − 2 neutrals + query | setup118 (run pending) |
@@ -34,11 +35,13 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 ## What We Know
 
 - **Fine-tuned classifiers are strong without the neutral**: setup6 (RoBERTa) reaches 0.9975 F1 on query + response alone.
+- **A stable neutral-aware fine-tuning path exists**: setup105_1 (RoBERTa cross-encoder on response + neutral) reaches 0.9975 Macro F1. That clearly beats the learned embedding-feature family and shows that end-to-end neutral-aware modeling can work when the backbone is stable.
 - **Committed prompt-neutral result is competitive, not clearly better**: setup7-qwen (Longformer + Qwen neutral) scores 0.9964 vs setup6-qwen at 0.9985. But that comparison is confounded by backbone and context length, so it is evidence against a big gain, not a clean causal proof.
 - **Delta direction matters, not magnitude**: cosine thresholding (setup100–102) scores 0.35–0.45 F1. Logistic regression on the full 768-dim delta vector (setup103) reaches 0.9913. Collapsing the delta to a scalar discards the directional information that makes ads detectable.
 - **Scalar bottleneck explains setup110**: six pairwise cosine distances from two providers still score only 0.5653 F1. The dual-provider advantage is wasted at the scalar bottleneck.
 - **The no-classifier scalar control does not rescue the anchor idea**: setup111 scores 0.5669 Macro F1, almost the same failure mode as setup110. The bottleneck is the six-scalar representation, not mainly the logistic-regression layer on top.
 - **Absolute positions shift precision/recall**: setup104 adds `[response_emb | neutral_emb]` alongside the delta — FP drops (23→10) but FN rises (23→35). More conservative, not strictly better.
+- **A second neutral is useful but not automatically better**: setup113 confirms that dual-provider residuals work, but its committed result (0.9857 Macro F1) still trails the stronger single-neutral learned embedding setups. The extra neutral appears to trade precision for recall rather than delivering a clear overall gain.
 - **Sentence-level delta has a false positive problem**: setup106 (Hungarian matching) reaches FN=37 but FP=120. Normal stylistic variation between response and neutral triggers the classifier on clean responses.
 - **DeBERTa-v3 collapses to all-positive twice**: setup8 and setup105 both failed under the same conditions. Setup105 also lacked a validation config, so the cross-encoder was evaluated with the wrong input format.
 
@@ -48,7 +51,6 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 ### Pending runs
 - [ ] setup7 (Gemini neutral in prompt) — confirm neutral-in-prompt finding holds across providers
-- [ ] setup105_1 — compare stable cross-encoder against the learned embedding-feature family
 - [ ] setup114 — test whether absolute positions help in the dual-neutral case as they slightly did in setup104
 - [ ] setup115 — isolate the query contribution in the fine-tuned classifier family
 - [ ] setup116 — test whether a second neutral helps the prompted classifier family
@@ -59,6 +61,7 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 ### Design gaps
 - [ ] Add a matched-backbone fine-tuned comparison for `query + response` vs `query + neutral + response`
+- [ ] Add a matched-backbone fine-tuned comparison for one neutral vs two neutrals
 - [ ] Evaluate all pending runs under the same train/validation/test protocol and compare score deltas, not only final Macro F1
 
 ### Neutral quality
