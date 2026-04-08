@@ -4,9 +4,10 @@ This directory stores training outputs.
 
 ## Output Shapes
 
-### Classifier setups
+### Classifier and cross-encoder setups
 
-Classifier runs usually create `models/<setup-name>/` containing:
+Classifier and cross-encoder runs usually create `models/<setup-name>/`
+containing:
 
 - the Hugging Face model bundle
 - the tokenizer files
@@ -21,7 +22,15 @@ Embedding-divergence runs usually create `models/<setup-name>/` containing:
 - `embedding_state.json`
 - `training_summary.json`
 
-### Anchor-distance setups
+### Learned embedding-feature setups
+
+These runs usually create `models/<setup-name>/` containing:
+
+- `embedding_lr_classifier.pkl`
+- `embedding_state.json`
+- `training_summary.json`
+
+### Scalar anchor setups
 
 `setup110` usually creates `models/setup110/` containing:
 
@@ -34,12 +43,11 @@ Embedding-divergence runs usually create `models/<setup-name>/` containing:
 - `embedding_state.json`
 - `training_summary.json`
 
-### Archived experimental setups
+### Descriptor-only historical setup
 
-Some documented setups such as `setup103` to `setup106` are currently archived
-rather than first-class runnable backends. Their concepts are still documented
-in `../setup.md`, but the corresponding model directories are not guaranteed to
-exist locally.
+`setup106` is still documented in `../setup.md`, but its sentence-delta
+backend is not currently wired into the CLI. Historical model directories for
+that setup are therefore not guaranteed to exist locally.
 
 ## Current Repository State
 

@@ -17,8 +17,8 @@ the code implements those ideas.
    Thin wrappers in `src/zhaw_at_touche/cli/` parse arguments, resolve setup
    defaults, and call shared functions.
 4. Test layer
-   Unit tests under `tests/` cover the pure Python pieces such as setup loading,
-   metrics, overlap logic, and pairwise-distance helpers.
+   Unit tests under `tests/` cover the pure Python pieces such as setup
+   loading, metrics, overlap logic, and the saved-state embedding backends.
 
 ## Repository Structure
 
@@ -54,8 +54,11 @@ Handles Touché-specific data preparation and prompt rendering.
 
 The prompt layer currently supports:
 
+- `response_only`
 - `query_response`
 - `query_neutral_response`
+- `query_dual_neutral_response`
+- `cross_encoder`
 - `query_reference_rag_response`
 
 Those formats map directly to the setup families documented in `setup.md`.
@@ -84,7 +87,7 @@ Implements the fine-tuned classifier runtime:
 - training loop execution
 - model loading and batch prediction
 
-This is the runtime used by the classifier setups:
+This is the runtime used by the classifier and cross-encoder setups:
 
 - `setup4`
 - `setup6`
@@ -96,6 +99,10 @@ This is the runtime used by the classifier setups:
 - `setup10`
 - `setup11`
 - `setup12`
+- `setup105`
+- `setup105_1`
+- `setup115`
+- `setup116`
 
 ### `embedding_divergence.py`
 
@@ -122,6 +129,22 @@ Implements the multi-anchor embedding baseline:
 
 This module powers `setup110`.
 
+It also owns the shared JSONL row-merging helper used by the multi-file
+embedding backends.
+
+### `embedding_lr_classifier.py`
+
+Implements the learned embedding-feature family:
+
+- embed the configured text fields once with a frozen encoder
+- build residual or stacked feature matrices such as
+  `response_emb - neutral_emb` or `[query_emb | delta_gemini | delta_qwen]`
+- fit a logistic regression over those features
+- calibrate and save a threshold alongside the classifier bundle
+
+This module powers `setup103`, `setup104`, `setup113`, `setup114`, `setup117`,
+`setup118`, and `setup119`.
+
 ### `anchor_distance_threshold.py`
 
 Implements the no-classifier multi-anchor baseline:
@@ -134,18 +157,6 @@ Implements the no-classifier multi-anchor baseline:
 
 This module powers `setup111`.
 
-### `pairwise_distance.py`
-
-Implements field-pair distance analysis:
-
-- merge multiple JSONL files by `id`
-- compare arbitrary text fields such as `response`, `gemini25flashlite`, and
-  `qwen`
-- compute response-level or sentence-level distances
-- summarize pairwise score distributions
-
-Its row-merging helper is also reused by `setup110` and `setup111`.
-
 ## CLI Entry Points
 
 The root `pyproject.toml` exposes these command-line tools:
@@ -155,7 +166,6 @@ The root `pyproject.toml` exposes these command-line tools:
 - `touche-train`
 - `touche-validate`
 - `touche-embed-divergence`
-- `touche-pairwise-distances`
 - `touche-predict`
 - `touche-stats-data`
 - `touche-stats-generated`
@@ -167,24 +177,27 @@ The root `pyproject.toml` exposes these command-line tools:
 ### Supported by the current training CLI
 
 - `trainer_type=classifier`
+- `trainer_type=cross_encoder`
 - `trainer_type=embedding_divergence`
+- `trainer_type=embedding_residual_classifier`
+- `trainer_type=embedding_classifier`
+- `trainer_type=query_residual_classifier`
+- `trainer_type=dual_residual_classifier`
+- `trainer_type=dual_embedding_classifier`
+- `trainer_type=query_dual_residual_classifier`
 - `trainer_type=anchor_distance_classifier`
 - `trainer_type=anchor_distance_threshold`
 
-### Present as archived setup descriptors
+### Documented but not currently wired end-to-end
 
-`train_model/setup103.json` to `train_model/setup106.json` describe additional
-research ideas, but their trainer backends are not currently exposed by
-`touche-train`.
+`train_model/setup106.json` describes the sentence-delta experiment, but its
+trainer backend is not currently exposed by `touche-train`.
 
 That is why the repo can simultaneously contain:
 
-- committed result directories such as `results/setup103/` and `results/setup104/`
-- setup JSON files for `setup103` to `setup106`
-- no current CLI path that would retrain those ideas from scratch
-
-The docs now call those setups archived rather than pretending they are
-first-class runtime options.
+- committed result directories such as `results/setup106/`
+- a setup JSON file for `setup106`
+- no current CLI path that would retrain that idea from scratch
 
 ## End-To-End Flow
 
@@ -207,23 +220,25 @@ first-class runtime options.
 5. fit a threshold and save `embedding_state.json`
 6. evaluate with `touche-validate` or `touche-embed-divergence`
 
-### Anchor-distance path
+### Learned embedding-feature path
+
+1. load one or two generated JSONL sources
+2. optionally merge Gemini and Qwen rows by `id`
+3. embed the configured text fields with a frozen encoder
+4. build residual or stacked feature matrices
+5. fit logistic regression and calibrate the threshold
+6. evaluate with `touche-validate`
+
+### Scalar anchor path
 
 1. load paired Gemini and Qwen generated JSONL data
 2. merge rows by `id`
 3. embed `query`, `response`, Gemini neutral, and Qwen neutral
-4. derive the six pairwise anchor-distance features
+4. derive the six anchor-distance features
 5. either fit a logistic regression (`setup110`) or use the handcrafted score
    `response_drift - anchor_cohesion` (`setup111`)
 6. fit or reuse the calibrated threshold
 7. evaluate with `touche-validate`
-
-### Pairwise-analysis path
-
-1. load one or more JSONL files
-2. merge them by `id`
-3. compare explicit field pairs such as `response:qwen`
-4. write per-record and aggregate distance summaries
 
 ## Design Intent
 

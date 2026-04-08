@@ -22,17 +22,22 @@ overrides on top of it.
 
 | Trainer type | Setup names | Notes |
 | --- | --- | --- |
-| `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12` | fine-tuned transformer classifiers |
+| `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
+| `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
+| `embedding_residual_classifier` | `setup103`, `setup119` | logistic regression on one residual vector |
+| `embedding_classifier` | `setup104` | logistic regression on stacked response, neutral, and residual vectors |
+| `query_residual_classifier` | `setup117` | query embedding plus single-provider residual |
+| `dual_residual_classifier` | `setup113` | logistic regression on Gemini and Qwen residual vectors |
+| `dual_embedding_classifier` | `setup114` | full dual-provider embedding stack |
+| `query_dual_residual_classifier` | `setup118` | query embedding plus dual residual vectors |
 | `anchor_distance_classifier` | `setup110` | saved-state logistic regression over six pairwise anchor distances |
 | `anchor_distance_threshold` | `setup111` | saved-state handcrafted multi-anchor score with calibrated threshold |
 
-### Archived JSON Descriptors
+### Descriptor Only
 
-`setup103`, `setup104`, `setup105`, and `setup106` are documented in
-`../setup.md`, but the current `touche-train` parser does not expose their
-trainer backends. Their JSON files remain useful as research notes and for
-explaining the committed `results/setup103/` and `results/setup104/` artifacts.
+`setup106` is still documented in `../setup.md`, but the current
+`touche-train` parser does not expose a sentence-delta backend.
 
 ## Supported JSON Fields
 
@@ -63,6 +68,9 @@ The loader accepts these fields:
 - `input_format`
 - `reference_field`
 - `reference_label`
+- `aux_reference_label`
+- `reference_label_1`
+- `reference_label_2`
 - `pad_to_max_length`
 - `positive_class_weight_scale`
 - `query_field`
@@ -89,6 +97,7 @@ Not every field is used by every backend.
 uv run touche-train --setup-name setup6
 uv run touche-train --setup-name setup10
 uv run touche-train --setup-name setup12
+uv run touche-train --setup-name setup115
 ```
 
 ### Reference-aware classifiers
@@ -97,6 +106,14 @@ uv run touche-train --setup-name setup12
 uv run touche-train --setup-name setup4
 uv run touche-train --setup-name setup7
 uv run touche-train --setup-name setup7-qwen
+uv run touche-train --setup-name setup116
+```
+
+### Cross-encoder setups
+
+```bash
+uv run touche-train --setup-name setup105
+uv run touche-train --setup-name setup105_1
 ```
 
 ### DeBERTa stabilization experiments
@@ -112,6 +129,18 @@ uv run touche-train --setup-name setup9
 uv run touche-train --setup-name setup100
 uv run touche-train --setup-name setup101
 uv run touche-train --setup-name setup102
+```
+
+### Learned embedding-feature setups
+
+```bash
+uv run touche-train --setup-name setup103
+uv run touche-train --setup-name setup104
+uv run touche-train --setup-name setup113
+uv run touche-train --setup-name setup114
+uv run touche-train --setup-name setup117
+uv run touche-train --setup-name setup118
+uv run touche-train --setup-name setup119
 ```
 
 ### Anchor-distance baseline
@@ -141,9 +170,9 @@ uv run touche-train --setup-name setup7 --no-wandb
 
 ## Output Contracts
 
-### Classifier setups
+### Classifier and cross-encoder setups
 
-Classifier runs write to `models/<setup-name>/`:
+Classifier and cross-encoder runs write to `models/<setup-name>/`:
 
 - Hugging Face model/tokenizer bundle
 - `training_summary.json`
@@ -159,6 +188,14 @@ Embedding-divergence runs write to `models/<setup-name>/`:
 
 They do not write a Hugging Face classifier bundle, `training_metrics.jsonl`,
 or a W&B run.
+
+### Learned embedding-feature setups
+
+These runs write to `models/<setup-name>/`:
+
+- `embedding_lr_classifier.pkl`
+- `embedding_state.json`
+- `training_summary.json`
 
 ### Anchor-distance setups
 
@@ -178,6 +215,7 @@ or a W&B run.
 - Gemini-backed files are the default source for most setups.
 - `setup6-qwen` and `setup7-qwen` switch the training and validation files to
   `data/generated/qwen/`.
+- `setup119` is the Qwen-only residual counterpart to `setup103`.
 - Only the reference-aware and embedding-based setups actually consume the
   neutral field as part of the model logic. Plain `query_response` classifiers
   still train on just the query and the response text.
