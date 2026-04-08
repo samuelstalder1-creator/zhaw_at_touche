@@ -1,0 +1,187 @@
+{
+  "scoring_backend": "query_dual_residual_classifier",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "model_dir": "models/setup118",
+  "results_dir": "results/setup118",
+  "device": "cuda",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "query_field": "query",
+  "threshold": 0.6943495739469361,
+  "threshold_source": "saved_state",
+  "threshold_metric": "macro_f1",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "aux_input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "aux_calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "calibration_summary": {
+    "samples": 5780,
+    "accuracy": 0.789446366782007,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3514,
+        "1": 485
+      },
+      "1": {
+        "0": 732,
+        "1": 1049
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8276024493641074,
+        "recall": 0.87871967991998,
+        "f1": 0.8523953911461492,
+        "support": 3999
+      },
+      {
+        "label": 1,
+        "precision": 0.6838331160365059,
+        "recall": 0.5889949466591803,
+        "f1": 0.6328808446455506,
+        "support": 1781
+      }
+    ],
+    "positive_label": {
+      "precision": 0.6838331160365059,
+      "recall": 0.5889949466591803,
+      "f1": 0.6328808446455506,
+      "support": 1781
+    },
+    "macro": {
+      "precision": 0.7557177827003067,
+      "recall": 0.7338573132895801,
+      "f1": 0.7426381178958499,
+      "support": 5780
+    },
+    "weighted": {
+      "precision": 0.7833025907730247,
+      "recall": 0.789446366782007,
+      "f1": 0.7847560473195806,
+      "support": 5780
+    }
+  },
+  "files": {
+    "responses-test-with-neutral_gemini.jsonl": {
+      "samples": 6220,
+      "accuracy": 0.7877813504823151,
+      "labels": [
+        0,
+        1
+      ],
+      "matrix": {
+        "0": {
+          "0": 3733,
+          "1": 583
+        },
+        "1": {
+          "0": 737,
+          "1": 1167
+        }
+      },
+      "per_label": [
+        {
+          "label": 0,
+          "precision": 0.8351230425055929,
+          "recall": 0.8649212233549582,
+          "f1": 0.8497609833826543,
+          "support": 4316
+        },
+        {
+          "label": 1,
+          "precision": 0.6668571428571428,
+          "recall": 0.6129201680672269,
+          "f1": 0.638752052545156,
+          "support": 1904
+        }
+      ],
+      "positive_label": {
+        "precision": 0.6668571428571428,
+        "recall": 0.6129201680672269,
+        "f1": 0.638752052545156,
+        "support": 1904
+      },
+      "macro": {
+        "precision": 0.7509900926813678,
+        "recall": 0.7389206957110925,
+        "f1": 0.7442565179639051,
+        "support": 6220
+      },
+      "weighted": {
+        "precision": 0.7836152815842666,
+        "recall": 0.7877813504823151,
+        "f1": 0.7851691820459025,
+        "support": 6220
+      },
+      "response_field": "response",
+      "neutral_field": "gemini25flashlite",
+      "aux_neutral_field": "qwen"
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "accuracy": 0.7877813504823151,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3733,
+        "1": 583
+      },
+      "1": {
+        "0": 737,
+        "1": 1167
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8351230425055929,
+        "recall": 0.8649212233549582,
+        "f1": 0.8497609833826543,
+        "support": 4316
+      },
+      {
+        "label": 1,
+        "precision": 0.6668571428571428,
+        "recall": 0.6129201680672269,
+        "f1": 0.638752052545156,
+        "support": 1904
+      }
+    ],
+    "positive_label": {
+      "precision": 0.6668571428571428,
+      "recall": 0.6129201680672269,
+      "f1": 0.638752052545156,
+      "support": 1904
+    },
+    "macro": {
+      "precision": 0.7509900926813678,
+      "recall": 0.7389206957110925,
+      "f1": 0.7442565179639051,
+      "support": 6220
+    },
+    "weighted": {
+      "precision": 0.7836152815842666,
+      "recall": 0.7877813504823151,
+      "f1": 0.7851691820459025,
+      "support": 6220
+    }
+  }
+}
