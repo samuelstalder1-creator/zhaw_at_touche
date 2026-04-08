@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the setup115 response-only classifier. No query, no neutral reference in the input.",
+  "model_dir": "models/setup115",
+  "results_dir": "results/setup115",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "response_only"
+}

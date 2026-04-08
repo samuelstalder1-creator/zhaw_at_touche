@@ -1,0 +1,15 @@
+{
+  "description": "Delta classifier with query (single Gemini neutral). Logistic regression over [query_emb | response_emb - gemini_emb] (1536-dim). Adds the query embedding to the setup103 residual to test whether topic context sharpens the delta signal. Direct ablation: compare against setup103 (delta only, no query) and setup6 (BERT with query, no delta) to isolate each contribution. Frozen encoder, no fine-tuning.",
+  "trainer_type": "query_residual_classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "query_field": "query",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

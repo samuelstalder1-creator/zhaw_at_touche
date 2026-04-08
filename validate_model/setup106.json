@@ -1,0 +1,19 @@
+{
+  "description": "Validation preset for the setup106 sentence-delta classifier (Hungarian matching, Gemini). Scoring backend: sentence_delta_classifier.",
+  "scoring_backend": "sentence_delta_classifier",
+  "model_dir": "models/setup106",
+  "results_dir": "results/setup106",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

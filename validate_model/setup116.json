@@ -1,0 +1,16 @@
+{
+  "description": "Validation preset for the setup116 dual-neutral prompted classifier (query + Gemini neutral + Qwen neutral + response).",
+  "model_dir": "models/setup116",
+  "results_dir": "results/setup116",
+  "max_length": 1536,
+  "batch_size": 2,
+  "input_format": "query_dual_neutral_response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "reference_label_1": "GEMINI",
+  "reference_label_2": "QWEN",
+  "pad_to_max_length": true,
+  "aux_input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ]
+}

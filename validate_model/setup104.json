@@ -1,0 +1,19 @@
+{
+  "description": "Validation preset for the setup104 full embedding classifier ([response_emb | neutral_emb | delta], Gemini). Scoring backend: embedding_classifier.",
+  "scoring_backend": "embedding_classifier",
+  "model_dir": "models/setup104",
+  "results_dir": "results/setup104",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

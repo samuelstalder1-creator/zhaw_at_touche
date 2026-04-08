@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the DeBERTa-v3 setup8 model (query + response, stabilized). Note: committed run collapsed to all-positive — rerun before trusting results.",
+  "model_dir": "models/setup8",
+  "results_dir": "results/setup8",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

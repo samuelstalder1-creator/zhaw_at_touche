@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the RoBERTa setup6 baseline (query + response, no neutral).",
+  "model_dir": "models/setup6",
+  "results_dir": "results/setup6",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

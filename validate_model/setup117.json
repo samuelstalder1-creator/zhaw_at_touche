@@ -1,0 +1,21 @@
+{
+  "description": "Validation preset for the setup117 query + delta classifier ([query_emb | delta_gemini], 1536-dim). Scoring backend: query_residual_classifier.",
+  "scoring_backend": "query_residual_classifier",
+  "model_dir": "models/setup117",
+  "results_dir": "results/setup117",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "query_field": "query",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

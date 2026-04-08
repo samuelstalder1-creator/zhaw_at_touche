@@ -1,0 +1,17 @@
+{
+  "description": "Response-only fine-tuned classifier. The model sees only the response text with no query and no neutral reference. Isolates how much the query contributes to the classifier family: compare against setup6 (query + response) to measure the query's contribution, and against setup103 (delta, no query) to compare classifier vs delta on the same minimal input. Backbone: roberta-base for consistency with setup6.",
+  "trainer_type": "classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "FacebookAI/roberta-base",
+  "input_format": "response_only",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "weight_decay": 0.01,
+  "device": "cuda"
+}

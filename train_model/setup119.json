@@ -1,0 +1,13 @@
+{
+  "description": "Qwen-only residual classifier. Logistic regression on (response_emb - qwen_emb) (768-dim). Direct Qwen-provider counterpart to setup103 (Gemini). Needed to separate provider quality from dual-provider effect: if setup103 (Gemini) and setup119 (Qwen) perform similarly, the two providers are interchangeable in the delta space; if one is stronger, that provider should be preferred in setup113/114. Frozen encoder, no fine-tuning.",
+  "trainer_type": "embedding_residual_classifier",
+  "train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}
