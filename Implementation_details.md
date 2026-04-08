@@ -19,9 +19,9 @@
   - `src/zhaw_at_touche/cli/anchor_distance_classifier.py`
   - `src/zhaw_at_touche/anchor_distance_threshold.py`
   - `src/zhaw_at_touche/cli/anchor_distance_threshold.py`
-- Pairwise distance analysis:
-  - `src/zhaw_at_touche/pairwise_distance.py`
-  - `src/zhaw_at_touche/cli/pairwise_distances.py`
+- Learned embedding-feature backends:
+  - `src/zhaw_at_touche/embedding_lr_classifier.py`
+  - `src/zhaw_at_touche/cli/embedding_lr_classifier.py`
 - Evaluation summaries:
   - `src/zhaw_at_touche/evaluation_utils.py`
   - `src/zhaw_at_touche/cli/evaluation_matrix.py`
@@ -47,20 +47,21 @@
 ### Fully supported by the current CLI
 
 - Classifier setups: `setup4`, `setup6`, `setup6-qwen`, `setup7`,
-  `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
+  `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`,
+  `setup115`, `setup116`
+- Cross-encoder setups: `setup105`, `setup105_1`
+- Learned embedding-feature setups: `setup103`, `setup104`, `setup113`,
+  `setup114`, `setup117`, `setup118`, `setup119`
 - Embedding-divergence setups: `setup100`, `setup101`, `setup102`
-- Anchor-distance setups: `setup110`, `setup111`
+- Scalar anchor setups: `setup110`, `setup111`
 
-### Documented but archived
+### Documented but not currently wired end-to-end
 
-- `setup103`, `setup104`, `setup105`, `setup106`
+- `setup106`
 
-Those archived setup descriptors remain in `train_model/` because they explain
-historical experiments and some committed result directories, but the current
-`touche-train` parser only accepts `trainer_type=classifier`,
-`trainer_type=embedding_divergence`, and
-`trainer_type=anchor_distance_classifier`, and
-`trainer_type=anchor_distance_threshold`.
+That sentence-delta descriptor remains in `train_model/` because it explains a
+historical experiment and committed result directory, but the current
+`touche-train` parser does not expose a sentence-delta backend.
 
 ## CLI Defaults
 
@@ -82,6 +83,8 @@ historical experiments and some committed result directories, but the current
   `training_metrics.jsonl`, and optional W&B run files.
 - Embedding-divergence runs write `embedding_state.json` plus
   `training_summary.json`.
+- Learned embedding-feature runs write `embedding_lr_classifier.pkl`,
+  `embedding_state.json`, and `training_summary.json`.
 - Anchor-distance runs write `anchor_distance_classifier.pkl`,
   `embedding_state.json`, and `training_summary.json`.
 - Anchor-distance threshold runs write `embedding_state.json` and
@@ -93,23 +96,19 @@ historical experiments and some committed result directories, but the current
   standardized CSV exports, and misclassification exports.
 - Delegates `setup100` to `setup102` to the embedding-divergence backend when
   the validation preset sets `scoring_backend=embedding_divergence`.
+- Delegates `setup103`, `setup104`, `setup113`, `setup114`, `setup117`,
+  `setup118`, and `setup119` to the embedding-LR backend when the validation
+  preset sets the matching learned-feature scoring backend.
 - Delegates `setup110` to the anchor-distance backend when the validation
   preset sets `scoring_backend=anchor_distance_classifier`.
 - Delegates `setup111` to the handcrafted anchor-distance backend when the
   validation preset sets `scoring_backend=anchor_distance_threshold`.
 
-### `touche-pairwise-distances`
-
-- Merges one or more JSONL files by `id`.
-- Computes response-level or sentence-level embedding distances for explicit
-  field pairs.
-- Writes JSONL, CSV, and summary JSON outputs under the chosen results
-  directory.
-
 ## Key Setup Concepts
 
-- Prompt shape: `query_response`, `query_neutral_response`,
-  `query_reference_rag_response`
+- Prompt shape: `response_only`, `query_response`,
+  `query_neutral_response`, `query_dual_neutral_response`,
+  `query_reference_rag_response`, `cross_encoder`
 - Provider-specific neutral field: `gemini25flashlite` versus `qwen`
 - Optimization controls: scheduler, warmup, weight decay, gradient clipping,
   layerwise LR decay, temporary embedding freezing

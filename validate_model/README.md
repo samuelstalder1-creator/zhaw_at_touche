@@ -35,6 +35,10 @@ overrides.
 - `input_format`
 - `reference_field`
 - `reference_label`
+- `aux_reference_field`
+- `aux_reference_label`
+- `reference_label_1`
+- `reference_label_2`
 - `pad_to_max_length`
 - `max_length`
 - `batch_size`
@@ -64,15 +68,24 @@ overrides.
 | `setup10` | ALBERT validation | plain classifier path |
 | `setup11` | ELECTRA validation | plain classifier path |
 | `setup12` | DistilRoBERTa validation | plain classifier path |
+| `setup115` | response-only classifier validation | plain classifier path with no query and no neutral |
+| `setup116` | dual-neutral prompted classifier validation | plain classifier path with paired Gemini + Qwen files |
 | `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
+| `setup103`, `setup104`, `setup117`, `setup119` | learned embedding-feature validation | delegates to the embedding-LR backend |
+| `setup113`, `setup114`, `setup118` | dual-file learned embedding-feature validation | delegates to the embedding-LR backend and merges Gemini + Qwen rows by `id` |
 | `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
 | `setup111` | anchor-distance threshold validation | delegates to the handcrafted anchor-distance backend and merges Gemini + Qwen rows by `id` |
 
 `setup6` and `setup8` do not need dedicated validation JSON files. They still
 validate correctly through the default `models/<setup-name>/` and
 `results/<setup-name>/` resolution path.
+
+Historical descriptors still present in `validate_model/`:
+
+- `setup105_1`
+- `setup106`
 
 ## Common Commands
 
@@ -89,6 +102,8 @@ uv run touche-validate --setup-name setup12
 uv run touche-validate --setup-name setup4
 uv run touche-validate --setup-name setup7
 uv run touche-validate --setup-name setup7-qwen
+uv run touche-validate --setup-name setup115
+uv run touche-validate --setup-name setup116
 ```
 
 ### Provider-specific evaluation on Qwen-generated files
@@ -124,6 +139,23 @@ validator reuses the saved `embedding_state.json` threshold when it exists and
 only recalibrates on validation data if no saved or manual threshold is
 available.
 
+### Learned embedding-feature validation
+
+```bash
+uv run touche-train --setup-name setup103
+uv run touche-validate --setup-name setup103
+
+uv run touche-train --setup-name setup113
+uv run touche-validate --setup-name setup113
+
+uv run touche-train --setup-name setup118
+uv run touche-validate --setup-name setup118
+```
+
+These presets delegate to the embedding-LR backend automatically. Single-file
+variants read one generated JSONL source. Dual-file variants merge paired
+Gemini and Qwen files by `id` before embedding and scoring.
+
 ### Anchor-distance validation
 
 ```bash
@@ -135,7 +167,7 @@ uv run touche-validate --setup-name setup111
 ```
 
 These presets merge the Gemini and Qwen files by `id` and compute the same six
-pairwise response-level distances. `setup110` applies the saved
+response-level cosine distances. `setup110` applies the saved
 logistic-regression bundle plus calibrated threshold from `models/setup110/`.
 `setup111` uses the handcrafted score `response_drift - anchor_cohesion` and
 reuses the calibrated threshold from `models/setup111/`.

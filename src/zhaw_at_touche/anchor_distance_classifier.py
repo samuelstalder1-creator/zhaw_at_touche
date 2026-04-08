@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +21,7 @@ from .embedding_divergence import (
     load_embedding_model,
 )
 from .evaluation_utils import metrics_dict
-from .pairwise_distance import merge_jsonl_records_by_id
+from .jsonl import read_jsonl
 
 CLASSIFIER_BUNDLE_FILENAME = "anchor_distance_classifier.pkl"
 
@@ -92,6 +93,46 @@ def feature_pairs(
 
 def pair_feature_name(left_field: str, right_field: str) -> str:
     return f"{left_field}__{right_field}_distance"
+
+
+def _is_missing(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, float):
+        return math.isnan(value)
+    return False
+
+
+def merge_jsonl_records_by_id(input_paths: Sequence[Path]) -> list[dict[str, Any]]:
+    merged_by_id: dict[str, dict[str, Any]] = {}
+    record_order: list[str] = []
+
+    for path in input_paths:
+        for row in read_jsonl(path):
+            record_id = row.get("id")
+            if not isinstance(record_id, str) or not record_id.strip():
+                raise ValueError(f"Every input row must contain a non-empty string 'id' field: {path}")
+
+            if record_id not in merged_by_id:
+                merged_by_id[record_id] = dict(row)
+                record_order.append(record_id)
+                continue
+
+            merged_row = merged_by_id[record_id]
+            for key, incoming_value in row.items():
+                if key not in merged_row or _is_missing(merged_row[key]):
+                    merged_row[key] = incoming_value
+                    continue
+                if _is_missing(incoming_value):
+                    continue
+                if merged_row[key] != incoming_value:
+                    raise ValueError(
+                        f"Conflicting values for id='{record_id}', field='{key}' while merging {path}."
+                    )
+
+    return [merged_by_id[record_id] for record_id in record_order]
 
 
 def _require_text_field(record: dict[str, Any], field_name: str) -> str:

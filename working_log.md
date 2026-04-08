@@ -5,7 +5,7 @@
 - Reviewed the Touché 2025 task framing and the repository experiment history.
 - Unified the workflow into one `uv`-managed Python package with shared CLI
   tooling for preprocessing, generation, training, validation, inference,
-  overlap checks, results summaries, and pairwise field-distance analysis.
+  overlap checks, and results summaries.
 - Standardized the repository structure around `data/`, `train_model/`,
   `validate_model/`, `models/`, `results/`, and `src/zhaw_at_touche/`.
 - Implemented preprocessing plus neutral-response generation for Gemini and a
@@ -13,13 +13,14 @@
 - Implemented reusable setup loading for training and validation.
 - Expanded the classifier family across RoBERTa, Longformer, DeBERTa-v3,
   ALBERT, ELECTRA, and DistilRoBERTa experiments.
+- Added `setup115` (response-only RoBERTa) and `setup116` (dual-neutral
+  Longformer) to complete the classifier-side ablation matrix.
 - Added semantic-drift baselines `setup100`, `setup101`, and `setup102`.
-- Added multi-anchor embedding baseline `setup110` (logistic regression on 6
+- Activated learned embedding-feature backends for `setup103`, `setup104`,
+  `setup113`, `setup114`, `setup117`, `setup118`, and `setup119`.
+- Added scalar multi-anchor baseline `setup110` (logistic regression on 6
   cosine scalars from Gemini + Qwen neutrals).
-- Preserved archived experiment descriptors `setup103` to `setup106` plus the
-  committed `setup103` and `setup104` result artifacts.
-- Added pairwise distance tooling to compare fields such as `response`,
-  `gemini25flashlite`, and `qwen`.
+- Kept `setup106` as the remaining descriptor-only historical experiment.
 - Analysed `setup105` collapse: all-positive predictions caused by DeBERTa-v3
   instability and a missing `validate_model/setup105.json` that caused the
   cross-encoder to be evaluated with the wrong input format.
@@ -31,6 +32,11 @@
 - Added `setup113` (dual residual: `[delta_gemini | delta_qwen]`) and
   `setup114` (full dual stack: `[R | G | Q | delta_G | delta_Q]`) as
   dual-provider extensions of `setup103` and `setup104`.
+- Added `setup117` and `setup118` to test whether query embeddings sharpen the
+  learned delta signal, plus `setup119` as the Qwen-only residual counterpart
+  to `setup103`.
+- Removed the standalone pairwise-distance tooling and kept only the shared
+  JSONL merge helper used by the multi-file embedding backends.
 - Simplified `results.md` to Macro F1 + confusion matrix only; added newly
   committed results for `setup7-qwen`, `setup106`, `setup110`, and `setup105`.
 - Rewrote `setup.md` around experiment families and the core research questions
@@ -42,6 +48,8 @@
   `query_response` classifiers (`setup6`)? Setup7 has no committed results.
 - Does the cross-encoder (`setup105_1`) outperform bi-encoder family 3 setups
   (`setup103`, `setup104`) when trained on a stable backbone?
+- Does adding the query to the learned embedding-feature family (`setup117`,
+  `setup118`) help once the delta vector is already available?
 - Do dual-provider neutrals (`setup113`, `setup114`) improve over single-provider
   residuals (`setup103`, `setup104`)?
 - Is DeBERTa-v3 actually better than RoBERTa for this task once training is
@@ -49,10 +57,11 @@
 
 ## Future TODOs
 
-- Implement training backends for `dual_residual_classifier` (setup113),
-  `dual_embedding_classifier` (setup114), and `cross_encoder` (setup105_1).
-- Run `setup105_1`, `setup113`, `setup114` and commit results.
-- Run remaining uncommitted classifier setups: `setup4`, `setup7`, `setup9`, `setup11`.
+- Run and commit the remaining active setups: `setup4`, `setup7`, `setup9`,
+  `setup11`, `setup114`, `setup115`, `setup116`, `setup117`, `setup118`,
+  `setup119`.
+- Compare matched ablations for the research question rather than only headline
+  best-model results.
 - Archive final submission-ready model bundles and validation artifacts.
 - Build and smoke-test the final container or deployment packaging for the
   Touché hand-in.

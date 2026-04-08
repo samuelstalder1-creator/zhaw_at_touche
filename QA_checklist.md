@@ -17,13 +17,17 @@
 
 - The repo now treats `setup.md` as the canonical setup reference.
 - Documentation now explicitly distinguishes between currently supported setup
-  families and archived experimental descriptors.
+  families and the remaining descriptor-only sentence-delta experiment.
 - Current runnable training families are:
   - classifier: `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`,
-    `setup8`, `setup9`, `setup10`, `setup11`, `setup12`
+    `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`,
+    `setup116`
+  - cross-encoder: `setup105`, `setup105_1`
+  - learned embedding features: `setup103`, `setup104`, `setup113`,
+    `setup114`, `setup117`, `setup118`, `setup119`
   - embedding divergence: `setup100`, `setup101`, `setup102`
-  - anchor distance: `setup110`, `setup111`
-- Archived setup descriptors still documented in the repo:
-  - `setup103`, `setup104`, `setup105`, `setup106`
+  - scalar anchor: `setup110`, `setup111`
+- Descriptor still documented in the repo:
+  - `setup106`
 - Full integration testing still depends on a synced `uv` environment plus
   model and API access.
