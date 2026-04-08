@@ -5,11 +5,14 @@
   "max_length": 1536,
   "batch_size": 2,
   "input_format": "query_dual_neutral_response",
-  "neutral_field": "gemini25flashlite",
-  "aux_neutral_field": "qwen",
-  "reference_label_1": "GEMINI",
-  "reference_label_2": "QWEN",
+  "reference_field": "gemini25flashlite",
+  "reference_label": "GEMINI",
+  "aux_reference_field": "qwen",
+  "aux_reference_label": "QWEN",
   "pad_to_max_length": true,
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
   "aux_input_files": [
     "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
   ]

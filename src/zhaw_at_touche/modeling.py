@@ -18,7 +18,15 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 
-from .datasets import DEFAULT_INPUT_FORMAT, build_model_input
+from .datasets import (
+    CROSS_ENCODER_INPUT_FORMAT,
+    DEFAULT_INPUT_FORMAT,
+    DUAL_NEUTRAL_INPUT_FORMAT,
+    RESPONSE_ONLY_INPUT_FORMAT,
+    build_model_input,
+)
+
+_FORMATS_WITHOUT_REFERENCE = (RESPONSE_ONLY_INPUT_FORMAT,)
 from .evaluation_utils import metrics_dict, validation_metrics_payload
 from .jsonl import append_jsonl, read_jsonl
 
@@ -122,9 +130,12 @@ class TrainingConfig:
     input_format: str = DEFAULT_INPUT_FORMAT
     reference_field: str | None = None
     reference_label: str = "GEMINI"
+    aux_reference_field: str | None = None
+    aux_reference_label: str = "QWEN"
     pad_to_max_length: bool = False
     positive_class_weight_scale: float = 2.0
     validation_path: Path | None = None
+    aux_validation_path: Path | None = None
     wandb_enabled: bool = True
     wandb_project: str | None = "zhaw-at-touche-training"
     wandb_dir: Path | None = None
@@ -149,6 +160,8 @@ def record_input_text(
     input_format: str,
     reference_field: str | None,
     reference_label: str,
+    aux_reference_field: str | None = None,
+    aux_reference_label: str = "QWEN",
 ) -> str:
     query = record.get("query")
     response = record.get(text_key)
@@ -160,7 +173,8 @@ def record_input_text(
         )
 
     reference_response: str | None = None
-    if input_format != DEFAULT_INPUT_FORMAT:
+    needs_reference = input_format not in _FORMATS_WITHOUT_REFERENCE and input_format != DEFAULT_INPUT_FORMAT
+    if needs_reference:
         if not reference_field:
             raise ValueError(f"Input format '{input_format}' requires a reference field.")
         reference_value = record.get(reference_field)
@@ -170,12 +184,23 @@ def record_input_text(
             )
         reference_response = reference_value
 
+    aux_reference_response: str | None = None
+    if input_format == DUAL_NEUTRAL_INPUT_FORMAT and aux_reference_field:
+        aux_value = record.get(aux_reference_field)
+        if not isinstance(aux_value, str) or not aux_value.strip():
+            raise ValueError(
+                f"Record {record.get('id', '<unknown>')} is missing a valid '{aux_reference_field}' field."
+            )
+        aux_reference_response = aux_value
+
     return build_model_input(
         query,
         response,
         input_format=input_format,
         reference_response=reference_response,
         reference_label=reference_label,
+        aux_reference_response=aux_reference_response,
+        aux_reference_label=aux_reference_label,
     )
 
 
@@ -189,6 +214,8 @@ class InstructionCollator:
         reference_field: str | None = None,
         reference_label: str = "GEMINI",
         pad_to_max_length: bool = False,
+        aux_reference_field: str | None = None,
+        aux_reference_label: str = "QWEN",
     ):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -197,6 +224,8 @@ class InstructionCollator:
         self.reference_field = reference_field
         self.reference_label = reference_label
         self.pad_to_max_length = pad_to_max_length
+        self.aux_reference_field = aux_reference_field
+        self.aux_reference_label = aux_reference_label
 
     def __call__(self, batch: list[dict[str, Any]]) -> dict[str, Any]:
         texts: list[str] = []
@@ -208,6 +237,8 @@ class InstructionCollator:
                     input_format=self.input_format,
                     reference_field=self.reference_field,
                     reference_label=self.reference_label,
+                    aux_reference_field=self.aux_reference_field,
+                    aux_reference_label=self.aux_reference_label,
                 )
             )
 
@@ -351,6 +382,8 @@ def evaluate_records(
     reference_label: str,
     pad_to_max_length: bool,
     loss_function,
+    aux_reference_field: str | None = None,
+    aux_reference_label: str = "QWEN",
 ) -> dict[str, float | int | dict[str, Any] | None]:
     if not records:
         raise ValueError("Validation records must not be empty.")
@@ -363,6 +396,8 @@ def evaluate_records(
         reference_field=reference_field,
         reference_label=reference_label,
         pad_to_max_length=pad_to_max_length,
+        aux_reference_field=aux_reference_field,
+        aux_reference_label=aux_reference_label,
     )
     loader = DataLoader(
         list(records),
@@ -515,6 +550,8 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         reference_field=config.reference_field,
         reference_label=config.reference_label,
         pad_to_max_length=config.pad_to_max_length,
+        aux_reference_field=config.aux_reference_field,
+        aux_reference_label=config.aux_reference_label,
     )
     train_loader = DataLoader(
         train_dataset,
@@ -840,6 +877,8 @@ def predict_with_bundle(
     input_format: str = DEFAULT_INPUT_FORMAT,
     reference_field: str | None = None,
     reference_label: str = "GEMINI",
+    aux_reference_field: str | None = None,
+    aux_reference_label: str = "QWEN",
     pad_to_max_length: bool = False,
 ) -> list[Prediction]:
     if batch_size < 1:
@@ -856,6 +895,8 @@ def predict_with_bundle(
                     input_format=input_format,
                     reference_field=reference_field,
                     reference_label=reference_label,
+                    aux_reference_field=aux_reference_field,
+                    aux_reference_label=aux_reference_label,
                 )
                 for record in batch
             ]

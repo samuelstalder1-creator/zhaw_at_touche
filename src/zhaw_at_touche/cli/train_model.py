@@ -56,6 +56,7 @@ def base_defaults() -> dict[str, object]:
         "input_format": DEFAULT_INPUT_FORMAT,
         "reference_field": None,
         "reference_label": "GEMINI",
+        "aux_reference_label": "QWEN",
         "pad_to_max_length": False,
         "positive_class_weight_scale": 2.0,
         "validation_file": str(resolve_default_validation_path()) if resolve_default_validation_path() else None,
@@ -86,9 +87,16 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         "--trainer-type",
         choices=(
             "classifier",
+            "cross_encoder",
             "embedding_divergence",
             "anchor_distance_classifier",
             "anchor_distance_threshold",
+            "embedding_residual_classifier",
+            "embedding_classifier",
+            "query_residual_classifier",
+            "dual_residual_classifier",
+            "dual_embedding_classifier",
+            "query_dual_residual_classifier",
         ),
         default=defaults["trainer_type"],
         help="Training backend selected by the setup.",
@@ -179,6 +187,11 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         "--reference-label",
         default=defaults["reference_label"],
         help="Label text rendered in reference-aware input formats.",
+    )
+    parser.add_argument(
+        "--aux-reference-label",
+        default=defaults["aux_reference_label"],
+        help="Label text rendered for the secondary reference in dual-neutral input formats.",
     )
     parser.add_argument(
         "--pad-to-max-length",
@@ -289,10 +302,14 @@ def main() -> None:
         AnchorDistanceThresholdTrainingConfig,
         train_anchor_distance_threshold,
     )
+    import json
+    import tempfile
+    from zhaw_at_touche.datasets import CROSS_ENCODER_INPUT_FORMAT, DUAL_NEUTRAL_INPUT_FORMAT
     from zhaw_at_touche.embedding_divergence import (
         EmbeddingDivergenceTrainingConfig,
         train_embedding_divergence,
     )
+    from zhaw_at_touche.embedding_lr_classifier import EmbeddingLRConfig, train_embedding_lr_classifier
     from zhaw_at_touche.modeling import TrainingConfig, resolve_device, train_model
 
     args = parse_args()
@@ -353,6 +370,70 @@ def main() -> None:
         print(f"trained anchor-distance classifier state saved to {model_dir}")
         print(f"training rows: {summary['train_rows']}")
         return
+    if args.trainer_type in {
+        "embedding_residual_classifier",
+        "embedding_classifier",
+        "query_residual_classifier",
+        "dual_residual_classifier",
+        "dual_embedding_classifier",
+        "query_dual_residual_classifier",
+    }:
+        config = EmbeddingLRConfig(
+            trainer_type=args.trainer_type,
+            embedding_model_name=args.model_name,
+            train_path=Path(args.train_file),
+            aux_train_path=Path(args.aux_train_file) if args.aux_train_file else None,
+            output_dir=model_dir,
+            max_length=args.max_length,
+            batch_size=args.batch_size,
+            device=resolve_device(args.device),
+            response_field=args.response_field,
+            neutral_field=args.neutral_field,
+            aux_neutral_field=args.aux_neutral_field if args.aux_neutral_field else None,
+            query_field=args.query_field,
+            threshold_metric=args.threshold_metric,
+            validation_path=Path(args.validation_file) if args.validation_file else None,
+            aux_validation_path=Path(args.aux_validation_file) if args.aux_validation_file else None,
+        )
+        summary = train_embedding_lr_classifier(config)
+        print(f"trained {args.trainer_type} state saved to {model_dir}")
+        print(f"training rows: {summary['train_rows']}")
+        return
+    if args.trainer_type == "cross_encoder":
+        config = TrainingConfig(
+            model_name=args.model_name,
+            train_path=Path(args.train_file),
+            output_dir=model_dir,
+            max_length=args.max_length,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_accum,
+            learning_rate=args.learning_rate,
+            optimizer_eps=args.optimizer_eps,
+            weight_decay=args.weight_decay,
+            lr_scheduler=args.lr_scheduler,
+            warmup_ratio=args.warmup_ratio,
+            max_grad_norm=args.max_grad_norm,
+            gradient_checkpointing=args.gradient_checkpointing,
+            layerwise_lr_decay=args.layerwise_lr_decay,
+            freeze_embeddings_epochs=args.freeze_embeddings_epochs,
+            device=resolve_device(args.device),
+            max_train_rows=args.max_train_rows,
+            input_format=CROSS_ENCODER_INPUT_FORMAT,
+            reference_field=args.neutral_field,
+            reference_label=args.reference_label,
+            pad_to_max_length=args.pad_to_max_length,
+            positive_class_weight_scale=args.positive_class_weight_scale,
+            validation_path=Path(args.validation_file) if args.validation_file else None,
+            wandb_enabled=args.wandb,
+            wandb_project=args.wandb_project,
+            wandb_dir=Path(args.wandb_dir) if args.wandb_dir else None,
+            wandb_run_name=args.wandb_run_name or args.setup_name,
+        )
+        summary = train_model(config)
+        print(f"trained cross-encoder saved to {model_dir}")
+        print(f"training rows: {summary['train_rows']}")
+        return
     if args.trainer_type == "embedding_divergence":
         config = EmbeddingDivergenceTrainingConfig(
             embedding_model_name=args.model_name,
@@ -373,37 +454,85 @@ def main() -> None:
         print(f"training rows: {summary['train_rows']}")
         return
 
-    config = TrainingConfig(
-        model_name=args.model_name,
-        train_path=Path(args.train_file),
-        output_dir=model_dir,
-        max_length=args.max_length,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        grad_accum=args.grad_accum,
-        learning_rate=args.learning_rate,
-        optimizer_eps=args.optimizer_eps,
-        weight_decay=args.weight_decay,
-        lr_scheduler=args.lr_scheduler,
-        warmup_ratio=args.warmup_ratio,
-        max_grad_norm=args.max_grad_norm,
-        gradient_checkpointing=args.gradient_checkpointing,
-        layerwise_lr_decay=args.layerwise_lr_decay,
-        freeze_embeddings_epochs=args.freeze_embeddings_epochs,
-        device=resolve_device(args.device),
-        max_train_rows=args.max_train_rows,
-        input_format=args.input_format,
-        reference_field=args.reference_field,
-        reference_label=args.reference_label,
-        pad_to_max_length=args.pad_to_max_length,
-        positive_class_weight_scale=args.positive_class_weight_scale,
-        validation_path=Path(args.validation_file) if args.validation_file else None,
-        wandb_enabled=args.wandb,
-        wandb_project=args.wandb_project,
-        wandb_dir=Path(args.wandb_dir) if args.wandb_dir else None,
-        wandb_run_name=args.wandb_run_name or args.setup_name,
-    )
-    summary = train_model(config)
+    # For dual-neutral format, merge primary and auxiliary JSONL files by id
+    # so each record has both neutral fields available to the collator.
+    train_path = Path(args.train_file)
+    validation_path = Path(args.validation_file) if args.validation_file else None
+    aux_reference_field: str | None = None
+    aux_reference_label: str = "QWEN"
+    _tmp_train = None
+    _tmp_val = None
+    if args.input_format == DUAL_NEUTRAL_INPUT_FORMAT:
+        from zhaw_at_touche.anchor_distance_classifier import load_merged_records
+        if not args.aux_train_file:
+            raise ValueError("query_dual_neutral_response requires --aux-train-file.")
+        if args.validation_file and not args.aux_validation_file:
+            raise ValueError(
+                "query_dual_neutral_response requires --aux-validation-file when --validation-file is set."
+            )
+        merged_train = load_merged_records(Path(args.train_file), Path(args.aux_train_file))
+        _tmp_train = tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False, encoding="utf-8")
+        for record in merged_train:
+            _tmp_train.write(json.dumps(record) + "\n")
+        _tmp_train.flush()
+        train_path = Path(_tmp_train.name)
+        if args.validation_file and args.aux_validation_file:
+            merged_val = load_merged_records(Path(args.validation_file), Path(args.aux_validation_file))
+            _tmp_val = tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False, encoding="utf-8")
+            for record in merged_val:
+                _tmp_val.write(json.dumps(record) + "\n")
+            _tmp_val.flush()
+            validation_path = Path(_tmp_val.name)
+        aux_reference_field = args.aux_neutral_field
+        aux_reference_label = args.aux_reference_label
+
+    # For dual-neutral format, reference_field should fall back to neutral_field
+    # (the Gemini neutral) when reference_field is not explicitly set.
+    effective_reference_field = args.reference_field
+    if args.input_format == DUAL_NEUTRAL_INPUT_FORMAT and not effective_reference_field:
+        effective_reference_field = args.neutral_field
+
+    try:
+        config = TrainingConfig(
+            model_name=args.model_name,
+            train_path=train_path,
+            output_dir=model_dir,
+            max_length=args.max_length,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_accum,
+            learning_rate=args.learning_rate,
+            optimizer_eps=args.optimizer_eps,
+            weight_decay=args.weight_decay,
+            lr_scheduler=args.lr_scheduler,
+            warmup_ratio=args.warmup_ratio,
+            max_grad_norm=args.max_grad_norm,
+            gradient_checkpointing=args.gradient_checkpointing,
+            layerwise_lr_decay=args.layerwise_lr_decay,
+            freeze_embeddings_epochs=args.freeze_embeddings_epochs,
+            device=resolve_device(args.device),
+            max_train_rows=args.max_train_rows,
+            input_format=args.input_format,
+            reference_field=effective_reference_field,
+            reference_label=args.reference_label,
+            aux_reference_field=aux_reference_field,
+            aux_reference_label=aux_reference_label,
+            pad_to_max_length=args.pad_to_max_length,
+            positive_class_weight_scale=args.positive_class_weight_scale,
+            validation_path=validation_path,
+            wandb_enabled=args.wandb,
+            wandb_project=args.wandb_project,
+            wandb_dir=Path(args.wandb_dir) if args.wandb_dir else None,
+            wandb_run_name=args.wandb_run_name or args.setup_name,
+        )
+        summary = train_model(config)
+    finally:
+        if _tmp_train is not None:
+            _tmp_train.close()
+            Path(_tmp_train.name).unlink(missing_ok=True)
+        if _tmp_val is not None:
+            _tmp_val.close()
+            Path(_tmp_val.name).unlink(missing_ok=True)
     print(f"trained model saved to {model_dir}")
     print(f"training rows: {summary['train_rows']}")
     print(f"device: {summary['device']}")

@@ -103,6 +103,9 @@ def base_defaults() -> dict[str, object]:
         "input_format": DEFAULT_INPUT_FORMAT,
         "reference_field": None,
         "reference_label": "GEMINI",
+        "aux_reference_field": None,
+        "aux_reference_label": "QWEN",
+        "aux_input_files": None,
         "pad_to_max_length": False,
     }
 
@@ -160,6 +163,22 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         "--reference-label",
         default=defaults["reference_label"],
         help="Label text rendered in reference-aware input formats.",
+    )
+    parser.add_argument(
+        "--aux-reference-field",
+        default=defaults["aux_reference_field"],
+        help="Optional secondary reference text field for dual-neutral input formats.",
+    )
+    parser.add_argument(
+        "--aux-reference-label",
+        default=defaults["aux_reference_label"],
+        help="Label text rendered for the secondary reference in dual-neutral input formats.",
+    )
+    parser.add_argument(
+        "--aux-input-files",
+        nargs="+",
+        default=defaults["aux_input_files"],
+        help="Secondary input files merged by ID for dual-neutral input formats.",
     )
     parser.add_argument(
         "--pad-to-max-length",
@@ -276,21 +295,26 @@ def _warn_collapse(summary: dict, context: str) -> None:
 
 
 def main() -> None:
-    raw_argv = sys.argv[1:]
-    if resolve_scoring_backend(raw_argv) == "embedding_divergence":
-        from zhaw_at_touche.cli.embedding_divergence import main as embedding_divergence_main
+    from zhaw_at_touche.embedding_lr_classifier import ALL_TRAINER_TYPES as _EMBEDDING_LR_BACKENDS
 
+    raw_argv = sys.argv[1:]
+    backend = resolve_scoring_backend(raw_argv)
+
+    if backend == "embedding_divergence":
+        from zhaw_at_touche.cli.embedding_divergence import main as embedding_divergence_main
         embedding_divergence_main(raw_argv)
         return
-    if resolve_scoring_backend(raw_argv) == "anchor_distance_classifier":
+    if backend == "anchor_distance_classifier":
         from zhaw_at_touche.cli.anchor_distance_classifier import main as anchor_distance_main
-
         anchor_distance_main(raw_argv)
         return
-    if resolve_scoring_backend(raw_argv) == "anchor_distance_threshold":
+    if backend == "anchor_distance_threshold":
         from zhaw_at_touche.cli.anchor_distance_threshold import main as anchor_distance_threshold_main
-
         anchor_distance_threshold_main(raw_argv)
+        return
+    if backend in _EMBEDDING_LR_BACKENDS:
+        from zhaw_at_touche.cli.embedding_lr_classifier import main as embedding_lr_main
+        embedding_lr_main(raw_argv)
         return
 
     from zhaw_at_touche.modeling import load_model_reference, predict_with_bundle, resolve_device
@@ -308,9 +332,16 @@ def main() -> None:
     all_predicted_labels: list[int] = []
     file_summaries: dict[str, Any] = {}
 
-    for raw_path in args.input_files:
+    aux_input_files = list(args.aux_input_files or [])
+
+    for i, raw_path in enumerate(args.input_files):
         path = Path(raw_path)
-        records = list(read_jsonl(path))
+        aux_path = Path(aux_input_files[i]) if i < len(aux_input_files) else None
+        if aux_path is not None:
+            from zhaw_at_touche.anchor_distance_classifier import load_merged_records
+            records = load_merged_records(path, aux_path)
+        else:
+            records = list(read_jsonl(path))
         if not records:
             raise ValueError(f"Input file is empty: {path}")
 
@@ -329,6 +360,8 @@ def main() -> None:
             input_format=args.input_format,
             reference_field=args.reference_field,
             reference_label=args.reference_label,
+            aux_reference_field=args.aux_reference_field,
+            aux_reference_label=args.aux_reference_label,
             pad_to_max_length=args.pad_to_max_length,
         )
         generated_predictions = None
@@ -345,6 +378,8 @@ def main() -> None:
                 input_format=args.input_format,
                 reference_field=args.reference_field,
                 reference_label=args.reference_label,
+                aux_reference_field=args.aux_reference_field,
+                aux_reference_label=args.aux_reference_label,
                 pad_to_max_length=args.pad_to_max_length,
             )
 
@@ -405,6 +440,8 @@ def main() -> None:
         "input_format": args.input_format,
         "reference_field": args.reference_field,
         "reference_label": args.reference_label,
+        "aux_reference_field": args.aux_reference_field,
+        "aux_reference_label": args.aux_reference_label,
         "pad_to_max_length": args.pad_to_max_length,
         "threshold": args.threshold,
         "files": file_summaries,

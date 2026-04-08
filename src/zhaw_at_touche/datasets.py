@@ -21,10 +21,16 @@ WHITESPACE_RE = re.compile(r"\s+")
 DEFAULT_INPUT_FORMAT = "query_response"
 NEUTRAL_REFERENCE_INPUT_FORMAT = "query_neutral_response"
 RAG_REFERENCE_INPUT_FORMAT = "query_reference_rag_response"
+RESPONSE_ONLY_INPUT_FORMAT = "response_only"
+CROSS_ENCODER_INPUT_FORMAT = "cross_encoder"
+DUAL_NEUTRAL_INPUT_FORMAT = "query_dual_neutral_response"
 SUPPORTED_INPUT_FORMATS = (
     DEFAULT_INPUT_FORMAT,
     NEUTRAL_REFERENCE_INPUT_FORMAT,
     RAG_REFERENCE_INPUT_FORMAT,
+    RESPONSE_ONLY_INPUT_FORMAT,
+    CROSS_ENCODER_INPUT_FORMAT,
+    DUAL_NEUTRAL_INPUT_FORMAT,
 )
 
 
@@ -107,14 +113,35 @@ def build_model_input(
     input_format: str = DEFAULT_INPUT_FORMAT,
     reference_response: str | None = None,
     reference_label: str = "GEMINI",
+    aux_reference_response: str | None = None,
+    aux_reference_label: str = "QWEN",
 ) -> str:
     if input_format == DEFAULT_INPUT_FORMAT:
         return f"Query: {query}\nResponse: {response}\nAnswer:"
+    if input_format == RESPONSE_ONLY_INPUT_FORMAT:
+        return f"Response: {response}\nAnswer:"
+    if input_format == CROSS_ENCODER_INPUT_FORMAT:
+        neutral_reference = reference_response or ""
+        return (
+            f"Response: {response}\n\n"
+            f"Neutral Reference: {neutral_reference}\n\n"
+            "Classify:"
+        )
     if input_format == NEUTRAL_REFERENCE_INPUT_FORMAT:
         neutral_reference = reference_response or ""
         return (
             f"USER QUERY: {query}\n\n"
             f"NEUTRAL REFERENCE ({reference_label}): {neutral_reference}\n\n"
+            f"RESPONSE TO CLASSIFY: {response}\n\n"
+            "LABEL THIS AS AD OR NEUTRAL:"
+        )
+    if input_format == DUAL_NEUTRAL_INPUT_FORMAT:
+        neutral1 = reference_response or ""
+        neutral2 = aux_reference_response or ""
+        return (
+            f"USER QUERY: {query}\n\n"
+            f"NEUTRAL REFERENCE 1 ({reference_label}): {neutral1}\n\n"
+            f"NEUTRAL REFERENCE 2 ({aux_reference_label}): {neutral2}\n\n"
             f"RESPONSE TO CLASSIFY: {response}\n\n"
             "LABEL THIS AS AD OR NEUTRAL:"
         )

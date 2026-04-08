@@ -8,6 +8,7 @@ DEFAULT_TRAINING_SETUPS_DIR = Path("train_model")
 
 ALLOWED_SETUP_FIELDS = {
     "aux_neutral_field",
+    "aux_reference_label",
     "aux_train_file",
     "aux_validation_file",
     "batch_size",
@@ -33,6 +34,8 @@ ALLOWED_SETUP_FIELDS = {
     "query_field",
     "reference_field",
     "reference_label",
+    "reference_label_1",
+    "reference_label_2",
     "response_field",
     "score_granularity",
     "sentence_agg",
