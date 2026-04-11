@@ -9,6 +9,7 @@ The repository currently contains committed result artifacts for:
 
 - `results/setup6/`
 - `results/setup6-qwen/`
+- `results/setup7/`
 - `results/setup7-qwen/`
 - `results/setup8/`
 - `results/setup10/`
@@ -26,6 +27,7 @@ The repository currently contains committed result artifacts for:
 - `results/setup113/`
 - `results/setup114/`
 - `results/setup115/`
+- `results/setup116/`
 - `results/setup117/`
 - `results/setup118/`
 - `results/setup119/`

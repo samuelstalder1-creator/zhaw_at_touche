@@ -18,8 +18,8 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 | response | setup115 ✓ |
 | query + response | setup6 ✓, setup12 ✓ |
 | response + 1 neutral (joint cross-encoder) | setup105_1 ✓ |
-| query + response + 1 neutral | setup7-qwen ✓, setup7 (run pending) |
-| query + response + 2 neutrals | setup116 (run pending) |
+| query + response + 1 neutral | setup7 ✓, setup7-qwen ✓ |
+| query + response + 2 neutrals | setup116 ✓ |
 
 ### Delta models
 
@@ -37,7 +37,8 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 - **The strongest committed classifier does not need the query**: setup115 (response only) reaches 0.9987 Macro F1, beating every committed query-aware classifier. In the current classifier family, the response alone appears sufficient for near-ceiling performance.
 - **Fine-tuned classifiers are strong without the neutral**: setup6 (RoBERTa) reaches 0.9975 F1 on query + response alone.
 - **A stable neutral-aware fine-tuning path exists**: setup105_1 (RoBERTa cross-encoder on response + neutral) reaches 0.9975 Macro F1. That clearly beats the learned embedding-feature family and shows that end-to-end neutral-aware modeling can work when the backbone is stable.
-- **Committed prompt-neutral result is competitive, not clearly better**: setup7-qwen (Longformer + Qwen neutral) scores 0.9964 vs setup6-qwen at 0.9985. But that comparison is confounded by backbone and context length, so it is evidence against a big gain, not a clean causal proof.
+- **Prompted neutral-aware classifiers are strong but not better than the best plain classifiers**: setup7 reaches 0.9953, setup7-qwen reaches 0.9964, and setup116 reaches 0.9962. All remain below setup12 (0.9977), setup6 (0.9975), and setup115 (0.9987).
+- **A second prompt neutral helps only slightly**: setup116 improves over Gemini-only setup7, but it still does not beat setup7-qwen, setup12, or setup105_1. The extra neutral adds signal, but not a step change in classifier quality.
 - **Delta direction matters, not magnitude**: cosine thresholding (setup100–102) scores 0.35–0.45 F1. Logistic regression on the full 768-dim delta vector (setup103) reaches 0.9913. Collapsing the delta to a scalar discards the directional information that makes ads detectable.
 - **Scalar bottleneck explains setup110**: six pairwise cosine distances from two providers still score only 0.5653 F1. The dual-provider advantage is wasted at the scalar bottleneck.
 - **The no-classifier scalar control does not rescue the anchor idea**: setup111 scores 0.5669 Macro F1, almost the same failure mode as setup110. The bottleneck is the six-scalar representation, not mainly the logistic-regression layer on top.
@@ -54,13 +55,13 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 ## Open Tasks
 
 ### Pending runs
-- [ ] setup7 (Gemini neutral in prompt) — confirm neutral-in-prompt finding holds across providers
-- [ ] setup116 — test whether a second neutral helps the prompted classifier family
 - [ ] setup9, setup11 — complete backbone comparison within classifier family
 
 ### Completed runs
+- [x] setup7 — Gemini neutral in prompt is competitive (0.9953 Macro F1) but still below the strongest plain classifier baselines
 - [x] setup114 — full dual-provider embedding stack underperformed the simpler dual-residual baseline (0.7527 vs 0.9857 for setup113)
 - [x] setup115 — query ablation completed; response-only classifier is now the strongest committed overall classifier at 0.9987 Macro F1
+- [x] setup116 — dual-neutral prompted classifier slightly improved over setup7 (0.9962 vs 0.9953) but still did not beat setup7-qwen, setup12, or setup105_1
 - [x] setup117 — query + single-neutral residual underperformed badly relative to setup103 (0.7224 vs 0.9913)
 - [x] setup118 — query + dual-residual configuration also underperformed relative to setup113 (0.7443 vs 0.9857)
 - [x] setup119 — Qwen-only residual completed and was much weaker than the Gemini counterpart (0.7475 vs 0.9913 for setup103)

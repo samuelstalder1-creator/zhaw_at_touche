@@ -11,7 +11,9 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 | `setup12` | classifier | Gemini | 0.9977 | 4312 | 4 | 8 | 1896 | best committed Gemini-backed query-aware classifier |
 | `setup6` | classifier | Gemini | 0.9975 | 4305 | 11 | 2 | 1902 | strongest Gemini recall |
 | `setup105_1` | cross-encoder | Gemini | 0.9975 | 4315 | 1 | 12 | 1892 | stable RoBERTa cross-encoder retry |
-| `setup7-qwen` | classifier | Qwen | 0.9964 | 4311 | 5 | 14 | 1890 | long-context with Qwen neutral reference |
+| `setup7-qwen` | classifier | Qwen | 0.9964 | 4311 | 5 | 14 | 1890 | best committed prompted-neutral classifier |
+| `setup116` | classifier | Gemini + Qwen | 0.9962 | 4312 | 4 | 16 | 1888 | best committed dual-neutral prompted classifier |
+| `setup7` | classifier | Gemini | 0.9953 | 4298 | 18 | 7 | 1897 | Gemini neutral in prompt; below `setup7-qwen` and `setup116` |
 | `setup10` | classifier | Gemini | 0.9920 | 4306 | 10 | 32 | 1872 | strong compact baseline (ALBERT) |
 | `setup104` | learned embedding feature | Gemini | 0.9915 | 4306 | 10 | 35 | 1869 | best committed single-neutral embedding feature |
 | `setup103` | learned embedding feature | Gemini | 0.9913 | 4293 | 23 | 23 | 1881 | residual-only Gemini baseline |
@@ -31,10 +33,7 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 
 ## No Committed Results Yet
 
-Core research-question runs still missing:
-
-- `setup7`
-- `setup116`
+All core research-question runs now have committed results.
 
 Secondary or backbone-comparison runs still missing:
 
@@ -48,6 +47,10 @@ Secondary or backbone-comparison runs still missing:
   query-aware committed classifiers despite using the response alone
 - Best committed Qwen-backed classifier remains `setup6-qwen`
 - Best committed Gemini-backed query-aware classifier remains `setup12`
+- Prompted neutral-aware classifiers (`setup7`, `setup7-qwen`, `setup116`) are
+  all strong, but none beat the best plain query-aware baselines; `setup116`
+  improves over Gemini-only `setup7`, but still trails `setup7-qwen`,
+  `setup12`, and `setup105_1`
 - The stable cross-encoder retry `setup105_1` is competitive with the best
   plain classifiers, avoids the collapse seen in `setup105`, and is currently
   the strongest committed neutral-aware fine-tuned model

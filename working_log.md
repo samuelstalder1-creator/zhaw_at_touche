@@ -39,27 +39,36 @@
   JSONL merge helper used by the multi-file embedding backends.
 - Simplified `results.md` to Macro F1 + confusion matrix only; added newly
   committed results for `setup7-qwen`, `setup106`, `setup110`, and `setup105`.
+- Added and documented later committed results for `setup7`, `setup114`,
+  `setup115`, `setup116`, `setup117`, `setup118`, and `setup119`, then
+  refreshed the repository docs to align the inventories, result summaries,
+  and research-progress tracking.
 - Rewrote `setup.md` around experiment families and the core research questions
   rather than per-setup descriptions with embedded result snapshots.
 
 ## Open Questions
 
-- Does injecting the neutral reference into the prompt (`setup7`) beat plain
-  `query_response` classifiers (`setup6`)? Setup7 has no committed results.
-- Does the cross-encoder (`setup105_1`) outperform bi-encoder family 3 setups
-  (`setup103`, `setup104`) when trained on a stable backbone?
-- Does adding the query to the learned embedding-feature family (`setup117`,
-  `setup118`) help once the delta vector is already available?
-- Do dual-provider neutrals (`setup113`, `setup114`) improve over single-provider
-  residuals (`setup103`, `setup104`)?
+- Would a matched-backbone `query + neutral + response` comparison still trail
+  the plain `query_response` classifiers, or is the current gap mainly a
+  Longformer/context-length confound? Committed `setup7` and `setup7-qwen`
+  remain strong but still below the best plain baselines.
+- Why does the stable cross-encoder (`setup105_1`) remain stronger than the
+  prompt-neutral Longformer classifiers while still not beating the best plain
+  classifier baselines?
+- Why does adding the query to the learned embedding-feature family (`setup117`,
+  `setup118`) hurt so badly once the delta vector is already available?
+- Why does the richer dual-provider stack (`setup114`) underperform the simpler
+  dual-residual setup (`setup113`) so sharply?
 - Is DeBERTa-v3 actually better than RoBERTa for this task once training is
   stabilized (`setup8`, `setup9`)?
+- Why does the dual-neutral prompted classifier (`setup116`) only slightly
+  improve over `setup7` and still fail to beat `setup7-qwen`, `setup12`, or
+  `setup105_1`?
 
 ## Future TODOs
 
-- Run and commit the remaining active setups: `setup4`, `setup7`, `setup9`,
-  `setup11`, `setup114`, `setup115`, `setup116`, `setup117`, `setup118`,
-  `setup119`.
+- Run and commit the remaining active setups: `setup4`, `setup9`, and
+  `setup11`.
 - Compare matched ablations for the research question rather than only headline
   best-model results.
 - Archive final submission-ready model bundles and validation artifacts.
