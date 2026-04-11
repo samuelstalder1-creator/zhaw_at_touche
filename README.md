@@ -149,7 +149,8 @@ backend.
 
 ## Current Result Headlines
 
-- Best committed Gemini-backed classifier: `setup12`
+- Best committed overall classifier: `setup115`
+- Best committed Gemini-backed query-aware classifier: `setup12`
 - Best committed Qwen-backed classifier: `setup6-qwen`
 - Best committed cross-encoder retry: `setup105_1`
 - Best committed learned embedding-feature setup: `setup104`

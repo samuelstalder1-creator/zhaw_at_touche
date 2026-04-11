@@ -24,6 +24,11 @@ The repository currently contains committed result artifacts for:
 - `results/setup110/`
 - `results/setup111/`
 - `results/setup113/`
+- `results/setup114/`
+- `results/setup115/`
+- `results/setup117/`
+- `results/setup118/`
+- `results/setup119/`
 - `results/setupX/` as a placeholder/example directory
 
 ## Typical Validation Outputs

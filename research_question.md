@@ -15,7 +15,7 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 | Input | Setup |
 |---|---|
-| response | setup115 (run pending) |
+| response | setup115 ✓ |
 | query + response | setup6 ✓, setup12 ✓ |
 | response + 1 neutral (joint cross-encoder) | setup105_1 ✓ |
 | query + response + 1 neutral | setup7-qwen ✓, setup7 (run pending) |
@@ -25,15 +25,16 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 | Input | Setup |
 |---|---|
-| response − 1 neutral | setup103 ✓, setup104 ✓, setup119 (run pending, Qwen counterpart) |
-| response − 1 neutral + query | setup117 (run pending) |
-| response − 2 neutrals | setup113 ✓, setup114 (run pending, full stack) |
-| response − 2 neutrals + query | setup118 (run pending) |
+| response − 1 neutral | setup103 ✓, setup104 ✓, setup119 ✓ |
+| response − 1 neutral + query | setup117 ✓ |
+| response − 2 neutrals | setup113 ✓, setup114 ✓ |
+| response − 2 neutrals + query | setup118 ✓ |
 
 ---
 
 ## What We Know
 
+- **The strongest committed classifier does not need the query**: setup115 (response only) reaches 0.9987 Macro F1, beating every committed query-aware classifier. In the current classifier family, the response alone appears sufficient for near-ceiling performance.
 - **Fine-tuned classifiers are strong without the neutral**: setup6 (RoBERTa) reaches 0.9975 F1 on query + response alone.
 - **A stable neutral-aware fine-tuning path exists**: setup105_1 (RoBERTa cross-encoder on response + neutral) reaches 0.9975 Macro F1. That clearly beats the learned embedding-feature family and shows that end-to-end neutral-aware modeling can work when the backbone is stable.
 - **Committed prompt-neutral result is competitive, not clearly better**: setup7-qwen (Longformer + Qwen neutral) scores 0.9964 vs setup6-qwen at 0.9985. But that comparison is confounded by backbone and context length, so it is evidence against a big gain, not a clean causal proof.
@@ -42,6 +43,9 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 - **The no-classifier scalar control does not rescue the anchor idea**: setup111 scores 0.5669 Macro F1, almost the same failure mode as setup110. The bottleneck is the six-scalar representation, not mainly the logistic-regression layer on top.
 - **Absolute positions shift precision/recall**: setup104 adds `[response_emb | neutral_emb]` alongside the delta — FP drops (23→10) but FN rises (23→35). More conservative, not strictly better.
 - **A second neutral is useful but not automatically better**: setup113 confirms that dual-provider residuals work, but its committed result (0.9857 Macro F1) still trails the stronger single-neutral learned embedding setups. The extra neutral appears to trade precision for recall rather than delivering a clear overall gain.
+- **The larger learned embedding stacks did not validate the richer-feature hypothesis**: setup114 (full dual-provider embedding stack) drops to 0.7527 Macro F1, far below setup113. In the dual-neutral family, adding absolute embedding positions hurts badly rather than helping.
+- **Adding the query to the delta family is currently a regression, not a gain**: setup117 (query + single-neutral residual) reaches 0.7224 Macro F1 and setup118 (query + dual residual) reaches 0.7443, both far below their no-query counterparts. The query embedding is not complementing the residual signal in the current formulation.
+- **Qwen-only residuals are much weaker than the Gemini residual baseline**: setup119 reaches 0.7475 Macro F1 versus 0.9913 for setup103. Provider choice matters sharply for the learned delta family.
 - **Sentence-level delta has a false positive problem**: setup106 (Hungarian matching) reaches FN=37 but FP=120. Normal stylistic variation between response and neutral triggers the classifier on clean responses.
 - **DeBERTa-v3 collapses to all-positive twice**: setup8 and setup105 both failed under the same conditions. Setup105 also lacked a validation config, so the cross-encoder was evaluated with the wrong input format.
 
@@ -51,18 +55,20 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 ### Pending runs
 - [ ] setup7 (Gemini neutral in prompt) — confirm neutral-in-prompt finding holds across providers
-- [ ] setup114 — test whether absolute positions help in the dual-neutral case as they slightly did in setup104
-- [ ] setup115 — isolate the query contribution in the fine-tuned classifier family
 - [ ] setup116 — test whether a second neutral helps the prompted classifier family
-- [ ] setup117 — test whether query embeddings help the single-neutral delta family
-- [ ] setup118 — test the full dual-neutral + query delta configuration
-- [ ] setup119 — isolate Qwen-only provider quality against setup103
 - [ ] setup9, setup11 — complete backbone comparison within classifier family
+
+### Completed runs
+- [x] setup114 — full dual-provider embedding stack underperformed the simpler dual-residual baseline (0.7527 vs 0.9857 for setup113)
+- [x] setup115 — query ablation completed; response-only classifier is now the strongest committed overall classifier at 0.9987 Macro F1
+- [x] setup117 — query + single-neutral residual underperformed badly relative to setup103 (0.7224 vs 0.9913)
+- [x] setup118 — query + dual-residual configuration also underperformed relative to setup113 (0.7443 vs 0.9857)
+- [x] setup119 — Qwen-only residual completed and was much weaker than the Gemini counterpart (0.7475 vs 0.9913 for setup103)
 
 ### Design gaps
 - [ ] Add a matched-backbone fine-tuned comparison for `query + response` vs `query + neutral + response`
 - [ ] Add a matched-backbone fine-tuned comparison for one neutral vs two neutrals
-- [ ] Evaluate all pending runs under the same train/validation/test protocol and compare score deltas, not only final Macro F1
+- [ ] Evaluate the remaining pending runs under the same train/validation/test protocol and compare score deltas, not only final Macro F1
 
 ### Neutral quality
 - [ ] Identify cases where the neutral failed to remove the ad (small delta, positive label) — these set the ceiling for all delta methods

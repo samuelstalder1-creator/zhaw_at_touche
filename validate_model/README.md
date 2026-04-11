@@ -61,13 +61,16 @@ overrides.
 | --- | --- | --- |
 | `teamCMU` | remote evaluation-only preset | loads a published Hugging Face model |
 | `setup4` | reference-aware classifier validation | mirrors the DeBERTa reference + RAG prompt |
+| `setup6` | classifier validation | plain classifier path using default Gemini-backed files |
 | `setup6-qwen` | provider-specific classifier validation | defaults to the Qwen-enriched test file |
 | `setup7` | reference-aware long-context validation | uses Gemini neutral context |
 | `setup7-qwen` | provider-specific long-context validation | uses Qwen neutral context |
+| `setup8` | classifier validation | plain classifier path |
 | `setup9` | stabilized DeBERTa validation | plain classifier path |
 | `setup10` | ALBERT validation | plain classifier path |
 | `setup11` | ELECTRA validation | plain classifier path |
 | `setup12` | DistilRoBERTa validation | plain classifier path |
+| `setup105_1` | cross-encoder validation | stable RoBERTa retry over response + neutral |
 | `setup115` | response-only classifier validation | plain classifier path with no query and no neutral |
 | `setup116` | dual-neutral prompted classifier validation | plain classifier path with paired Gemini + Qwen files |
 | `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
@@ -78,14 +81,13 @@ overrides.
 | `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
 | `setup111` | anchor-distance threshold validation | delegates to the handcrafted anchor-distance backend and merges Gemini + Qwen rows by `id` |
 
-`setup6` and `setup8` do not need dedicated validation JSON files. They still
-validate correctly through the default `models/<setup-name>/` and
-`results/<setup-name>/` resolution path.
+Historical descriptor still present in `validate_model/`:
 
-Historical descriptors still present in `validate_model/`:
-
-- `setup105_1`
 - `setup106`
+
+There is currently no dedicated `validate_model/setup105.json` preset. When
+`setup105` is evaluated, it relies on the default model/results path
+resolution or explicit CLI arguments instead.
 
 ## Common Commands
 
