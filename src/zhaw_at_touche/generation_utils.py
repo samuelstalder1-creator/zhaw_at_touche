@@ -37,6 +37,11 @@ MODEL_ALIASES = {
     "gemini-1.5-flash": "gemini15flash",
     "gemini-2.5-flash-lite": "gemini25flashlite",
     "Qwen/Qwen2.5-1.5B-Instruct": "qwen",
+    "gemma4:2b": "gemma4_2b",
+    "gemma4:12b": "gemma4_12b",
+    "gemma4:27b": "gemma4_27b",
+    "gemma4:31b": "gemma4_31b",
+    "gemma4:e4b": "gemma4_e4b",
 }
 
 BULLET_CHARS = "•◦▪●‣∙"
