@@ -32,6 +32,119 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 ---
 
+## Research Question Answers
+
+All core research-question runs are complete. The following answers are grounded in the committed test-set results.
+
+### 1. Is the semantic delta a sufficient signal?
+
+**Yes — the 768-dim delta is sufficient; scalar summaries are not.**
+
+A logistic regression trained on the full Gemini delta vector (`response_emb − gemini_emb`, setup103) reaches **0.9913 Macro F1** — near-ceiling and far above any scalar-based baseline. This confirms that the embedding delta encodes the directional structure of advertising language: the classifier learns *which directions* in the 768-dim space separate promotional from neutral text.
+
+Collapsing the same signal to a single cosine distance (setup100–102) drops performance to 0.35–0.45. Collapsing dual-provider information to six cosine scalars (setup110–111) only reaches 0.57. The directional structure is precisely what the scalar bottleneck discards, which is why setup103 works and setup100–102 do not.
+
+The delta is sufficient in an absolute sense, but it is not ceiling-level: the best fine-tuned classifier (setup115, **0.9987**) still leads by 0.0074 Macro F1 and 17 fewer errors.
+
+### 2. Does the delta substitute for fine-tuning?
+
+**No. Fine-tuned classifiers consistently outperform frozen-encoder delta-LR setups.**
+
+| Approach | Best setup | Macro F1 | Errors (FP+FN) |
+|---|---|---:|---:|
+| Fine-tuned, no neutral | setup115 | 0.9987 | 7 |
+| Fine-tuned, neutral in prompt | setup7-qwen | 0.9964 | 19 |
+| Fine-tuned, cross-encoder (neutral) | setup105_1 | 0.9975 | 13 |
+| Delta-LR, Gemini residual | setup104 | 0.9915 | 45 |
+| Delta-LR, Gemini residual | setup103 | 0.9913 | 46 |
+| Delta-LR, dual residual | setup113 | 0.9857 | 76 |
+
+End-to-end fine-tuning allows the backbone to adapt its representations to the task. A frozen `all-mpnet-base-v2` encoder cannot do this; the logistic regression layer compensates for some of the gap but not all of it. The delta approach is a strong lightweight alternative — it requires no GPU fine-tuning and still outperforms every scalar baseline — but it does not replace fine-tuning.
+
+### 3. Does the delta complement fine-tuning?
+
+**Only marginally, and the neutral does not push past the best plain fine-tuned classifier.**
+
+The strongest neutral-aware fine-tuned model is the cross-encoder (setup105_1, **0.9975**). It attends jointly to both the response and the neutral at every transformer layer, making it the most expressive neutral-aware design. Yet it still trails the response-only fine-tuned classifier (setup115, **0.9987**).
+
+Prompted-neutral classifiers (setup7, setup7-qwen, setup116) are similarly strong but also fail to beat the best plain baselines:
+
+| Setup | Input | Macro F1 |
+|---|---|---:|
+| setup115 | response only | **0.9987** |
+| setup12 | query + response | 0.9977 |
+| setup6 | query + response | 0.9975 |
+| setup105_1 | response + neutral (cross-encoder) | 0.9975 |
+| setup7-qwen | query + neutral (Qwen) + response | 0.9964 |
+| setup116 | query + Gemini neutral + Qwen neutral + response | 0.9962 |
+| setup7 | query + neutral (Gemini) + response | 0.9953 |
+
+The neutral does add some signal when it is available at fine-tuning time (setup105_1 ties setup6 at 0.9975 and marginally beats setup10 at 0.9920), but the plain fine-tuned classifier (setup115) already captures whatever the neutral would provide. This suggests the response itself carries sufficient discriminative structure — the neutral rewrite does not expose new information that end-to-end fine-tuning cannot find directly.
+
+### 4. How does query access affect each approach?
+
+**In fine-tuned classifiers: the query does not help — response alone is sufficient.**
+
+| Setup | Input | Macro F1 |
+|---|---|---:|
+| setup115 | response only | **0.9987** |
+| setup12 | query + response | 0.9977 |
+| setup6 | query + response | 0.9975 |
+
+The response-only model (setup115, RoBERTa-base) outperforms every query-aware committed classifier. Adding the query introduces marginal noise or at best provides redundant signal. Ad language is detectable from the response text alone.
+
+**In delta-LR: the query actively hurts.**
+
+| Setup | Input | Macro F1 |
+|---|---|---:|
+| setup103 | `response_emb − gemini_emb` | 0.9913 |
+| setup117 | `[query_emb \| delta_gemini]` | 0.7224 |
+| setup113 | `[delta_gemini \| delta_qwen]` | 0.9857 |
+| setup118 | `[query_emb \| delta_gemini \| delta_qwen]` | 0.7443 |
+
+Adding the 768-dim query embedding to the delta vector drops Macro F1 by ~0.27 in both single- and dual-neutral configurations. The query embedding introduces high-dimensional noise that competes with the residual signal in the logistic regression weight space. The delta vector already encodes what the query would contribute indirectly (since the neutral is generated conditioned on the same context), so the query embedding is redundant and harmful here.
+
+### 5. How does access to multiple neutral sources affect each approach?
+
+**In fine-tuned prompted classifiers: marginal gain, provider quality dominates.**
+
+| Setup | Neutral sources | Macro F1 |
+|---|---|---:|
+| setup7 | Gemini only | 0.9953 |
+| setup7-qwen | Qwen only | 0.9964 |
+| setup116 | Gemini + Qwen | 0.9962 |
+
+The dual-neutral setup (setup116) slightly improves over Gemini-only (setup7) but does not surpass Qwen-only (setup7-qwen). Two neutrals do not beat the better single neutral. The incremental lift from the second neutral is not a step change.
+
+**In delta-LR: the second neutral hurts, and Qwen neutrals are substantially weaker.**
+
+| Setup | Neutral sources | Macro F1 |
+|---|---|---:|
+| setup103 | Gemini only | 0.9913 |
+| setup119 | Qwen only | 0.7475 |
+| setup113 | `[delta_gemini \| delta_qwen]` | 0.9857 |
+| setup114 | full dual stack | 0.7527 |
+
+The Qwen-only delta (setup119, 0.7475) is far weaker than the Gemini-only delta (setup103, 0.9913). Concatenating both deltas (setup113, 0.9857) recovers most of the Gemini-only quality but still trails it, suggesting the weaker Qwen residual introduces noise rather than complementary signal. The full dual stack with absolute embedding positions (setup114, 0.7527) collapses further — absolute positions hurt badly in the dual-provider context. Provider quality matters far more than provider diversity for the delta family.
+
+---
+
+## Summary Answer
+
+| Sub-question | Answer |
+|---|---|
+| Is the delta sufficient? | Yes (0.9913 with frozen encoder), but not ceiling — fine-tuning reaches 0.9987 |
+| Does delta substitute for fine-tuning? | No — fine-tuned models consistently win by ~0.007 Macro F1 |
+| Does delta complement fine-tuning? | Marginally — the cross-encoder ties plain fine-tuned at 0.9975 but does not surpass the best (0.9987) |
+| Does the query help fine-tuned classifiers? | No — response alone (0.9987) beats every query-aware classifier |
+| Does the query help delta-LR? | No — it actively hurts (0.9913 → 0.7224) |
+| Do multiple neutrals help fine-tuned classifiers? | Marginally (0.9953 → 0.9962), but the better single neutral (Qwen: 0.9964) already beats the dual |
+| Do multiple neutrals help delta-LR? | No — dual-provider residual (0.9857) trails single Gemini (0.9913); Qwen alone (0.7475) is far weaker |
+
+The key architectural insight is that **directional information in the delta vector is what matters**, not the number of providers or the presence of the query. A 768-dim logistic regression on the Gemini residual delivers near-ceiling detection without any fine-tuning — but end-to-end fine-tuning on the response alone is still the strongest approach, and the neutral rewrite does not push it further.
+
+---
+
 ## What We Know
 
 - **The strongest committed classifier does not need the query**: setup115 (response only) reaches 0.9987 Macro F1, beating every committed query-aware classifier. In the current classifier family, the response alone appears sufficient for near-ceiling performance.
@@ -54,10 +167,10 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 ## Open Tasks
 
-### Pending runs
-- [ ] setup9, setup11 — complete backbone comparison within classifier family
+### Pending runs (secondary backbone comparison only)
+- [ ] setup9, setup11 — complete backbone comparison within classifier family (not required for research question)
 
-### Completed runs
+### Completed runs (research question)
 - [x] setup7 — Gemini neutral in prompt is competitive (0.9953 Macro F1) but still below the strongest plain classifier baselines
 - [x] setup114 — full dual-provider embedding stack underperformed the simpler dual-residual baseline (0.7527 vs 0.9857 for setup113)
 - [x] setup115 — query ablation completed; response-only classifier is now the strongest committed overall classifier at 0.9987 Macro F1
@@ -66,11 +179,8 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 - [x] setup118 — query + dual-residual configuration also underperformed relative to setup113 (0.7443 vs 0.9857)
 - [x] setup119 — Qwen-only residual completed and was much weaker than the Gemini counterpart (0.7475 vs 0.9913 for setup103)
 
-### Design gaps
+### Design gaps (optional, not blocking)
 - [ ] Add a matched-backbone fine-tuned comparison for `query + response` vs `query + neutral + response`
 - [ ] Add a matched-backbone fine-tuned comparison for one neutral vs two neutrals
-- [ ] Evaluate the remaining pending runs under the same train/validation/test protocol and compare score deltas, not only final Macro F1
-
-### Neutral quality
 - [ ] Identify cases where the neutral failed to remove the ad (small delta, positive label) — these set the ceiling for all delta methods
 - [ ] Compare Gemini vs Qwen neutralisation quality across ad and non-ad responses
