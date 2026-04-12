@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the stabilized DeBERTa-v3-base setup13 model.",
+  "model_dir": "models/setup13",
+  "results_dir": "results/setup13",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}
