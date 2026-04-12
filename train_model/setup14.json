@@ -1,0 +1,20 @@
+{
+  "description": "DeBERTa-v3-base minimal stable configuration. Three problems diagnosed in setup13: (1) freeze_embeddings_epochs=1 blocks gradient flow in DeBERTa's disentangled attention during epoch 1, so the model starts near random and the cosine LR has already peaked before full-model learning begins; (2) lr=1e-5 too conservative once freeze is removed; (3) positive_class_weight_scale=0.5 over-corrected — effective weight 1.13x gives too weak a positive signal. Fixes: no freeze, no layerwise decay, lr=2e-5 (standard DeBERTa-v3 fine-tuning LR), positive_class_weight_scale=1.0 (raw class ratio ~2.27x, no amplification). Scheduler changed to linear for more predictable decay. Keep optimizer_eps=1e-6, max_grad_norm=1.0, warmup_ratio=0.1, weight_decay=0.01. Input: query + response, matching setup6/setup12 for direct backbone comparison.",
+  "trainer_type": "classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "microsoft/deberta-v3-base",
+  "input_format": "query_response",
+  "max_length": 512,
+  "epochs": 3,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05,
+  "optimizer_eps": 1e-06,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.1,
+  "max_grad_norm": 1.0,
+  "positive_class_weight_scale": 1.0,
+  "device": "cuda"
+}
