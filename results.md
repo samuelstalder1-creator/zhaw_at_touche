@@ -182,3 +182,42 @@ Secondary or backbone-comparison runs still missing:
   main failure is the representation bottleneck, not the learned layer
 - Both collapse cases (`setup8`, `setup105`) predict everything as positive;
   the shared theme is DeBERTa instability in this repo
+
+---
+
+## Interpretability of Results (Ceiling Effect)
+
+All top-performing setups cluster between 0.99 and 1.00 Macro F1. This raises the question of whether the differences are meaningful.
+
+### What is NOT meaningful
+
+The fine-grained ranking within the top cluster cannot be defended without confidence intervals, repeated runs, or significance tests. A 0.001 F1 difference on a single test split is within noise:
+
+| Setup | Macro F1 | Errors (FP+FN) |
+|---|---:|---:|
+| `setup115` | 0.9987 | 7 |
+| `setup12` | 0.9977 | 12 |
+| `setup6` | 0.9975 | 13 |
+| `setup105_1` | 0.9975 | 13 |
+
+Claiming setup115 is strictly better than setup12 is not supported by a single-run evaluation.
+
+### What IS meaningful
+
+The large structural gaps between families are robust enough to survive noise:
+
+| Comparison | F1 gap | Error ratio |
+|---|---:|---:|
+| Fine-tuned classifier vs delta-LR | ~0.007 | 7 vs 46 (6.6×) |
+| Full 768-dim delta vs cosine threshold | ~0.54 | — |
+| Gemini residual vs Qwen residual | ~0.24 | — |
+| Delta-LR with vs without query embedding | ~0.27 drop | — |
+| Full delta vector vs 6-scalar bottleneck | ~0.43 | — |
+
+These are architectural findings, not marginal ranking differences. A 0.27 F1 drop from adding query embeddings, or a 0.54 gap between vector delta and cosine threshold, are effects large enough to be real.
+
+### Why all scores are so high
+
+The task uses synthetic ad injection, which likely leaves consistent stylistic artifacts. End-to-end fine-tuned transformers can detect these easily, producing a ceiling effect in the top cluster. This is a limitation of the evaluation setup, not a problem with the experiments. A real-world dataset with organic advertising would likely produce more spread across setups.
+
+The research value lies in the structural comparisons: the experiments clearly show which architectural choices matter (directional delta, frozen vs fine-tuned encoder, provider quality) and which do not (query access, second neutral source, scalar compression).
