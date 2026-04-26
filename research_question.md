@@ -15,20 +15,20 @@ Two strategies exist for exploiting a neutral rewrite (a version of the response
 
 | Input | Setup |
 |---|---|
-| response | setup115 ✓ |
-| query + response | setup6 ✓, setup12 ✓ |
-| response + 1 neutral (joint cross-encoder) | setup105_1 ✓ |
-| query + response + 1 neutral | setup7 ✓, setup7-qwen ✓ |
-| query + response + 2 neutrals | setup116 ✓ |
+| response | setup115  |
+| query + response | setup6 , setup12  |
+| response + 1 neutral (joint cross-encoder) | setup105_1  |
+| query + response + 1 neutral | setup7 , setup7-qwen  |
+| query + response + 2 neutrals | setup116  |
 
 ### Delta models
 
 | Input | Setup |
 |---|---|
-| response − 1 neutral | setup103 ✓, setup104 ✓, setup119 ✓ |
-| response − 1 neutral + query | setup117 ✓ |
-| response − 2 neutrals | setup113 ✓, setup114 ✓ |
-| response − 2 neutrals + query | setup118 ✓ |
+| response − 1 neutral | setup103 , setup104 , setup119  |
+| response − 1 neutral + query | setup117  |
+| response − 2 neutrals | setup113 , setup114  |
+| response − 2 neutrals + query | setup118 |
 
 ---
 
