@@ -31,6 +31,118 @@ All metrics are on the `test` split. Confusion matrix columns: TN / FP / FN / TP
 | `setup105` | cross-encoder | Gemini | 0.2344 | 0 | 4316 | 0 | 1904 | collapsed to all-positive; DeBERTa instability + missing eval config |
 | `setup8` | classifier | Gemini | 0.2344 | 0 | 4316 | 0 | 1904 | collapsed to all-positive predictions |
 
+---
+
+## Results by Research Question
+
+Each sub-question groups only the setups directly relevant to answering it. Confusion matrix format: **TN / FP / FN / TP**.
+
+---
+
+### RQ1 — Is the semantic delta a sufficient signal?
+
+Compares the full 768-dim delta vector against scalar summarisations of the same signal.
+
+| Setup | Input | Macro F1 | TN | FP | FN | TP |
+|---|---|---:|---:|---:|---:|---:|
+| `setup103` | `response_emb − gemini_emb` | 0.9913 | 4293 | 23 | 23 | 1881 |
+| `setup104` | `[response_emb \| gemini_emb \| delta]` | 0.9915 | 4306 | 10 | 35 | 1869 |
+| `setup110` | 6 cosine scalars (learned LR) | 0.5653 | 2729 | 1587 | 907 | 997 |
+| `setup111` | 6 cosine scalars (handcrafted) | 0.5669 | 3438 | 878 | 1269 | 635 |
+| `setup100` | cosine threshold (balanced) | 0.4532 | 2755 | 1561 | 1396 | 508 |
+| `setup101` | cosine threshold (overpredicts pos.) | 0.3509 | 559 | 3757 | 125 | 1779 |
+| `setup102` | cosine threshold (larger encoder) | 0.3533 | 582 | 3734 | 144 | 1760 |
+
+**Finding**: The 768-dim delta vector (setup103, 0.9913) is sufficient; scalar bottlenecks (setup100–102: 0.35–0.45; setup110–111: ~0.57) discard the directional structure that makes the delta work.
+
+---
+
+### RQ2 — Does the delta substitute for fine-tuning?
+
+Compares the best delta-LR setups against the best plain fine-tuned classifiers (no neutral).
+
+| Setup | Approach | Input | Macro F1 | TN | FP | FN | TP |
+|---|---|---|---:|---:|---:|---:|---:|
+| `setup115` | fine-tuned | response only | 0.9987 | 4315 | 1 | 6 | 1898 |
+| `setup12` | fine-tuned | query + response | 0.9977 | 4312 | 4 | 8 | 1896 |
+| `setup6` | fine-tuned | query + response | 0.9975 | 4305 | 11 | 2 | 1902 |
+| `setup104` | delta-LR | `[response_emb \| gemini_emb \| delta]` | 0.9915 | 4306 | 10 | 35 | 1869 |
+| `setup103` | delta-LR | `response_emb − gemini_emb` | 0.9913 | 4293 | 23 | 23 | 1881 |
+| `setup113` | delta-LR | `[delta_gemini \| delta_qwen]` | 0.9857 | 4260 | 56 | 20 | 1884 |
+
+**Finding**: Fine-tuned classifiers consistently outperform delta-LR by ~0.007 Macro F1 and 17–39 fewer errors. The delta does not substitute for fine-tuning, but is a strong GPU-free alternative.
+
+---
+
+### RQ3 — Does the delta complement fine-tuning?
+
+Compares neutral-aware fine-tuned models against the best plain fine-tuned classifiers.
+
+| Setup | Architecture | Input | Macro F1 | TN | FP | FN | TP |
+|---|---|---|---:|---:|---:|---:|---:|
+| `setup115` | classifier | response only | **0.9987** | 4315 | 1 | 6 | 1898 |
+| `setup12` | classifier | query + response | 0.9977 | 4312 | 4 | 8 | 1896 |
+| `setup6` | classifier | query + response | 0.9975 | 4305 | 11 | 2 | 1902 |
+| `setup105_1` | cross-encoder | response + Gemini neutral | 0.9975 | 4315 | 1 | 12 | 1892 |
+| `setup7-qwen` | classifier | query + Qwen neutral + response | 0.9964 | 4311 | 5 | 14 | 1890 |
+| `setup116` | classifier | query + Gemini neutral + Qwen neutral + response | 0.9962 | 4312 | 4 | 16 | 1888 |
+| `setup7` | classifier | query + Gemini neutral + response | 0.9953 | 4298 | 18 | 7 | 1897 |
+
+**Finding**: No neutral-aware fine-tuned model surpasses the response-only baseline (setup115, 0.9987). The cross-encoder (setup105_1) ties setup6 but does not beat setup115. The neutral does not complement fine-tuning — the response alone already captures what the neutral would expose.
+
+---
+
+### RQ4 — How does query access affect each approach?
+
+#### Fine-tuned classifiers — query vs no query
+
+| Setup | Input | Macro F1 | TN | FP | FN | TP |
+|---|---|---:|---:|---:|---:|---:|
+| `setup115` | response only | **0.9987** | 4315 | 1 | 6 | 1898 |
+| `setup12` | query + response | 0.9977 | 4312 | 4 | 8 | 1896 |
+| `setup6` | query + response | 0.9975 | 4305 | 11 | 2 | 1902 |
+
+**Finding**: Response alone outperforms every query-aware classifier. The query adds redundant or slightly noisy signal.
+
+#### Delta-LR — query vs no query
+
+| Setup | Input | Macro F1 | TN | FP | FN | TP |
+|---|---|---:|---:|---:|---:|---:|
+| `setup103` | `delta_gemini` | 0.9913 | 4293 | 23 | 23 | 1881 |
+| `setup117` | `[query_emb \| delta_gemini]` | 0.7224 | 3557 | 759 | 717 | 1187 |
+| `setup113` | `[delta_gemini \| delta_qwen]` | 0.9857 | 4260 | 56 | 20 | 1884 |
+| `setup118` | `[query_emb \| delta_gemini \| delta_qwen]` | 0.7443 | 3733 | 583 | 737 | 1167 |
+
+**Finding**: Adding the 768-dim query embedding drops Macro F1 by ~0.27 in both single- and dual-neutral configurations. The query introduces high-dimensional noise that competes with the residual signal in the logistic regression weight space.
+
+---
+
+### RQ5 — How does access to multiple neutral sources affect each approach?
+
+#### Fine-tuned prompted classifiers — single vs dual neutral
+
+| Setup | Neutral sources | Macro F1 | TN | FP | FN | TP |
+|---|---|---:|---:|---:|---:|---:|
+| `setup7-qwen` | Qwen only | **0.9964** | 4311 | 5 | 14 | 1890 |
+| `setup116` | Gemini + Qwen | 0.9962 | 4312 | 4 | 16 | 1888 |
+| `setup7` | Gemini only | 0.9953 | 4298 | 18 | 7 | 1897 |
+
+**Finding**: The dual-neutral setup (setup116) marginally improves over Gemini-only (setup7) but does not surpass Qwen-only (setup7-qwen). Provider quality dominates — a second neutral does not deliver a step change.
+
+#### Delta-LR — single vs dual neutral, and provider choice
+
+| Setup | Neutral sources | Macro F1 | TN | FP | FN | TP |
+|---|---|---:|---:|---:|---:|---:|
+| `setup103` | Gemini only | **0.9913** | 4293 | 23 | 23 | 1881 |
+| `setup104` | Gemini only (+ absolute pos.) | 0.9915 | 4306 | 10 | 35 | 1869 |
+| `setup113` | `[delta_gemini \| delta_qwen]` | 0.9857 | 4260 | 56 | 20 | 1884 |
+| `setup119` | Qwen only | 0.7475 | 3689 | 627 | 694 | 1210 |
+| `setup114` | full dual stack (abs. + delta) | 0.7527 | 3599 | 717 | 610 | 1294 |
+
+**Finding**: The Qwen-only residual (setup119, 0.7475) is far weaker than the Gemini residual (setup103, 0.9913). Concatenating both deltas (setup113) recovers most of the Gemini-only quality but still trails it — the weaker Qwen residual introduces noise. Provider quality matters far more than provider diversity.
+
+---
+
 ## No Committed Results Yet
 
 All core research-question runs now have committed results.
@@ -70,3 +182,42 @@ Secondary or backbone-comparison runs still missing:
   main failure is the representation bottleneck, not the learned layer
 - Both collapse cases (`setup8`, `setup105`) predict everything as positive;
   the shared theme is DeBERTa instability in this repo
+
+---
+
+## Interpretability of Results (Ceiling Effect)
+
+All top-performing setups cluster between 0.99 and 1.00 Macro F1. This raises the question of whether the differences are meaningful.
+
+### What is NOT meaningful
+
+The fine-grained ranking within the top cluster cannot be defended without confidence intervals, repeated runs, or significance tests. A 0.001 F1 difference on a single test split is within noise:
+
+| Setup | Macro F1 | Errors (FP+FN) |
+|---|---:|---:|
+| `setup115` | 0.9987 | 7 |
+| `setup12` | 0.9977 | 12 |
+| `setup6` | 0.9975 | 13 |
+| `setup105_1` | 0.9975 | 13 |
+
+Claiming setup115 is strictly better than setup12 is not supported by a single-run evaluation.
+
+### What IS meaningful
+
+The large structural gaps between families are robust enough to survive noise:
+
+| Comparison | F1 gap | Error ratio |
+|---|---:|---:|
+| Fine-tuned classifier vs delta-LR | ~0.007 | 7 vs 46 (6.6×) |
+| Full 768-dim delta vs cosine threshold | ~0.54 | — |
+| Gemini residual vs Qwen residual | ~0.24 | — |
+| Delta-LR with vs without query embedding | ~0.27 drop | — |
+| Full delta vector vs 6-scalar bottleneck | ~0.43 | — |
+
+These are architectural findings, not marginal ranking differences. A 0.27 F1 drop from adding query embeddings, or a 0.54 gap between vector delta and cosine threshold, are effects large enough to be real.
+
+### Why all scores are so high
+
+The task uses synthetic ad injection, which likely leaves consistent stylistic artifacts. End-to-end fine-tuned transformers can detect these easily, producing a ceiling effect in the top cluster. This is a limitation of the evaluation setup, not a problem with the experiments. A real-world dataset with organic advertising would likely produce more spread across setups.
+
+The research value lies in the structural comparisons: the experiments clearly show which architectural choices matter (directional delta, frozen vs fine-tuned encoder, provider quality) and which do not (query access, second neutral source, scalar compression).
