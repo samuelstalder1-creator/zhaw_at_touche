@@ -26,7 +26,7 @@ overrides on top of it.
 | `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
 | `embedding_residual_classifier` | `setup103`, `setup119` | logistic regression on one residual vector |
-| `embedding_classifier` | `setup104` | logistic regression on stacked response, neutral, and residual vectors |
+| `embedding_classifier` | `setup104`, `setup104-qwen` | logistic regression on stacked response, neutral, and residual vectors |
 | `query_residual_classifier` | `setup117` | query embedding plus single-provider residual |
 | `dual_residual_classifier` | `setup113` | logistic regression on Gemini and Qwen residual vectors |
 | `dual_embedding_classifier` | `setup114` | full dual-provider embedding stack |
@@ -136,6 +136,7 @@ uv run touche-train --setup-name setup102
 ```bash
 uv run touche-train --setup-name setup103
 uv run touche-train --setup-name setup104
+uv run touche-train --setup-name setup104-qwen
 uv run touche-train --setup-name setup113
 uv run touche-train --setup-name setup114
 uv run touche-train --setup-name setup117
@@ -215,6 +216,7 @@ These runs write to `models/<setup-name>/`:
 - Gemini-backed files are the default source for most setups.
 - `setup6-qwen` and `setup7-qwen` switch the training and validation files to
   `data/generated/qwen/`.
+- `setup104-qwen` is the Qwen-backed full embedding counterpart to `setup104`.
 - `setup119` is the Qwen-only residual counterpart to `setup103`.
 - Only the reference-aware and embedding-based setups actually consume the
   neutral field as part of the model logic. Plain `query_response` classifiers

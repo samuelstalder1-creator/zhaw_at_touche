@@ -76,7 +76,7 @@ overrides.
 | `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
-| `setup103`, `setup104`, `setup117`, `setup119` | learned embedding-feature validation | delegates to the embedding-LR backend |
+| `setup103`, `setup104`, `setup104-qwen`, `setup117`, `setup119` | learned embedding-feature validation | delegates to the embedding-LR backend |
 | `setup113`, `setup114`, `setup118` | dual-file learned embedding-feature validation | delegates to the embedding-LR backend and merges Gemini + Qwen rows by `id` |
 | `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
 | `setup111` | anchor-distance threshold validation | delegates to the handcrafted anchor-distance backend and merges Gemini + Qwen rows by `id` |
@@ -146,6 +146,9 @@ available.
 ```bash
 uv run touche-train --setup-name setup103
 uv run touche-validate --setup-name setup103
+
+uv run touche-train --setup-name setup104-qwen
+uv run touche-validate --setup-name setup104-qwen
 
 uv run touche-train --setup-name setup113
 uv run touche-validate --setup-name setup113

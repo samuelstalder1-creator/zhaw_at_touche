@@ -175,6 +175,15 @@ class ValidationSetupsTests(unittest.TestCase):
         self.assertEqual(args.reference_label, "QWEN")
         self.assertTrue(args.pad_to_max_length)
 
+    def test_repo_setup104_qwen_uses_qwen_test_file(self) -> None:
+        args = parse_args(["--setup-name", "setup104-qwen"])
+        defaults = load_setup_defaults("setup104-qwen")
+
+        self.assertEqual(resolve_model_source(args), Path("models/setup104-qwen"))
+        self.assertEqual(args.results_dir, "results/setup104-qwen")
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(defaults["neutral_field"], "qwen")
+
     def test_eval_splits_can_include_validation_and_test(self) -> None:
         args = parse_args(["--eval-splits", "validation", "test"])
 

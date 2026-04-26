@@ -138,6 +138,18 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertEqual(args.reference_label, "QWEN")
         self.assertTrue(args.pad_to_max_length)
 
+    def test_repo_setup104_qwen_uses_qwen_generated_files(self) -> None:
+        args = parse_args(["--setup-name", "setup104-qwen"])
+
+        self.assertEqual(args.trainer_type, "embedding_classifier")
+        self.assertEqual(args.train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+        )
+        self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
+        self.assertEqual(args.neutral_field, "qwen")
+
     def test_parse_args_accepts_linear_scheduler(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             setups_dir = Path(tmp_dir)
