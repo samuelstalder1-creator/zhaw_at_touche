@@ -213,3 +213,5 @@ __marimo__/
 .DS_Store
 .matplotlib/
 .uv-cache/
+
+run_submission/**
