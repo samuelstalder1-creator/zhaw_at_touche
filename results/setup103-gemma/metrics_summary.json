@@ -1,0 +1,183 @@
+{
+  "scoring_backend": "embedding_residual_classifier",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "model_dir": "models/setup103-gemma",
+  "results_dir": "results/setup103-gemma",
+  "device": "cuda",
+  "response_field": "response",
+  "neutral_field": "gemma4_e4b",
+  "aux_neutral_field": "qwen",
+  "query_field": "query",
+  "threshold": 0.48165140602864487,
+  "threshold_source": "saved_state",
+  "threshold_metric": "macro_f1",
+  "input_files": [
+    "data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl"
+  ],
+  "aux_input_files": [],
+  "calibration_input_files": [
+    "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl"
+  ],
+  "aux_calibration_input_files": [],
+  "calibration_summary": {
+    "samples": 5780,
+    "accuracy": 0.7328719723183391,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3055,
+        "1": 944
+      },
+      "1": {
+        "0": 600,
+        "1": 1181
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8358413132694938,
+        "recall": 0.7639409852463116,
+        "f1": 0.7982754115495166,
+        "support": 3999
+      },
+      {
+        "label": 1,
+        "precision": 0.5557647058823529,
+        "recall": 0.6631106120157215,
+        "f1": 0.604710701484895,
+        "support": 1781
+      }
+    ],
+    "positive_label": {
+      "precision": 0.5557647058823529,
+      "recall": 0.6631106120157215,
+      "f1": 0.604710701484895,
+      "support": 1781
+    },
+    "macro": {
+      "precision": 0.6958030095759233,
+      "recall": 0.7135257986310166,
+      "f1": 0.7014930565172058,
+      "support": 5780
+    },
+    "weighted": {
+      "precision": 0.7495408915123143,
+      "recall": 0.7328719723183391,
+      "f1": 0.738632029434449,
+      "support": 5780
+    }
+  },
+  "files": {
+    "responses-test-with-neutral_gemma4e4b.jsonl": {
+      "samples": 6220,
+      "accuracy": 0.7266881028938906,
+      "labels": [
+        0,
+        1
+      ],
+      "matrix": {
+        "0": {
+          "0": 3152,
+          "1": 1164
+        },
+        "1": {
+          "0": 536,
+          "1": 1368
+        }
+      },
+      "per_label": [
+        {
+          "label": 0,
+          "precision": 0.8546637744034707,
+          "recall": 0.7303058387395737,
+          "f1": 0.7876061969015492,
+          "support": 4316
+        },
+        {
+          "label": 1,
+          "precision": 0.5402843601895735,
+          "recall": 0.7184873949579832,
+          "f1": 0.6167718665464382,
+          "support": 1904
+        }
+      ],
+      "positive_label": {
+        "precision": 0.5402843601895735,
+        "recall": 0.7184873949579832,
+        "f1": 0.6167718665464382,
+        "support": 1904
+      },
+      "macro": {
+        "precision": 0.6974740672965221,
+        "recall": 0.7243966168487784,
+        "f1": 0.7021890317239937,
+        "support": 6220
+      },
+      "weighted": {
+        "precision": 0.7584293042003742,
+        "recall": 0.7266881028938906,
+        "f1": 0.7353122153909172,
+        "support": 6220
+      },
+      "response_field": "response",
+      "neutral_field": "gemma4_e4b",
+      "aux_neutral_field": "qwen"
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "accuracy": 0.7266881028938906,
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3152,
+        "1": 1164
+      },
+      "1": {
+        "0": 536,
+        "1": 1368
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8546637744034707,
+        "recall": 0.7303058387395737,
+        "f1": 0.7876061969015492,
+        "support": 4316
+      },
+      {
+        "label": 1,
+        "precision": 0.5402843601895735,
+        "recall": 0.7184873949579832,
+        "f1": 0.6167718665464382,
+        "support": 1904
+      }
+    ],
+    "positive_label": {
+      "precision": 0.5402843601895735,
+      "recall": 0.7184873949579832,
+      "f1": 0.6167718665464382,
+      "support": 1904
+    },
+    "macro": {
+      "precision": 0.6974740672965221,
+      "recall": 0.7243966168487784,
+      "f1": 0.7021890317239937,
+      "support": 6220
+    },
+    "weighted": {
+      "precision": 0.7584293042003742,
+      "recall": 0.7266881028938906,
+      "f1": 0.7353122153909172,
+      "support": 6220
+    }
+  }
+}
