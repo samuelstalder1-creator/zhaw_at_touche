@@ -150,6 +150,30 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
         self.assertEqual(args.neutral_field, "qwen")
 
+    def test_repo_setup103_qwen_uses_qwen_generated_files(self) -> None:
+        args = parse_args(["--setup-name", "setup103-qwen"])
+
+        self.assertEqual(args.trainer_type, "embedding_residual_classifier")
+        self.assertEqual(args.train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+        )
+        self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
+        self.assertEqual(args.neutral_field, "qwen")
+
+    def test_repo_setup103_gemma_uses_gemma_generated_files(self) -> None:
+        args = parse_args(["--setup-name", "setup103-gemma"])
+
+        self.assertEqual(args.trainer_type, "embedding_residual_classifier")
+        self.assertEqual(args.train_file, "data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl",
+        )
+        self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
+        self.assertEqual(args.neutral_field, "gemma4_e4b")
+
     def test_parse_args_accepts_linear_scheduler(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             setups_dir = Path(tmp_dir)

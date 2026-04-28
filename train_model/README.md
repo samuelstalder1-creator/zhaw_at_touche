@@ -25,7 +25,7 @@ overrides on top of it.
 | `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
 | `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
-| `embedding_residual_classifier` | `setup103`, `setup119` | logistic regression on one residual vector |
+| `embedding_residual_classifier` | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup119` | logistic regression on one residual vector |
 | `embedding_classifier` | `setup104`, `setup104-qwen` | logistic regression on stacked response, neutral, and residual vectors |
 | `query_residual_classifier` | `setup117` | query embedding plus single-provider residual |
 | `dual_residual_classifier` | `setup113` | logistic regression on Gemini and Qwen residual vectors |
@@ -135,6 +135,8 @@ uv run touche-train --setup-name setup102
 
 ```bash
 uv run touche-train --setup-name setup103
+uv run touche-train --setup-name setup103-qwen
+uv run touche-train --setup-name setup103-gemma
 uv run touche-train --setup-name setup104
 uv run touche-train --setup-name setup104-qwen
 uv run touche-train --setup-name setup113
@@ -216,6 +218,9 @@ These runs write to `models/<setup-name>/`:
 - Gemini-backed files are the default source for most setups.
 - `setup6-qwen` and `setup7-qwen` switch the training and validation files to
   `data/generated/qwen/`.
+- `setup103-qwen` is the naming-aligned Qwen residual counterpart to `setup103`.
+- `setup103-gemma` applies the same residual-only setup to
+  `data/generated/gemma4e4b/`.
 - `setup104-qwen` is the Qwen-backed full embedding counterpart to `setup104`.
 - `setup119` is the Qwen-only residual counterpart to `setup103`.
 - Only the reference-aware and embedding-based setups actually consume the

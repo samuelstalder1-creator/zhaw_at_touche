@@ -89,6 +89,8 @@ Embedding-based examples:
 
 ```bash
 uv run touche-train --setup-name setup103
+uv run touche-train --setup-name setup103-qwen
+uv run touche-train --setup-name setup103-gemma
 uv run touche-train --setup-name setup104-qwen
 uv run touche-train --setup-name setup105_1
 uv run touche-train --setup-name setup116
@@ -119,6 +121,8 @@ Provider-specific evaluation:
 ```bash
 uv run touche-validate --setup-name setup6 --generated-provider qwen
 uv run touche-validate --setup-name setup7-qwen
+uv run touche-validate --setup-name setup103-qwen
+uv run touche-validate --setup-name setup103-gemma
 uv run touche-validate --setup-name setup104-qwen
 ```
 
@@ -130,7 +134,7 @@ uv run touche-validate --setup-name setup104-qwen
 | --- | --- | --- |
 | Fine-tuned classifier | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | transformer classifiers over prompt-formatted inputs |
 | Cross-encoder | `setup105`, `setup105_1` | jointly encodes response and neutral reference in one sequence |
-| Learned embedding features | `setup103`, `setup104`, `setup104-qwen`, `setup113`, `setup114`, `setup117`, `setup118`, `setup119` | frozen encoder plus learned logistic regression over delta or stacked embedding features |
+| Learned embedding features | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup104`, `setup104-qwen`, `setup113`, `setup114`, `setup117`, `setup118`, `setup119` | frozen encoder plus learned logistic regression over delta or stacked embedding features |
 | Embedding divergence | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines over response vs neutral embeddings |
 | Scalar anchor baseline | `setup110`, `setup111` | multi-anchor Gemini+Qwen baselines over six query/Gemini/Qwen/response cosine distances; `setup110` learns weights, `setup111` uses a handcrafted score |
 

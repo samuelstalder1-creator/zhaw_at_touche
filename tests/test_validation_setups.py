@@ -184,6 +184,24 @@ class ValidationSetupsTests(unittest.TestCase):
         self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
         self.assertEqual(defaults["neutral_field"], "qwen")
 
+    def test_repo_setup103_qwen_uses_qwen_test_file(self) -> None:
+        args = parse_args(["--setup-name", "setup103-qwen"])
+        defaults = load_setup_defaults("setup103-qwen")
+
+        self.assertEqual(resolve_model_source(args), Path("models/setup103-qwen"))
+        self.assertEqual(args.results_dir, "results/setup103-qwen")
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(defaults["neutral_field"], "qwen")
+
+    def test_repo_setup103_gemma_uses_gemma_test_file(self) -> None:
+        args = parse_args(["--setup-name", "setup103-gemma"])
+        defaults = load_setup_defaults("setup103-gemma")
+
+        self.assertEqual(resolve_model_source(args), Path("models/setup103-gemma"))
+        self.assertEqual(args.results_dir, "results/setup103-gemma")
+        self.assertEqual(args.input_files, ["data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl"])
+        self.assertEqual(defaults["neutral_field"], "gemma4_e4b")
+
     def test_eval_splits_can_include_validation_and_test(self) -> None:
         args = parse_args(["--eval-splits", "validation", "test"])
 

@@ -60,13 +60,15 @@ These are training-free baselines. They fail because cosine distance is a single
 
 ---
 
-### Family 3 — Learned embedding features (setup103–104, setup104-qwen, setup113–114, setup117–119)
+### Family 3 — Learned embedding features (setup103, setup103-qwen, setup103-gemma, setup104, setup104-qwen, setup113–114, setup117–119)
 
 Instead of thresholding a distance, a logistic regression is trained on the embedding vectors themselves. The encoder stays frozen; only the logistic regression weights are learned. This is the key fix over family 2: the classifier learns *which directions in embedding space correspond to advertising*.
 
 | Setup | Features | Dim |
 | --- | --- | --- |
 | setup103 | `response_emb − gemini_emb` | 768 |
+| setup103-qwen | `response_emb − qwen_emb` | 768 |
+| setup103-gemma | `response_emb − gemma4_e4b_emb` | 768 |
 | setup104 | `[response_emb \| gemini_emb \| delta_gemini]` | 2304 |
 | setup104-qwen | `[response_emb \| qwen_emb \| delta_qwen]` | 2304 |
 | setup113 | `[delta_gemini \| delta_qwen]` | 1536 |
@@ -75,13 +77,15 @@ Instead of thresholding a distance, a logistic regression is trained on the embe
 | setup118 | `[query_emb \| delta_gemini \| delta_qwen]` | 2304 |
 | setup119 | `response_emb − qwen_emb` | 768 |
 
-Setup103 is the single-provider Gemini residual. Setup119 is the Qwen-only
-residual counterpart used to isolate provider effects. Setup104 and
-setup104-qwen add absolute embedding positions on top for Gemini and Qwen
-respectively. Setup113 and setup114 extend both ideas to dual-provider
-neutrals (Gemini + Qwen), testing whether two independent neutral sources add
-signal. Setup117 and setup118 inject the query embedding into the same delta
-family to test whether topic context sharpens the residual signal.
+Setup103 is the single-provider Gemini residual. Setup103-qwen and
+setup103-gemma apply the same residual-only design to Qwen and Gemma neutral
+files. Setup119 remains the earlier Qwen-only residual naming used in the
+committed results. Setup104 and setup104-qwen add absolute embedding positions
+on top for Gemini and Qwen respectively. Setup113 and setup114 extend both
+ideas to dual-provider neutrals (Gemini + Qwen), testing whether two
+independent neutral sources add signal. Setup117 and setup118 inject the query
+embedding into the same delta family to test whether topic context sharpens
+the residual signal.
 
 ### Family 4 — Cross-encoder (setup105, setup105_1)
 
@@ -132,6 +136,8 @@ Operates at sentence level rather than document level. Sentences in the response
 | setup101 | embedding divergence | all-mpnet-base-v2 | response vs neutral (top-3) |
 | setup102 | embedding divergence | BGE-large-en-v1.5 | response vs neutral (top-3) |
 | setup103 | learned embedding feature | all-mpnet-base-v2 | `response_emb − gemini_emb` |
+| setup103-qwen | learned embedding feature | all-mpnet-base-v2 | `response_emb − qwen_emb` |
+| setup103-gemma | learned embedding feature | all-mpnet-base-v2 | `response_emb − gemma4_e4b_emb` |
 | setup104 | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| gemini_emb \| delta_gemini]` |
 | setup104-qwen | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| qwen_emb \| delta_qwen]` |
 | setup105 | cross-encoder | DeBERTa-v3-base | response + neutral jointly encoded |

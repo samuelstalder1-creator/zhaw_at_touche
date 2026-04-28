@@ -1,0 +1,13 @@
+{
+  "description": "Residual embedding classifier with a Gemma neutral reference. Uses only (response_emb - gemma4_e4b_emb) as input to a logistic regression. Extends the setup103 residual-only design to the local Gemma neutral files under data/generated/gemma4e4b/. Frozen encoder, no fine-tuning. Trainer type: embedding_residual_classifier.",
+  "trainer_type": "embedding_residual_classifier",
+  "train_file": "data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl",
+  "validation_file": "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemma4_e4b",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

@@ -1,0 +1,19 @@
+{
+  "description": "Validation preset for the setup103-gemma residual embedding classifier (response_emb - gemma4_e4b_emb, Gemma). Scoring backend: embedding_residual_classifier.",
+  "scoring_backend": "embedding_residual_classifier",
+  "model_dir": "models/setup103-gemma",
+  "results_dir": "results/setup103-gemma",
+  "input_files": [
+    "data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemma4_e4b",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}
