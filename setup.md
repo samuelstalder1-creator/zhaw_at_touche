@@ -60,7 +60,7 @@ These are training-free baselines. They fail because cosine distance is a single
 
 ---
 
-### Family 3 — Learned embedding features (setup103, setup103-qwen, setup103-gemma, setup104, setup104-qwen, setup113–114, setup117–119)
+### Family 3 — Learned embedding features (setup103, setup103-qwen, setup103-gemma, setup104, setup104-qwen, setup113–114, setup117–121)
 
 Instead of thresholding a distance, a logistic regression is trained on the embedding vectors themselves. The encoder stays frozen; only the logistic regression weights are learned. This is the key fix over family 2: the classifier learns *which directions in embedding space correspond to advertising*.
 
@@ -76,6 +76,10 @@ Instead of thresholding a distance, a logistic regression is trained on the embe
 | setup117 | `[query_emb \| delta_gemini]` | 1536 |
 | setup118 | `[query_emb \| delta_gemini \| delta_qwen]` | 2304 |
 | setup119 | `response_emb − qwen_emb` | 768 |
+| setup120-qwen | `centered delta_qwen + abs(delta) + cosine + ||delta||` | 1538 |
+| setup120-gemma | `centered delta_gemma + abs(delta) + cosine + ||delta||` | 1538 |
+| setup121-qwen | `[response_emb \| qwen_emb \| centered delta_qwen \| abs(delta) \| cosine \| ||delta||]` | 3074 |
+| setup121-gemma | `[response_emb \| gemma4_e4b_emb \| centered delta_gemma \| abs(delta) \| cosine \| ||delta||]` | 3074 |
 
 Setup103 is the single-provider Gemini residual. Setup103-qwen and
 setup103-gemma apply the same residual-only design to Qwen and Gemma neutral
@@ -85,7 +89,12 @@ on top for Gemini and Qwen respectively. Setup113 and setup114 extend both
 ideas to dual-provider neutrals (Gemini + Qwen), testing whether two
 independent neutral sources add signal. Setup117 and setup118 inject the query
 embedding into the same delta family to test whether topic context sharpens
-the residual signal.
+the residual signal. Setup120-qwen and setup120-gemma keep the residual-only
+design but recenter the provider-specific delta by the negative-class mean and
+append cheap scalar/vector diagnostics (`abs(delta)`, cosine similarity, delta
+norm), while letting validation choose the LR regularization and class-weight
+setting. Setup121-qwen and setup121-gemma apply the same improvements to the
+full `[response | neutral | delta]` stack.
 
 ### Family 4 — Cross-encoder (setup105, setup105_1)
 
@@ -140,6 +149,10 @@ Operates at sentence level rather than document level. Sentences in the response
 | setup103-gemma | learned embedding feature | all-mpnet-base-v2 | `response_emb − gemma4_e4b_emb` |
 | setup104 | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| gemini_emb \| delta_gemini]` |
 | setup104-qwen | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| qwen_emb \| delta_qwen]` |
+| setup120-qwen | learned embedding feature | all-mpnet-base-v2 | centered `delta_qwen` + `abs(delta)` + cosine + norm |
+| setup120-gemma | learned embedding feature | all-mpnet-base-v2 | centered `delta_gemma` + `abs(delta)` + cosine + norm |
+| setup121-qwen | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| qwen_emb \| centered delta_qwen]` + delta auxiliaries |
+| setup121-gemma | learned embedding feature | all-mpnet-base-v2 | `[response_emb \| gemma4_e4b_emb \| centered delta_gemma]` + delta auxiliaries |
 | setup105 | cross-encoder | DeBERTa-v3-base | response + neutral jointly encoded |
 | setup105_1 | cross-encoder | RoBERTa-base | response + neutral jointly encoded |
 | setup110 | anchor distance | all-mpnet-base-v2 | Gemini + Qwen paired files, learned logistic regression over 6 cosine scalars |
@@ -172,3 +185,6 @@ Operates at sentence level rather than document level. Sentences in the response
 | `positive_class_weight_scale` | setup7, setup105_1, setup116 | compensates for 70/30 class imbalance |
 | `gradient_checkpointing` | setup4 | trades compute for lower memory |
 | `pad_to_max_length` | setup7, setup7-qwen, setup116 | consistent padding for long-context batches |
+| `delta_centering: negative_mean` | setup120-qwen, setup120-gemma, setup121-qwen, setup121-gemma | subtracts the mean negative-class provider delta before classification |
+| `append_delta_abs`, `append_pairwise_cosine`, `append_delta_norm` | setup120-qwen, setup120-gemma, setup121-qwen, setup121-gemma | adds provider-drift diagnostics without discarding the full residual vector |
+| `lr_c_values`, `lr_class_weight_options` | setup120-qwen, setup120-gemma, setup121-qwen, setup121-gemma | lets validation select the LR regularization and whether class balancing is still helpful |

@@ -162,6 +162,18 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
         self.assertEqual(args.neutral_field, "qwen")
 
+    def test_existing_embedding_lr_setups_keep_legacy_defaults(self) -> None:
+        residual_args = parse_args(["--setup-name", "setup103"])
+        full_args = parse_args(["--setup-name", "setup104"])
+
+        for args in (residual_args, full_args):
+            self.assertEqual(args.delta_centering, "none")
+            self.assertFalse(args.append_delta_abs)
+            self.assertFalse(args.append_pairwise_cosine)
+            self.assertFalse(args.append_delta_norm)
+            self.assertEqual(args.lr_c_values, [1.0])
+            self.assertEqual(args.lr_class_weight_options, ["balanced"])
+
     def test_repo_setup103_gemma_uses_gemma_generated_files(self) -> None:
         args = parse_args(["--setup-name", "setup103-gemma"])
 
@@ -173,6 +185,32 @@ class TrainingSetupsTests(unittest.TestCase):
         )
         self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
         self.assertEqual(args.neutral_field, "gemma4_e4b")
+
+    def test_repo_setup120_qwen_enables_centered_delta_feature_search(self) -> None:
+        args = parse_args(["--setup-name", "setup120-qwen"])
+
+        self.assertEqual(args.trainer_type, "embedding_residual_classifier")
+        self.assertEqual(args.train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(args.neutral_field, "qwen")
+        self.assertEqual(args.delta_centering, "negative_mean")
+        self.assertTrue(args.append_delta_abs)
+        self.assertTrue(args.append_pairwise_cosine)
+        self.assertTrue(args.append_delta_norm)
+        self.assertEqual(args.lr_c_values, [0.25, 0.5, 1.0, 2.0, 4.0])
+        self.assertEqual(args.lr_class_weight_options, ["none", "balanced"])
+
+    def test_repo_setup121_gemma_enables_centered_full_embedding_search(self) -> None:
+        args = parse_args(["--setup-name", "setup121-gemma"])
+
+        self.assertEqual(args.trainer_type, "embedding_classifier")
+        self.assertEqual(args.train_file, "data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl")
+        self.assertEqual(args.neutral_field, "gemma4_e4b")
+        self.assertEqual(args.delta_centering, "negative_mean")
+        self.assertTrue(args.append_delta_abs)
+        self.assertTrue(args.append_pairwise_cosine)
+        self.assertTrue(args.append_delta_norm)
+        self.assertEqual(args.lr_c_values, [0.25, 0.5, 1.0, 2.0, 4.0])
+        self.assertEqual(args.lr_class_weight_options, ["none", "balanced"])
 
     def test_parse_args_accepts_linear_scheduler(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:

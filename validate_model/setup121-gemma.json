@@ -1,0 +1,18 @@
+{
+  "description": "Validation preset for the improved Gemma full embedding classifier. Reuses the saved embedding-LR bundle and feature state from models/setup121-gemma on the Gemma-generated test rows.",
+  "scoring_backend": "embedding_classifier",
+  "model_dir": "models/setup121-gemma",
+  "results_dir": "results/setup121-gemma",
+  "input_files": [
+    "data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemma4_e4b",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

@@ -1,0 +1,19 @@
+{
+  "description": "Improved Gemma residual classifier. Starts from setup103-gemma, then recenters the residual vector by the mean negative-class Gemma delta, appends abs(delta), cosine(response, gemma), and ||delta||, and selects the logistic-regression C/class-weight combination on validation Macro F1. Frozen encoder, no fine-tuning. Trainer type: embedding_residual_classifier.",
+  "trainer_type": "embedding_residual_classifier",
+  "train_file": "data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl",
+  "validation_file": "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemma4_e4b",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "delta_centering": "negative_mean",
+  "append_delta_abs": true,
+  "append_pairwise_cosine": true,
+  "append_delta_norm": true,
+  "lr_c_values": [0.25, 0.5, 1.0, 2.0, 4.0],
+  "lr_class_weight_options": ["none", "balanced"],
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

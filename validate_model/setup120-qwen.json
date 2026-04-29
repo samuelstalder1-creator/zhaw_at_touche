@@ -1,0 +1,18 @@
+{
+  "description": "Validation preset for the improved Qwen residual classifier. Reuses the saved embedding-LR bundle and feature state from models/setup120-qwen on the Qwen-generated test rows.",
+  "scoring_backend": "embedding_residual_classifier",
+  "model_dir": "models/setup120-qwen",
+  "results_dir": "results/setup120-qwen",
+  "input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "qwen",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

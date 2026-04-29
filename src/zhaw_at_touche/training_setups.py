@@ -7,11 +7,15 @@ from typing import Any
 DEFAULT_TRAINING_SETUPS_DIR = Path("train_model")
 
 ALLOWED_SETUP_FIELDS = {
+    "append_delta_abs",
+    "append_delta_norm",
+    "append_pairwise_cosine",
     "aux_neutral_field",
     "aux_reference_label",
     "aux_train_file",
     "aux_validation_file",
     "batch_size",
+    "delta_centering",
     "device",
     "distance_metric",
     "epochs",
@@ -22,6 +26,8 @@ ALLOWED_SETUP_FIELDS = {
     "layerwise_lr_decay",
     "learning_rate",
     "lr_scheduler",
+    "lr_c_values",
+    "lr_class_weight_options",
     "max_length",
     "max_grad_norm",
     "max_train_rows",

@@ -69,6 +69,12 @@ def base_defaults() -> dict[str, object]:
         "score_granularity": "sentence",
         "sentence_agg": "max",
         "threshold_metric": "positive_f1",
+        "delta_centering": "none",
+        "append_delta_abs": False,
+        "append_pairwise_cosine": False,
+        "append_delta_norm": False,
+        "lr_c_values": [1.0],
+        "lr_class_weight_options": ["balanced"],
         "wandb_enabled": True,
         "wandb_project": "zhaw-at-touche-training",
         "wandb_dir": None,
@@ -250,6 +256,44 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
         help="Metric used to fit the embedding-divergence threshold.",
     )
     parser.add_argument(
+        "--delta-centering",
+        choices=("none", "negative_mean"),
+        default=defaults["delta_centering"],
+        help="Optional centering strategy applied to residual feature blocks before logistic regression.",
+    )
+    parser.add_argument(
+        "--append-delta-abs",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["append_delta_abs"],
+        help="Append abs(delta) blocks alongside the signed residual vectors.",
+    )
+    parser.add_argument(
+        "--append-pairwise-cosine",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["append_pairwise_cosine"],
+        help="Append per-provider cosine similarity scalars between response and neutral embeddings.",
+    )
+    parser.add_argument(
+        "--append-delta-norm",
+        action=argparse.BooleanOptionalAction,
+        default=defaults["append_delta_norm"],
+        help="Append per-provider L2 norm scalars for each residual vector.",
+    )
+    parser.add_argument(
+        "--lr-c-values",
+        nargs="+",
+        type=float,
+        default=defaults["lr_c_values"],
+        help="One or more inverse-regularization strengths explored for embedding-LR backends.",
+    )
+    parser.add_argument(
+        "--lr-class-weight-options",
+        nargs="+",
+        choices=("balanced", "none"),
+        default=defaults["lr_class_weight_options"],
+        help="Class-weight strategies explored for embedding-LR backends during validation-based model selection.",
+    )
+    parser.add_argument(
         "--wandb",
         action=argparse.BooleanOptionalAction,
         default=defaults["wandb_enabled"],
@@ -394,6 +438,12 @@ def main() -> None:
             threshold_metric=args.threshold_metric,
             validation_path=Path(args.validation_file) if args.validation_file else None,
             aux_validation_path=Path(args.aux_validation_file) if args.aux_validation_file else None,
+            delta_centering=args.delta_centering,
+            append_delta_abs=args.append_delta_abs,
+            append_pairwise_cosine=args.append_pairwise_cosine,
+            append_delta_norm=args.append_delta_norm,
+            lr_c_values=tuple(float(value) for value in args.lr_c_values),
+            lr_class_weight_options=tuple(args.lr_class_weight_options),
         )
         summary = train_embedding_lr_classifier(config)
         print(f"trained {args.trainer_type} state saved to {model_dir}")

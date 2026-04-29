@@ -202,7 +202,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             response_field=args.response_field, neutral_field=args.neutral_field,
             aux_neutral_field=args.aux_neutral_field, query_field=args.query_field,
             threshold=0.5, device=device, batch_size=args.batch_size,
-            max_length=args.max_length, progress_prefix=f"{trainer_type} calibration",
+            max_length=args.max_length, saved_state=saved_state,
+            progress_prefix=f"{trainer_type} calibration",
         )
         cal_scores = [p.score for p in cal_predictions]
         cal_labels = [int(r["label"]) for r in calibration_records]
@@ -234,7 +235,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             response_field=args.response_field, neutral_field=args.neutral_field,
             aux_neutral_field=args.aux_neutral_field, query_field=args.query_field,
             threshold=threshold, device=device, batch_size=args.batch_size,
-            max_length=args.max_length, progress_prefix=f"{trainer_type} eval {primary.stem}",
+            max_length=args.max_length, saved_state=saved_state,
+            progress_prefix=f"{trainer_type} eval {primary.stem}",
         )
 
         file_gold_labels: list[int] = []

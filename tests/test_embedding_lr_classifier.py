@@ -38,6 +38,7 @@ class EmbeddingLRTrainerTests(unittest.TestCase):
     def test_validation_summary_uses_calibrated_threshold(self) -> None:
         train_records = [{"label": 1}, {"label": 0}]
         validation_records = [{"label": 1}, {"label": 0}, {"label": 0}]
+        calibrated_summary = metrics_dict([1, 0, 0], [0, 1, 0])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = EmbeddingLRConfig(
@@ -63,19 +64,19 @@ class EmbeddingLRTrainerTests(unittest.TestCase):
                 patch(
                     "zhaw_at_touche.embedding_lr_classifier._embed_and_build",
                     side_effect=[
-                        (["delta"], np.array([[1.0], [2.0]], dtype=float)),
-                        (["delta"], np.array([[10.0], [20.0], [30.0]], dtype=float)),
+                        (["delta"], np.array([[1.0], [2.0]], dtype=float), {}),
+                        (["delta"], np.array([[10.0], [20.0], [30.0]], dtype=float), {}),
                     ],
                 ),
                 patch("zhaw_at_touche.embedding_lr_classifier.Pipeline", FakePipeline),
                 patch(
                     "zhaw_at_touche.embedding_lr_classifier.calibrate_threshold",
-                    return_value=(0.65, {"metric": "macro_f1"}),
+                    return_value=(0.65, calibrated_summary),
                 ),
             ):
                 summary = train_embedding_lr_classifier(config)
 
-        expected = metrics_dict([1, 0, 0], [0, 1, 0])
+        expected = calibrated_summary
         self.assertEqual(summary["threshold"], 0.65)
         self.assertEqual(summary["validation_summary"], expected)
 

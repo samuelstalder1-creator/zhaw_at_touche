@@ -25,8 +25,8 @@ overrides on top of it.
 | `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
 | `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
-| `embedding_residual_classifier` | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup119` | logistic regression on one residual vector |
-| `embedding_classifier` | `setup104`, `setup104-qwen` | logistic regression on stacked response, neutral, and residual vectors |
+| `embedding_residual_classifier` | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup119`, `setup120-qwen`, `setup120-gemma` | logistic regression on one residual vector, optionally with centered and auxiliary delta features |
+| `embedding_classifier` | `setup104`, `setup104-qwen`, `setup121-qwen`, `setup121-gemma` | logistic regression on stacked response, neutral, and residual vectors |
 | `query_residual_classifier` | `setup117` | query embedding plus single-provider residual |
 | `dual_residual_classifier` | `setup113` | logistic regression on Gemini and Qwen residual vectors |
 | `dual_embedding_classifier` | `setup114` | full dual-provider embedding stack |
@@ -82,6 +82,12 @@ The loader accepts these fields:
 - `sentence_agg`
 - `sentence_delta_agg`
 - `threshold_metric`
+- `delta_centering`
+- `append_delta_abs`
+- `append_pairwise_cosine`
+- `append_delta_norm`
+- `lr_c_values`
+- `lr_class_weight_options`
 - `wandb_enabled`
 - `wandb_project`
 - `wandb_dir`
@@ -139,6 +145,10 @@ uv run touche-train --setup-name setup103-qwen
 uv run touche-train --setup-name setup103-gemma
 uv run touche-train --setup-name setup104
 uv run touche-train --setup-name setup104-qwen
+uv run touche-train --setup-name setup120-qwen
+uv run touche-train --setup-name setup120-gemma
+uv run touche-train --setup-name setup121-qwen
+uv run touche-train --setup-name setup121-gemma
 uv run touche-train --setup-name setup113
 uv run touche-train --setup-name setup114
 uv run touche-train --setup-name setup117
