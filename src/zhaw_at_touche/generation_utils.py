@@ -37,6 +37,7 @@ MODEL_ALIASES = {
     "gemini-1.5-flash": "gemini15flash",
     "gemini-2.5-flash-lite": "gemini25flashlite",
     "Qwen/Qwen2.5-1.5B-Instruct": "qwen",
+    "gemma4:26b": "gemma4_26b",
     "gemma4:2b": "gemma4_2b",
     "gemma4:12b": "gemma4_12b",
     "gemma4:27b": "gemma4_27b",
@@ -63,8 +64,10 @@ def default_backend_for_provider(provider: str) -> str:
         return "gemini"
     if provider == "qwen":
         return "transformers"
+    if provider == "gemma426b":
+        return "openai_compatible"
     raise ValueError(
-        f"Unsupported provider '{provider}'. Supported providers: gemini, qwen."
+        f"Unsupported provider '{provider}'. Supported providers: gemini, qwen, gemma426b."
     )
 
 

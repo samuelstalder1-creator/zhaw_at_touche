@@ -3,14 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
 
-SUPPORTED_GENERATED_PROVIDERS = ("gemini", "qwen")
+SUPPORTED_GENERATED_PROVIDERS = ("gemini", "qwen", "gemma426b")
 PROVIDER_GENERATED_FIELDS = {
     "gemini": "gemini25flashlite",
     "qwen": "qwen",
+    "gemma426b": "gemma4_26b",
 }
 PROVIDER_REFERENCE_LABELS = {
     "gemini": "GEMINI",
     "qwen": "QWEN",
+    "gemma426b": "GEMMA4-26B",
 }
 
 

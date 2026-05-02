@@ -72,8 +72,17 @@ uv run touche-generate-neutral \
   --device cuda
 ```
 
+Gemma 4 26B via Ollama:
+
+```bash
+uv run touche-generate-neutral \
+  --provider gemma426b \
+  --split validation
+```
+
 Gemini writes `data/generated/gemini/*.jsonl`. Qwen writes
-`data/generated/qwen/*.jsonl`.
+`data/generated/qwen/*.jsonl`. Gemma 4 26B writes
+`data/generated/gemma426b/*.jsonl`.
 
 ### 3. Train a setup
 

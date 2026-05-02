@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from zhaw_at_touche.constants import (
+    DEFAULT_GEMMA_API_BASE,
+    DEFAULT_GEMMA_MODEL,
     DEFAULT_GEMINI_MODEL,
     DEFAULT_PROVIDER,
     DEFAULT_QWEN_API_BASE,
@@ -106,6 +108,8 @@ def resolve_backend(args: argparse.Namespace) -> str:
 def resolve_model(args: argparse.Namespace) -> str:
     if args.model:
         return args.model
+    if args.provider == "gemma426b":
+        return DEFAULT_GEMMA_MODEL
     if args.provider == "qwen":
         return DEFAULT_QWEN_MODEL
     return DEFAULT_GEMINI_MODEL
@@ -139,19 +143,36 @@ def main() -> None:
 
         gemini_client = genai.Client(api_key=api_key)
     elif backend == "openai_compatible":
-        openai_api_base = (
-            args.api_base
-            or os.environ.get("QWEN_API_BASE")
-            or os.environ.get("OPENAI_API_BASE")
-            or os.environ.get("OPENAI_BASE_URL")
-            or DEFAULT_QWEN_API_BASE
-        )
-        openai_api_key = (
-            args.api_key
-            or os.environ.get("QWEN_API_KEY")
-            or os.environ.get("OPENAI_API_KEY")
-            or "EMPTY"
-        )
+        if args.provider == "gemma426b":
+            openai_api_base = (
+                args.api_base
+                or os.environ.get("GEMMA_API_BASE")
+                or os.environ.get("OLLAMA_API_BASE")
+                or os.environ.get("OPENAI_API_BASE")
+                or os.environ.get("OPENAI_BASE_URL")
+                or DEFAULT_GEMMA_API_BASE
+            )
+            openai_api_key = (
+                args.api_key
+                or os.environ.get("GEMMA_API_KEY")
+                or os.environ.get("OLLAMA_API_KEY")
+                or os.environ.get("OPENAI_API_KEY")
+                or "EMPTY"
+            )
+        else:
+            openai_api_base = (
+                args.api_base
+                or os.environ.get("QWEN_API_BASE")
+                or os.environ.get("OPENAI_API_BASE")
+                or os.environ.get("OPENAI_BASE_URL")
+                or DEFAULT_QWEN_API_BASE
+            )
+            openai_api_key = (
+                args.api_key
+                or os.environ.get("QWEN_API_KEY")
+                or os.environ.get("OPENAI_API_KEY")
+                or "EMPTY"
+            )
     elif backend == "transformers":
         local_device = resolve_device(args.device)
         print(

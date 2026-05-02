@@ -225,6 +225,27 @@ class EmbeddingDivergenceCliTests(unittest.TestCase):
         self.assertEqual(args.neutral_field, "qwen")
         self.assertEqual(args.results_dir, "results/setup100-qwen")
 
+    def test_generated_provider_accepts_gemma426b(self) -> None:
+        args = parse_args(
+            [
+                "--setup-name",
+                "setup100",
+                "--generated-provider",
+                "gemma426b",
+            ]
+        )
+
+        self.assertEqual(
+            args.input_files,
+            ["data/generated/gemma426b/responses-test-with-neutral_gemma426b.jsonl"],
+        )
+        self.assertEqual(
+            args.calibration_input_files,
+            ["data/generated/gemma426b/responses-validation-with-neutral_gemma426b.jsonl"],
+        )
+        self.assertEqual(args.neutral_field, "gemma4_26b")
+        self.assertEqual(args.results_dir, "results/setup100-gemma426b")
+
 
 if __name__ == "__main__":
     unittest.main()

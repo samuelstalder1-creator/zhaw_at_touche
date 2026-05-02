@@ -129,6 +129,18 @@ class ValidationSetupsTests(unittest.TestCase):
         self.assertEqual(args.reference_label, "QWEN")
         self.assertEqual(args.results_dir, "results/setup7-qwen")
 
+    def test_generated_provider_accepts_gemma426b(self) -> None:
+        args = parse_args(["--setup-name", "setup7", "--generated-provider", "gemma426b"])
+
+        self.assertEqual(
+            args.input_files,
+            ["data/generated/gemma426b/responses-test-with-neutral_gemma426b.jsonl"],
+        )
+        self.assertEqual(args.generated_field, "gemma4_26b")
+        self.assertEqual(args.reference_field, "gemma4_26b")
+        self.assertEqual(args.reference_label, "GEMMA4-26B")
+        self.assertEqual(args.results_dir, "results/setup7-gemma426b")
+
     def test_generated_provider_overrides_setup_input_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             setups_dir = Path(tmp_dir)
