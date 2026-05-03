@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the single-epoch RoBERTa query-response setup6_3 classifier.",
+  "model_dir": "models/setup6_3",
+  "results_dir": "results/setup6_3",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "query_response"
+}

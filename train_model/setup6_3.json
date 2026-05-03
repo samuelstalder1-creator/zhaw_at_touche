@@ -1,0 +1,13 @@
+{
+  "description": "RoBERTa query-response classifier matching setup6 inputs but constrained to a single training epoch.",
+  "trainer_type": "classifier",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "FacebookAI/roberta-base",
+  "input_format": "query_response",
+  "max_length": 512,
+  "epochs": 1,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 2e-05
+}
