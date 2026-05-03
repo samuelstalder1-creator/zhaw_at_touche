@@ -530,6 +530,8 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
     model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
         num_labels=2,
+        id2label={0: "not_ad", 1: "ad"},
+        label2id={"not_ad": 0, "ad": 1},
     ).to(config.device)
     if config.gradient_checkpointing:
         gradient_checkpointing_enable = getattr(model, "gradient_checkpointing_enable", None)
@@ -749,6 +751,8 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                         "epoch": epoch,
                         **validation_metrics,
                     }
+                    model.save_pretrained(config.output_dir)
+                    tokenizer.save_pretrained(config.output_dir)
                     if wandb_run is not None:
                         wandb_run.summary.update(
                             {
@@ -765,8 +769,9 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
         if wandb_run is not None:
             wandb_run.finish()
 
-    model.save_pretrained(config.output_dir)
-    tokenizer.save_pretrained(config.output_dir)
+    if validation_records is None:
+        model.save_pretrained(config.output_dir)
+        tokenizer.save_pretrained(config.output_dir)
 
     summary = {
         "model_name": config.model_name,
