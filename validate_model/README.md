@@ -65,6 +65,7 @@ overrides.
 | `setup6-qwen` | provider-specific classifier validation | defaults to the Qwen-enriched test file |
 | `setup7` | reference-aware long-context validation | uses Gemini neutral context |
 | `setup7-qwen` | provider-specific long-context validation | uses Qwen neutral context |
+| `setup7_2-qwen` | hybrid long-context validation | uses Qwen neutral context with the setup10-style Longformer variant |
 | `setup8` | classifier validation | plain classifier path |
 | `setup9` | stabilized DeBERTa validation | plain classifier path |
 | `setup10` | ALBERT validation | plain classifier path |
@@ -104,6 +105,7 @@ uv run touche-validate --setup-name setup12
 uv run touche-validate --setup-name setup4
 uv run touche-validate --setup-name setup7
 uv run touche-validate --setup-name setup7-qwen
+uv run touche-validate --setup-name setup7_2-qwen
 uv run touche-validate --setup-name setup115
 uv run touche-validate --setup-name setup116
 ```

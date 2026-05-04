@@ -22,7 +22,7 @@ overrides on top of it.
 
 | Trainer type | Setup names | Notes |
 | --- | --- | --- |
-| `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
+| `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup7_2-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
 | `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
 | `embedding_residual_classifier` | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup119`, `setup120-qwen`, `setup120-gemma` | logistic regression on one residual vector, optionally with centered and auxiliary delta features |
@@ -112,6 +112,7 @@ uv run touche-train --setup-name setup115
 uv run touche-train --setup-name setup4
 uv run touche-train --setup-name setup7
 uv run touche-train --setup-name setup7-qwen
+uv run touche-train --setup-name setup7_2-qwen
 uv run touche-train --setup-name setup116
 ```
 
@@ -226,8 +227,10 @@ These runs write to `models/<setup-name>/`:
 ## Notes About Providers
 
 - Gemini-backed files are the default source for most setups.
-- `setup6-qwen` and `setup7-qwen` switch the training and validation files to
-  `data/generated/qwen/`.
+- `setup6-qwen`, `setup7-qwen`, and `setup7_2-qwen` switch the training and
+  validation files to `data/generated/qwen/`.
+- `setup7_2-qwen` keeps the Qwen-neutral Longformer prompt from `setup7-qwen`
+  but uses the longer optimization schedule from `setup10`.
 - `setup103-qwen` is the naming-aligned Qwen residual counterpart to `setup103`.
 - `setup103-gemma` applies the same residual-only setup to
   `data/generated/gemma4e4b/`.
