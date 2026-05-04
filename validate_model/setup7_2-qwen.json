@@ -1,0 +1,12 @@
+{
+  "description": "Validation preset for the setup7_2-qwen Longformer classifier using the Qwen neutral reference as context.",
+  "model_dir": "models/setup7_2-qwen",
+  "results_dir": "results/setup7_2-qwen",
+  "generated_provider": "qwen",
+  "max_length": 1024,
+  "batch_size": 4,
+  "input_format": "query_neutral_response",
+  "reference_field": "qwen",
+  "reference_label": "QWEN",
+  "pad_to_max_length": true
+}

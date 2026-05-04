@@ -1,0 +1,20 @@
+{
+  "description": "setup10-style Longformer fine-tuning on Qwen-backed neutral prompts. Keeps the longer setup10 optimization schedule and regularization, but swaps in the setup7-qwen backbone and query_neutral_response input format.",
+  "train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "allenai/longformer-base-4096",
+  "max_length": 1024,
+  "epochs": 2,
+  "batch_size": 1,
+  "grad_accum": 8,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "input_format": "query_neutral_response",
+  "reference_field": "qwen",
+  "reference_label": "QWEN",
+  "pad_to_max_length": true,
+  "positive_class_weight_scale": 1.5,
+  "device": "cuda"
+}
