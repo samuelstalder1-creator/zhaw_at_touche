@@ -4,7 +4,7 @@
   "validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
   "model_name": "allenai/longformer-base-4096",
   "max_length": 1024,
-  "epochs": 2,
+  "epochs": 1,
   "batch_size": 1,
   "grad_accum": 8,
   "learning_rate": 3e-05,
