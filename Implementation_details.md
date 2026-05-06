@@ -50,8 +50,10 @@
   `setup7-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`,
   `setup115`, `setup116`
 - Cross-encoder setups: `setup105`, `setup105_1`
-- Learned embedding-feature setups: `setup103`, `setup104`, `setup113`,
-  `setup114`, `setup117`, `setup118`, `setup119`
+- Learned embedding-feature setups: `setup103`, `setup103-qwen`,
+  `setup103-gemma`, `setup104-base`, `setup104`, `setup104-qwen`,
+  `setup113`, `setup114`, `setup117`, `setup118`, `setup119`,
+  `setup120-qwen`, `setup120-gemma`, `setup121-qwen`, `setup121-gemma`
 - Embedding-divergence setups: `setup100`, `setup101`, `setup102`
 - Scalar anchor setups: `setup110`, `setup111`
 
@@ -96,9 +98,11 @@ historical experiment and committed result directory, but the current
   standardized CSV exports, and misclassification exports.
 - Delegates `setup100` to `setup102` to the embedding-divergence backend when
   the validation preset sets `scoring_backend=embedding_divergence`.
-- Delegates `setup103`, `setup104`, `setup113`, `setup114`, `setup117`,
-  `setup118`, and `setup119` to the embedding-LR backend when the validation
-  preset sets the matching learned-feature scoring backend.
+- Delegates `setup103`, `setup103-qwen`, `setup103-gemma`, `setup104-base`,
+  `setup104`, `setup104-qwen`, `setup113`, `setup114`, `setup117`,
+  `setup118`, `setup119`, `setup120-qwen`, `setup120-gemma`,
+  `setup121-qwen`, and `setup121-gemma` to the embedding-LR backend when the
+  validation preset sets the matching learned-feature scoring backend.
 - Delegates `setup110` to the anchor-distance backend when the validation
   preset sets `scoring_backend=anchor_distance_classifier`.
 - Delegates `setup111` to the handcrafted anchor-distance backend when the

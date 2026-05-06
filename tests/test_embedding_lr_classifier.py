@@ -8,11 +8,14 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+import torch
 
 from zhaw_at_touche.cli import embedding_lr_classifier as embedding_lr_cli
 from zhaw_at_touche.embedding_lr_classifier import (
+    EmbeddingLRFeatureConfig,
     EmbeddingLRConfig,
     EmbeddingLRPrediction,
+    _build_feature_matrix,
     train_embedding_lr_classifier,
 )
 from zhaw_at_touche.evaluation_utils import metrics_dict
@@ -35,6 +38,26 @@ class FakePipeline:
 
 
 class EmbeddingLRTrainerTests(unittest.TestCase):
+    def test_response_embedding_classifier_uses_response_block_only(self) -> None:
+        feature_names, feature_matrix, delta_centers = _build_feature_matrix(
+            trainer_type="response_embedding_classifier",
+            embeddings={
+                "response": torch.tensor([[1.0, 2.0], [3.0, 4.0]], dtype=torch.float32),
+            },
+            response_field="response",
+            neutral_field="qwen",
+            aux_neutral_field=None,
+            query_field="query",
+            feature_config=EmbeddingLRFeatureConfig(),
+        )
+
+        self.assertEqual(feature_names, ["response"])
+        np.testing.assert_allclose(
+            feature_matrix,
+            np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
+        )
+        self.assertEqual(delta_centers, {})
+
     def test_validation_summary_uses_calibrated_threshold(self) -> None:
         train_records = [{"label": 1}, {"label": 0}]
         validation_records = [{"label": 1}, {"label": 0}, {"label": 0}]

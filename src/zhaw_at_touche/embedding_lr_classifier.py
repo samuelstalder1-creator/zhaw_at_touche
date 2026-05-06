@@ -27,6 +27,7 @@ DEFAULT_LR_C_VALUES = (1.0,)
 DEFAULT_LR_CLASS_WEIGHT_OPTIONS = ("balanced",)
 
 SINGLE_FILE_TRAINERS = frozenset({
+    "response_embedding_classifier",
     "embedding_residual_classifier",
     "embedding_classifier",
     "query_residual_classifier",
@@ -169,7 +170,10 @@ def _required_fields(
     aux_neutral_field: str | None,
     query_field: str,
 ) -> list[str]:
-    fields = [response_field, neutral_field]
+    if trainer_type == "response_embedding_classifier":
+        fields = [response_field]
+    else:
+        fields = [response_field, neutral_field]
     if trainer_type in DUAL_FILE_TRAINERS:
         if not aux_neutral_field:
             raise ValueError(f"{trainer_type} requires aux_neutral_field.")
@@ -239,15 +243,16 @@ def _build_feature_matrix(
     labels_for_centering: Sequence[int] | None = None,
 ) -> tuple[list[str], np.ndarray, dict[str, np.ndarray]]:
     R = embeddings[response_field].cpu().numpy().astype(np.float32, copy=False)
-    N = embeddings[neutral_field].cpu().numpy().astype(np.float32, copy=False)
+    N: np.ndarray | None = None
+    delta_name: str | None = None
+    raw_deltas: dict[str, np.ndarray] = {}
+    delta_pairs: dict[str, tuple[np.ndarray, np.ndarray]] = {}
 
-    delta_name = f"delta_{response_field}_{neutral_field}"
-    raw_deltas: dict[str, np.ndarray] = {
-        delta_name: (R - N).astype(np.float32, copy=False),
-    }
-    delta_pairs: dict[str, tuple[np.ndarray, np.ndarray]] = {
-        delta_name: (R, N),
-    }
+    if trainer_type != "response_embedding_classifier":
+        N = embeddings[neutral_field].cpu().numpy().astype(np.float32, copy=False)
+        delta_name = f"delta_{response_field}_{neutral_field}"
+        raw_deltas[delta_name] = (R - N).astype(np.float32, copy=False)
+        delta_pairs[delta_name] = (R, N)
 
     Q: np.ndarray | None = None
     if trainer_type in {"query_residual_classifier", "query_dual_residual_classifier"}:
@@ -263,12 +268,14 @@ def _build_feature_matrix(
         raw_deltas[delta_name_2] = (R - N2).astype(np.float32, copy=False)
         delta_pairs[delta_name_2] = (R, N2)
 
-    resolved_delta_centers = _resolve_delta_centers(
-        feature_config=feature_config,
-        delta_vectors=raw_deltas,
-        labels_for_centering=labels_for_centering,
-        provided_delta_centers=delta_center_vectors,
-    )
+    resolved_delta_centers = {}
+    if raw_deltas:
+        resolved_delta_centers = _resolve_delta_centers(
+            feature_config=feature_config,
+            delta_vectors=raw_deltas,
+            labels_for_centering=labels_for_centering,
+            provided_delta_centers=delta_center_vectors,
+        )
     centered_deltas = {
         name: delta - resolved_delta_centers.get(name, 0.0)
         for name, delta in raw_deltas.items()
@@ -294,15 +301,23 @@ def _build_feature_matrix(
             norm_values = np.linalg.norm(centered_delta, axis=1, keepdims=True).astype(np.float32)
             add_block(f"norm_{name}", norm_values)
 
-    if trainer_type == "embedding_residual_classifier":
+    if trainer_type == "response_embedding_classifier":
+        add_block(response_field, R)
+    elif trainer_type == "embedding_residual_classifier":
+        if delta_name is None:
+            raise ValueError("embedding_residual_classifier requires residual features.")
         add_delta_block(delta_name)
     elif trainer_type == "embedding_classifier":
+        if N is None or delta_name is None:
+            raise ValueError("embedding_classifier requires neutral and residual features.")
         add_block(response_field, R)
         add_block(neutral_field, N)
         add_delta_block(delta_name)
     elif trainer_type == "query_residual_classifier":
         if Q is None:
             raise ValueError("query_residual_classifier requires query embeddings.")
+        if delta_name is None:
+            raise ValueError("query_residual_classifier requires residual features.")
         add_block(query_field, Q)
         add_delta_block(delta_name)
     elif trainer_type == "dual_residual_classifier":

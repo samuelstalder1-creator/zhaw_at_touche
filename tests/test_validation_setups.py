@@ -196,6 +196,16 @@ class ValidationSetupsTests(unittest.TestCase):
         self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
         self.assertEqual(defaults["neutral_field"], "qwen")
 
+    def test_repo_setup104_base_uses_qwen_test_file(self) -> None:
+        args = parse_args(["--setup-name", "setup104-base"])
+        defaults = load_setup_defaults("setup104-base")
+
+        self.assertEqual(resolve_model_source(args), Path("models/setup104-base"))
+        self.assertEqual(args.results_dir, "results/setup104-base")
+        self.assertEqual(args.input_files, ["data/generated/qwen/responses-test-with-neutral_qwen.jsonl"])
+        self.assertEqual(defaults["neutral_field"], "qwen")
+        self.assertEqual(defaults["scoring_backend"], "response_embedding_classifier")
+
     def test_repo_setup103_qwen_uses_qwen_test_file(self) -> None:
         args = parse_args(["--setup-name", "setup103-qwen"])
         defaults = load_setup_defaults("setup103-qwen")

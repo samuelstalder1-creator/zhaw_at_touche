@@ -150,6 +150,18 @@ class TrainingSetupsTests(unittest.TestCase):
         self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
         self.assertEqual(args.neutral_field, "qwen")
 
+    def test_repo_setup104_base_uses_qwen_generated_files_for_response_only_baseline(self) -> None:
+        args = parse_args(["--setup-name", "setup104-base"])
+
+        self.assertEqual(args.trainer_type, "response_embedding_classifier")
+        self.assertEqual(args.train_file, "data/generated/qwen/responses-train-with-neutral_qwen.jsonl")
+        self.assertEqual(
+            args.validation_file,
+            "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+        )
+        self.assertEqual(args.model_name, "sentence-transformers/all-mpnet-base-v2")
+        self.assertEqual(args.neutral_field, "qwen")
+
     def test_repo_setup103_qwen_uses_qwen_generated_files(self) -> None:
         args = parse_args(["--setup-name", "setup103-qwen"])
 

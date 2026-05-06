@@ -1,0 +1,13 @@
+{
+  "description": "Response-only embedding baseline aligned to the Qwen experiment track. Uses the same frozen all-mpnet-base-v2 encoder and logistic-regression training loop as setup104, but feeds only response_emb to the classifier. The Qwen-backed files are kept only to align rows with setup104-qwen for a clean ablation of how much the neutral + delta blocks add beyond the response alone. Trainer type: response_embedding_classifier.",
+  "trainer_type": "response_embedding_classifier",
+  "train_file": "data/generated/qwen/responses-train-with-neutral_qwen.jsonl",
+  "validation_file": "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

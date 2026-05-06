@@ -97,6 +97,7 @@ def build_parser(setup_defaults: dict[str, object] | None = None) -> argparse.Ar
             "embedding_divergence",
             "anchor_distance_classifier",
             "anchor_distance_threshold",
+            "response_embedding_classifier",
             "embedding_residual_classifier",
             "embedding_classifier",
             "query_residual_classifier",
@@ -415,6 +416,7 @@ def main() -> None:
         print(f"training rows: {summary['train_rows']}")
         return
     if args.trainer_type in {
+        "response_embedding_classifier",
         "embedding_residual_classifier",
         "embedding_classifier",
         "query_residual_classifier",

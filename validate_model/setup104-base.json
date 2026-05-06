@@ -1,0 +1,19 @@
+{
+  "description": "Validation preset for the setup104-base response-only embedding baseline. Scores only response_emb while keeping the Qwen-backed files for direct comparison against setup104-qwen. Scoring backend: response_embedding_classifier.",
+  "scoring_backend": "response_embedding_classifier",
+  "model_dir": "models/setup104-base",
+  "results_dir": "results/setup104-base",
+  "input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "calibration_input_files": [
+    "data/generated/qwen/responses-validation-with-neutral_qwen.jsonl"
+  ],
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "qwen",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}

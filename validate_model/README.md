@@ -77,7 +77,7 @@ overrides.
 | `setup100` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup101` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
 | `setup102` | embedding-divergence validation | delegates to `touche-embed-divergence` backend |
-| `setup103`, `setup103-qwen`, `setup103-gemma`, `setup104`, `setup104-qwen`, `setup117`, `setup119`, `setup120-qwen`, `setup120-gemma`, `setup121-qwen`, `setup121-gemma` | learned embedding-feature validation | delegates to the embedding-LR backend |
+| `setup103`, `setup103-qwen`, `setup103-gemma`, `setup104-base`, `setup104`, `setup104-qwen`, `setup117`, `setup119`, `setup120-qwen`, `setup120-gemma`, `setup121-qwen`, `setup121-gemma` | learned embedding-feature validation | delegates to the embedding-LR backend |
 | `setup113`, `setup114`, `setup118` | dual-file learned embedding-feature validation | delegates to the embedding-LR backend and merges Gemini + Qwen rows by `id` |
 | `setup110` | anchor-distance validation | delegates to the anchor-distance backend and merges Gemini + Qwen rows by `id` |
 | `setup111` | anchor-distance threshold validation | delegates to the handcrafted anchor-distance backend and merges Gemini + Qwen rows by `id` |
@@ -154,6 +154,9 @@ uv run touche-validate --setup-name setup103-qwen
 
 uv run touche-train --setup-name setup103-gemma
 uv run touche-validate --setup-name setup103-gemma
+
+uv run touche-train --setup-name setup104-base
+uv run touche-validate --setup-name setup104-base
 
 uv run touche-train --setup-name setup104-qwen
 uv run touche-validate --setup-name setup104-qwen

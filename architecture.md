@@ -83,6 +83,7 @@ Different setups construct different feature vectors from the same frozen embedd
 |---|---|---:|---|
 | setup103 | `r − n_gemini` | 768 | Gemini residual — what Gemini removed |
 | setup119 | `r − n_qwen` | 768 | Qwen residual — what Qwen removed |
+| setup104-base | `r` | 768 | Response-only control with no neutral information |
 | setup104 | `[r \| n_gemini \| r − n_gemini]` | 2304 | Residual + absolute positions |
 | setup113 | `[r − n_gemini \| r − n_qwen]` | 1536 | Two independent residuals |
 | setup114 | `[r \| n_gemini \| n_qwen \| r − n_gemini \| r − n_qwen]` | 3840 | Full dual-provider stack |
@@ -91,7 +92,7 @@ Different setups construct different feature vectors from the same frozen embedd
 
 Where `r` = response embedding, `n_gemini`/`n_qwen` = neutral embeddings, `q` = query embedding.
 
-The simplest variant (setup103, `r − n`) is also the strongest single-file delta model at 0.9913 Macro F1. Adding absolute embedding positions (setup104) shifts precision/recall trade-offs but does not improve overall F1. Adding a second neutral (setup113) introduces some noise from the weaker Qwen neutral, dropping to 0.9857. Adding the query (setup117, setup118) hurts badly because the 768-dim query embedding introduces noise that competes with the residual signal in the LR weight space.
+The simplest variant (setup103, `r − n`) is also the strongest single-file delta model at 0.9913 Macro F1. Setup104-base provides the response-only control needed to measure how much of the signal is already present in `r` before any neutral is added. Adding absolute embedding positions (setup104) shifts precision/recall trade-offs but does not improve overall F1. Adding a second neutral (setup113) introduces some noise from the weaker Qwen neutral, dropping to 0.9857. Adding the query (setup117, setup118) hurts badly because the 768-dim query embedding introduces noise that competes with the residual signal in the LR weight space.
 
 ### Scalar baselines (setup100–102, setup110–111)
 

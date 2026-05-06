@@ -25,6 +25,7 @@ overrides on top of it.
 | `classifier` | `setup4`, `setup6`, `setup6-qwen`, `setup7`, `setup7-qwen`, `setup7_2-qwen`, `setup8`, `setup9`, `setup10`, `setup11`, `setup12`, `setup115`, `setup116` | fine-tuned transformer classifiers |
 | `cross_encoder` | `setup105`, `setup105_1` | jointly encodes response and neutral in one sequence |
 | `embedding_divergence` | `setup100`, `setup101`, `setup102` | saved-state semantic-drift baselines |
+| `response_embedding_classifier` | `setup104-base` | logistic regression on the response embedding only |
 | `embedding_residual_classifier` | `setup103`, `setup103-qwen`, `setup103-gemma`, `setup119`, `setup120-qwen`, `setup120-gemma` | logistic regression on one residual vector, optionally with centered and auxiliary delta features |
 | `embedding_classifier` | `setup104`, `setup104-qwen`, `setup121-qwen`, `setup121-gemma` | logistic regression on stacked response, neutral, and residual vectors |
 | `query_residual_classifier` | `setup117` | query embedding plus single-provider residual |
@@ -144,6 +145,7 @@ uv run touche-train --setup-name setup102
 uv run touche-train --setup-name setup103
 uv run touche-train --setup-name setup103-qwen
 uv run touche-train --setup-name setup103-gemma
+uv run touche-train --setup-name setup104-base
 uv run touche-train --setup-name setup104
 uv run touche-train --setup-name setup104-qwen
 uv run touche-train --setup-name setup120-qwen
@@ -234,6 +236,8 @@ These runs write to `models/<setup-name>/`:
 - `setup103-qwen` is the naming-aligned Qwen residual counterpart to `setup103`.
 - `setup103-gemma` applies the same residual-only setup to
   `data/generated/gemma4e4b/`.
+- `setup104-base` is the response-only control aligned to the Qwen-backed
+  files for direct comparison against `setup104-qwen`.
 - `setup104-qwen` is the Qwen-backed full embedding counterpart to `setup104`.
 - `setup119` is the Qwen-only residual counterpart to `setup103`.
 - Only the reference-aware and embedding-based setups actually consume the
