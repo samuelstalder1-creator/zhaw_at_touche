@@ -4,10 +4,10 @@ import argparse
 from pathlib import Path
 
 from zhaw_at_touche.evaluation_utils import (
+    binary_metrics_from_counts,
     collect_counts,
-    compute_metrics,
     render_matrix,
-    render_metrics,
+    render_binary_metrics,
     write_csv,
 )
 
@@ -44,13 +44,13 @@ def main() -> None:
         args.gold_key,
         args.pred_key,
     )
-    per_label, macro, weighted = compute_metrics(counts, labels)
+    metrics = binary_metrics_from_counts(counts)
 
     print(f"rows: {total_rows}")
     print("matrix: rows=gold_label, cols=response_label")
     print(render_matrix(counts, labels))
     print("metrics:")
-    print(render_metrics(per_label, macro, weighted))
+    print(render_binary_metrics(metrics))
 
     if used_files:
         print("used files:")

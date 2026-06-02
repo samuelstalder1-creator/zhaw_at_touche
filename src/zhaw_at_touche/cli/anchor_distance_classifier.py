@@ -18,11 +18,12 @@ from zhaw_at_touche.anchor_distance_classifier import (
 from zhaw_at_touche.constants import DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_SETUP_NAME
 from zhaw_at_touche.embedding_divergence import calibrate_threshold, load_embedding_model
 from zhaw_at_touche.evaluation_utils import (
-    compute_metrics,
+    binary_metrics_from_counts,
+    compact_metrics_summary,
     counts_from_pairs,
     metrics_dict,
+    render_binary_metrics,
     render_matrix,
-    render_metrics,
     write_csv,
 )
 from zhaw_at_touche.jsonl import write_jsonl
@@ -334,12 +335,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         summary["response_field"] = args.response_field
         summary["neutral_field"] = args.neutral_field
         summary["aux_neutral_field"] = args.aux_neutral_field
-        file_summaries[primary.name] = summary
-        positive_label = summary.get("positive_label")
-        file_f1 = positive_label["f1"] if isinstance(positive_label, dict) else 0.0
+        file_summaries[primary.name] = compact_metrics_summary(summary)
         print(
             f"{primary.name}: accuracy={summary['accuracy']:.4f} "
-            f"f1={file_f1:.4f} weighted_f1={summary['weighted']['f1']:.4f}"
+            f"precision={summary['precision']:.4f} "
+            f"recall={summary['recall']:.4f} "
+            f"f1={summary['f1']:.4f}"
         )
 
     overall_summary = metrics_dict(all_gold_labels, all_predicted_labels)
@@ -361,7 +362,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "aux_calibration_input_files": list(args.aux_calibration_input_files),
         "calibration_summary": calibration_summary,
         "files": file_summaries,
-        "overall": overall_summary,
+        "overall": compact_metrics_summary(overall_summary),
     }
     (results_dir / "metrics_summary.json").write_text(
         json.dumps(summary_payload, indent=2),
@@ -402,9 +403,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     counts, labels, _ = counts_from_pairs(all_gold_labels, all_predicted_labels)
-    per_label, macro, weighted = compute_metrics(counts, labels)
     matrix_text = render_matrix(counts, labels)
-    metrics_text = render_metrics(per_label, macro, weighted)
+    metrics_text = render_binary_metrics(binary_metrics_from_counts(counts))
     (results_dir / "response_metrics.txt").write_text(
         f"rows: {len(all_gold_labels)}\n"
         "matrix: rows=gold_label, cols=response_label\n"
@@ -421,9 +421,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     print(f"overall accuracy={overall_summary['accuracy']:.4f}")
-    overall_positive_label = overall_summary.get("positive_label")
-    if isinstance(overall_positive_label, dict):
-        print(f"overall positive_f1={overall_positive_label['f1']:.4f}")
+    print(f"overall precision={overall_summary['precision']:.4f}")
+    print(f"overall recall={overall_summary['recall']:.4f}")
+    print(f"overall f1={overall_summary['f1']:.4f}")
 
 
 if __name__ == "__main__":

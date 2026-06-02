@@ -715,37 +715,24 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                         {
                             "val/loss": validation_metrics["loss"],
                             "val/acc": validation_metrics["accuracy"],
-                            "val/positive_f1": validation_metrics["positive_f1"],
-                            "val/positive_precision": validation_metrics["positive_precision"],
-                            "val/positive_recall": validation_metrics["positive_recall"],
-                            "val/f1": validation_metrics["positive_f1"],
-                            "val/macro_precision": validation_metrics["macro_precision"],
-                            "val/macro_recall": validation_metrics["macro_recall"],
-                            "val/macro_f1": validation_metrics["macro_f1"],
-                            "val/weighted_precision": validation_metrics["weighted_precision"],
-                            "val/weighted_recall": validation_metrics["weighted_recall"],
-                            "val/weighted_f1": validation_metrics["weighted_f1"],
+                            "val/precision": validation_metrics["precision"],
+                            "val/recall": validation_metrics["recall"],
+                            "val/f1": validation_metrics["f1"],
                             "val/tn": validation_metrics["true_negative"],
                             "val/fp": validation_metrics["false_positive"],
                             "val/fn": validation_metrics["false_negative"],
                             "val/tp": validation_metrics["true_positive"],
-                            "val/predicted_positive_rate": validation_metrics["predicted_positive_rate"],
-                            "val/gold_positive_rate": validation_metrics["gold_positive_rate"],
                             "val/samples": validation_metrics["samples"],
                             "epoch": epoch,
                         }
                     )
 
-                current_score = validation_metrics["positive_f1"]
-                if current_score is None:
-                    current_score = validation_metrics["weighted_f1"]
+                current_score = validation_metrics["f1"]
                 best_score = (
-                    best_validation_metrics["positive_f1"]
+                    best_validation_metrics["f1"]
                     if best_validation_metrics is not None
                     else None
                 )
-                if best_score is None and best_validation_metrics is not None:
-                    best_score = best_validation_metrics["weighted_f1"]
                 if current_score is not None and (best_score is None or current_score > best_score):
                     best_validation_metrics = {
                         "epoch": epoch,
@@ -759,10 +746,9 @@ def train_model(config: TrainingConfig) -> dict[str, Any]:
                                 "best_val/epoch": epoch,
                                 "best_val/loss": validation_metrics["loss"],
                                 "best_val/acc": validation_metrics["accuracy"],
-                                "best_val/positive_f1": validation_metrics["positive_f1"],
-                                "best_val/positive_precision": validation_metrics["positive_precision"],
-                                "best_val/positive_recall": validation_metrics["positive_recall"],
-                                "best_val/weighted_f1": validation_metrics["weighted_f1"],
+                                "best_val/precision": validation_metrics["precision"],
+                                "best_val/recall": validation_metrics["recall"],
+                                "best_val/f1": validation_metrics["f1"],
                             }
                         )
     finally:

@@ -1,0 +1,19 @@
+{
+  "description": "setup10-derived Longformer fine-tuning with the Gemini neutral response included in the input. Uses allenai/longformer-base-4096 and raises max_length to 1024 because the sequence contains query, neutral generated answer, and response.",
+  "train_file": "data/generated/gemini/responses-train-with-neutral_gemini.jsonl",
+  "validation_file": "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl",
+  "model_name": "allenai/longformer-base-4096",
+  "max_length": 1024,
+  "epochs": 5,
+  "batch_size": 16,
+  "grad_accum": 4,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "warmup_ratio": 0.06,
+  "input_format": "query_neutral_response",
+  "reference_field": "gemini25flashlite",
+  "reference_label": "GEMINI",
+  "pad_to_max_length": true,
+  "device": "cuda"
+}

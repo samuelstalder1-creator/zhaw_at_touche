@@ -21,11 +21,12 @@ from zhaw_at_touche.eval_inputs import (
     with_provider_results_dir,
 )
 from zhaw_at_touche.evaluation_utils import (
-    compute_metrics,
+    binary_metrics_from_counts,
+    compact_metrics_summary,
     counts_from_pairs,
     metrics_dict,
+    render_binary_metrics,
     render_matrix,
-    render_metrics,
     write_csv,
 )
 from zhaw_at_touche.jsonl import read_jsonl, write_jsonl
@@ -420,12 +421,12 @@ def main() -> None:
         if generated_field and generated_predictions is not None:
             generated_positive_count = sum(prediction.label for prediction in generated_predictions)
             summary["generated_positive_rate"] = generated_positive_count / len(generated_predictions)
-        file_summaries[path.name] = summary
-        positive_label = summary.get("positive_label")
-        file_f1 = positive_label["f1"] if isinstance(positive_label, dict) else 0.0
+        file_summaries[path.name] = compact_metrics_summary(summary)
         print(
             f"{path.name}: accuracy={summary['accuracy']:.4f} "
-            f"f1={file_f1:.4f} weighted_f1={summary['weighted']['f1']:.4f}"
+            f"precision={summary['precision']:.4f} "
+            f"recall={summary['recall']:.4f} "
+            f"f1={summary['f1']:.4f}"
         )
         _warn_collapse(summary, context=path.name)
 
@@ -445,7 +446,7 @@ def main() -> None:
         "pad_to_max_length": args.pad_to_max_length,
         "threshold": args.threshold,
         "files": file_summaries,
-        "overall": overall_summary,
+        "overall": compact_metrics_summary(overall_summary),
     }
     (results_dir / "metrics_summary.json").write_text(
         json.dumps(summary_payload, indent=2),
@@ -486,9 +487,8 @@ def main() -> None:
     )
 
     counts, labels, _ = counts_from_pairs(all_gold_labels, all_predicted_labels)
-    per_label, macro, weighted = compute_metrics(counts, labels)
     matrix_text = render_matrix(counts, labels)
-    metrics_text = render_metrics(per_label, macro, weighted)
+    metrics_text = render_binary_metrics(binary_metrics_from_counts(counts))
     (results_dir / "response_metrics.txt").write_text(
         f"rows: {len(all_gold_labels)}\n"
         "matrix: rows=gold_label, cols=response_label\n"
@@ -505,10 +505,9 @@ def main() -> None:
     )
 
     print(f"overall accuracy={overall_summary['accuracy']:.4f}")
-    overall_positive_label = overall_summary.get("positive_label")
-    if isinstance(overall_positive_label, dict):
-        print(f"overall f1={overall_positive_label['f1']:.4f}")
-    print(f"overall weighted_f1={overall_summary['weighted']['f1']:.4f}")
+    print(f"overall precision={overall_summary['precision']:.4f}")
+    print(f"overall recall={overall_summary['recall']:.4f}")
+    print(f"overall f1={overall_summary['f1']:.4f}")
     print(f"artifacts written to {results_dir}")
 
 

@@ -18,11 +18,12 @@ from zhaw_at_touche.embedding_lr_classifier import (
     score_records,
 )
 from zhaw_at_touche.evaluation_utils import (
-    compute_metrics,
+    binary_metrics_from_counts,
+    compact_metrics_summary,
     counts_from_pairs,
     metrics_dict,
+    render_binary_metrics,
     render_matrix,
-    render_metrics,
     write_csv,
 )
 from zhaw_at_touche.jsonl import read_jsonl, write_jsonl
@@ -271,7 +272,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         summary["response_field"] = args.response_field
         summary["neutral_field"] = args.neutral_field
         summary["aux_neutral_field"] = args.aux_neutral_field
-        file_summaries[primary.name] = summary
+        file_summaries[primary.name] = compact_metrics_summary(summary)
         positive_label = summary.get("positive_label")
         file_f1 = positive_label["f1"] if isinstance(positive_label, dict) else 0.0
         print(f"{primary.name}: accuracy={summary['accuracy']:.4f} f1={file_f1:.4f}")
@@ -296,7 +297,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "aux_calibration_input_files": list(args.aux_calibration_input_files or []),
         "calibration_summary": calibration_summary,
         "files": file_summaries,
-        "overall": overall_summary,
+        "overall": compact_metrics_summary(overall_summary),
     }
     (results_dir / "metrics_summary.json").write_text(json.dumps(summary_payload, indent=2), encoding="utf-8")
 
@@ -312,22 +313,21 @@ def main(argv: Sequence[str] | None = None) -> None:
     write_csv_rows(results_dir / "misclassified_analysis.csv", base_fields + extra_fields, misclassified_rows)
 
     counts, labels, _ = counts_from_pairs(all_gold_labels, all_predicted_labels)
-    per_label, macro, weighted = compute_metrics(counts, labels)
     (results_dir / "response_metrics.txt").write_text(
         f"rows: {len(all_gold_labels)}\n"
         "matrix: rows=gold_label, cols=response_label\n"
         f"{render_matrix(counts, labels)}\n"
         "metrics:\n"
-        f"{render_metrics(per_label, macro, weighted)}\n",
+        f"{render_binary_metrics(binary_metrics_from_counts(counts))}\n",
         encoding="utf-8",
     )
     write_csv(results_dir / "confusion_matrix.csv", counts, labels)
     save_confusion_matrix_image(all_gold_labels, all_predicted_labels, results_dir / "confusion_matrix.png")
 
     print(f"overall accuracy={overall_summary['accuracy']:.4f}")
-    overall_positive = overall_summary.get("positive_label")
-    if isinstance(overall_positive, dict):
-        print(f"overall f1={overall_positive['f1']:.4f}")
+    print(f"overall precision={overall_summary['precision']:.4f}")
+    print(f"overall recall={overall_summary['recall']:.4f}")
+    print(f"overall f1={overall_summary['f1']:.4f}")
     print(f"artifacts written to {results_dir}")
 
 

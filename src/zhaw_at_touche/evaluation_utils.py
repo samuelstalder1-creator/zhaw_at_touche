@@ -158,51 +158,43 @@ def compute_metrics(
     return per_label, macro, weighted
 
 
-def render_metrics(
-    per_label: Sequence[dict[str, float | int | object]],
-    macro: dict[str, float],
-    weighted: dict[str, float],
-) -> str:
-    label_width = max(
-        len("label"),
-        len("macro avg"),
-        len("weighted avg"),
-        *(len(str(metric["label"])) for metric in per_label),
-    )
-    score_width = len("precision")
-    support_width = max(
-        len("support"),
-        *(len(str(int(metric["support"]))) for metric in per_label),
-        len(str(int(macro["support"]))),
-        len(str(int(weighted["support"]))),
-    )
+def binary_metrics_from_counts(
+    counts: Counter[tuple[object, object]],
+    *,
+    negative_label: object = 0,
+    positive_label: object = 1,
+) -> dict[str, float | int]:
+    true_negative = int(counts[(negative_label, negative_label)])
+    false_positive = int(counts[(negative_label, positive_label)])
+    false_negative = int(counts[(positive_label, negative_label)])
+    true_positive = int(counts[(positive_label, positive_label)])
+    samples = true_negative + false_positive + false_negative + true_positive
+    precision = safe_divide(true_positive, true_positive + false_positive)
+    recall = safe_divide(true_positive, true_positive + false_negative)
+    f1 = safe_divide(2 * precision * recall, precision + recall)
 
-    lines = [
-        f"{'label':>{label_width}} {'precision':>{score_width}} {'recall':>{score_width}} {'f1':>{score_width}} {'support':>{support_width}}"
-    ]
-    for metric in per_label:
-        lines.append(
-            f"{str(metric['label']):>{label_width}} "
-            f"{float(metric['precision']):>{score_width}.4f} "
-            f"{float(metric['recall']):>{score_width}.4f} "
-            f"{float(metric['f1']):>{score_width}.4f} "
-            f"{int(metric['support']):>{support_width}}"
-        )
-    lines.append(
-        f"{'macro avg':>{label_width}} "
-        f"{macro['precision']:>{score_width}.4f} "
-        f"{macro['recall']:>{score_width}.4f} "
-        f"{macro['f1']:>{score_width}.4f} "
-        f"{int(macro['support']):>{support_width}}"
+    return {
+        "true_negative": true_negative,
+        "false_positive": false_positive,
+        "false_negative": false_negative,
+        "true_positive": true_positive,
+        "accuracy": safe_divide(true_positive + true_negative, samples),
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "samples": samples,
+    }
+
+
+def render_binary_metrics(metrics: dict[str, float | int]) -> str:
+    return "\n".join(
+        [
+            f"Accuracy: {float(metrics['accuracy']):.4f}",
+            f"Precision: {float(metrics['precision']):.4f}",
+            f"Recall: {float(metrics['recall']):.4f}",
+            f"F1: {float(metrics['f1']):.4f}",
+        ]
     )
-    lines.append(
-        f"{'weighted avg':>{label_width}} "
-        f"{weighted['precision']:>{score_width}.4f} "
-        f"{weighted['recall']:>{score_width}.4f} "
-        f"{weighted['f1']:>{score_width}.4f} "
-        f"{int(weighted['support']):>{support_width}}"
-    )
-    return "\n".join(lines)
 
 
 def accuracy(gold_labels: Sequence[int], predicted_labels: Sequence[int]) -> float:
@@ -231,6 +223,7 @@ def metrics_dict(
 ) -> dict[str, Any]:
     counts, labels, total_rows = counts_from_pairs(gold_labels, predicted_labels)
     per_label, macro, weighted = compute_metrics(counts, labels)
+    binary_metrics = binary_metrics_from_counts(counts)
     positive_label_metrics = next(
         (
             {
@@ -246,7 +239,16 @@ def metrics_dict(
     )
     return {
         "samples": total_rows,
-        "accuracy": accuracy(gold_labels, predicted_labels),
+        "accuracy": binary_metrics["accuracy"],
+        "precision": binary_metrics["precision"],
+        "recall": binary_metrics["recall"],
+        "f1": binary_metrics["f1"],
+        "confusion_matrix": {
+            "true_negative": binary_metrics["true_negative"],
+            "false_positive": binary_metrics["false_positive"],
+            "false_negative": binary_metrics["false_negative"],
+            "true_positive": binary_metrics["true_positive"],
+        },
         "labels": list(labels),
         "matrix": {
             str(gold): {str(pred): counts[(gold, pred)] for pred in labels}
@@ -259,14 +261,30 @@ def metrics_dict(
     }
 
 
+def compact_metrics_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    omitted_metric_fields = {
+        "labels",
+        "matrix",
+        "per_label",
+        "positive_label",
+        "macro",
+        "weighted",
+    }
+    compact: dict[str, Any] = {}
+    for field in ("samples", "confusion_matrix", "accuracy", "precision", "recall", "f1"):
+        if field in summary:
+            compact[field] = summary[field]
+    for field, value in summary.items():
+        if field not in compact and field not in omitted_metric_fields:
+            compact[field] = value
+    return compact
+
+
 def validation_metrics_payload(
     *,
     loss: float,
     summary: dict[str, Any],
 ) -> dict[str, float | int | None]:
-    positive_label = summary.get("positive_label")
-    macro = summary.get("macro")
-    weighted = summary.get("weighted")
     matrix = summary.get("matrix")
     samples = int(summary["samples"])
 
@@ -277,32 +295,15 @@ def validation_metrics_payload(
     false_negative = int(positive_row.get("0", 0))
     true_positive = int(positive_row.get("1", 0))
 
-    predicted_positive = true_positive + false_positive
-    gold_positive = true_positive + false_negative
-
     return {
         "loss": loss,
         "accuracy": float(summary["accuracy"]),
-        "positive_precision": (
-            float(positive_label["precision"]) if isinstance(positive_label, dict) else None
-        ),
-        "positive_recall": (
-            float(positive_label["recall"]) if isinstance(positive_label, dict) else None
-        ),
-        "positive_f1": float(positive_label["f1"]) if isinstance(positive_label, dict) else None,
-        "macro_precision": float(macro["precision"]) if isinstance(macro, dict) else None,
-        "macro_recall": float(macro["recall"]) if isinstance(macro, dict) else None,
-        "macro_f1": float(macro["f1"]) if isinstance(macro, dict) else None,
-        "weighted_precision": (
-            float(weighted["precision"]) if isinstance(weighted, dict) else None
-        ),
-        "weighted_recall": float(weighted["recall"]) if isinstance(weighted, dict) else None,
-        "weighted_f1": float(weighted["f1"]) if isinstance(weighted, dict) else None,
+        "precision": float(summary["precision"]),
+        "recall": float(summary["recall"]),
+        "f1": float(summary["f1"]),
         "true_negative": true_negative,
         "false_positive": false_positive,
         "false_negative": false_negative,
         "true_positive": true_positive,
-        "predicted_positive_rate": safe_divide(predicted_positive, samples),
-        "gold_positive_rate": safe_divide(gold_positive, samples),
         "samples": samples,
     }

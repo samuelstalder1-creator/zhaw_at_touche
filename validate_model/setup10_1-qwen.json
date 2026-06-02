@@ -1,0 +1,14 @@
+{
+  "description": "Validation preset for setup10_1-qwen: Longformer classifier with Qwen neutral response context.",
+  "model_dir": "models/setup10_1-qwen",
+  "results_dir": "results/setup10_1-qwen",
+  "input_files": [
+    "data/generated/qwen/responses-test-with-neutral_qwen.jsonl"
+  ],
+  "max_length": 1024,
+  "batch_size": 4,
+  "input_format": "query_neutral_response",
+  "reference_field": "qwen",
+  "reference_label": "QWEN",
+  "pad_to_max_length": true
+}

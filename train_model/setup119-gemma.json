@@ -1,0 +1,13 @@
+{
+  "description": "Gemma-only residual classifier. Logistic regression on (response_emb - gemma4_e4b_emb), named as the explicit Gemma-provider counterpart to setup119-gemini and setup119-qwen. Frozen encoder, no fine-tuning. Trainer type: embedding_residual_classifier.",
+  "trainer_type": "embedding_residual_classifier",
+  "train_file": "data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl",
+  "validation_file": "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl",
+  "model_name": "sentence-transformers/all-mpnet-base-v2",
+  "neutral_field": "gemma4_e4b",
+  "score_granularity": "response",
+  "threshold_metric": "macro_f1",
+  "batch_size": 32,
+  "max_length": 512,
+  "device": "cuda"
+}
