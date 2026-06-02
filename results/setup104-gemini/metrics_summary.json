@@ -1,0 +1,114 @@
+{
+  "scoring_backend": "embedding_classifier",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "model_dir": "models/setup104-gemini",
+  "results_dir": "results/setup104-gemini",
+  "device": "cuda",
+  "response_field": "response",
+  "neutral_field": "gemini25flashlite",
+  "aux_neutral_field": "qwen",
+  "query_field": "query",
+  "threshold": 0.5548304010695948,
+  "threshold_source": "saved_state",
+  "threshold_metric": "macro_f1",
+  "input_files": [
+    "data/generated/gemini/responses-test-with-neutral_gemini.jsonl"
+  ],
+  "aux_input_files": [],
+  "calibration_input_files": [
+    "data/generated/gemini/responses-validation-with-neutral_gemini.jsonl"
+  ],
+  "aux_calibration_input_files": [],
+  "calibration_summary": {
+    "samples": 5780,
+    "accuracy": 0.7709342560553634,
+    "precision": 0.6217368140649974,
+    "recall": 0.6552498596294217,
+    "f1": 0.6380535811919081,
+    "confusion_matrix": {
+      "true_negative": 3289,
+      "false_positive": 710,
+      "false_negative": 614,
+      "true_positive": 1167
+    },
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3289,
+        "1": 710
+      },
+      "1": {
+        "0": 614,
+        "1": 1167
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8426851140148603,
+        "recall": 0.8224556139034759,
+        "f1": 0.8324474816502151,
+        "support": 3999
+      },
+      {
+        "label": 1,
+        "precision": 0.6217368140649974,
+        "recall": 0.6552498596294217,
+        "f1": 0.6380535811919081,
+        "support": 1781
+      }
+    ],
+    "positive_label": {
+      "precision": 0.6217368140649974,
+      "recall": 0.6552498596294217,
+      "f1": 0.6380535811919081,
+      "support": 1781
+    },
+    "macro": {
+      "precision": 0.7322109640399288,
+      "recall": 0.7388527367664488,
+      "f1": 0.7352505314210616,
+      "support": 5780
+    },
+    "weighted": {
+      "precision": 0.7746039856047036,
+      "recall": 0.7709342560553634,
+      "f1": 0.7725485998653978,
+      "support": 5780
+    }
+  },
+  "files": {
+    "responses-test-with-neutral_gemini.jsonl": {
+      "samples": 6220,
+      "confusion_matrix": {
+        "true_negative": 3539,
+        "false_positive": 777,
+        "false_negative": 643,
+        "true_positive": 1261
+      },
+      "accuracy": 0.7717041800643086,
+      "precision": 0.6187438665358195,
+      "recall": 0.6622899159663865,
+      "f1": 0.6397767630644343,
+      "response_field": "response",
+      "neutral_field": "gemini25flashlite",
+      "aux_neutral_field": "qwen"
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "confusion_matrix": {
+      "true_negative": 3539,
+      "false_positive": 777,
+      "false_negative": 643,
+      "true_positive": 1261
+    },
+    "accuracy": 0.7717041800643086,
+    "precision": 0.6187438665358195,
+    "recall": 0.6622899159663865,
+    "f1": 0.6397767630644343
+  }
+}

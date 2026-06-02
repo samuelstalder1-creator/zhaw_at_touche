@@ -1,0 +1,114 @@
+{
+  "scoring_backend": "embedding_classifier",
+  "embedding_model_name": "sentence-transformers/all-mpnet-base-v2",
+  "model_dir": "models/setup104-gemma",
+  "results_dir": "results/setup104-gemma",
+  "device": "cuda",
+  "response_field": "response",
+  "neutral_field": "gemma4_e4b",
+  "aux_neutral_field": "qwen",
+  "query_field": "query",
+  "threshold": 0.5383745523444223,
+  "threshold_source": "saved_state",
+  "threshold_metric": "macro_f1",
+  "input_files": [
+    "data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl"
+  ],
+  "aux_input_files": [],
+  "calibration_input_files": [
+    "data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl"
+  ],
+  "aux_calibration_input_files": [],
+  "calibration_summary": {
+    "samples": 5780,
+    "accuracy": 0.7717993079584775,
+    "precision": 0.6174974567650051,
+    "recall": 0.6816395283548569,
+    "f1": 0.6479850547104351,
+    "confusion_matrix": {
+      "true_negative": 3247,
+      "false_positive": 752,
+      "false_negative": 567,
+      "true_positive": 1214
+    },
+    "labels": [
+      0,
+      1
+    ],
+    "matrix": {
+      "0": {
+        "0": 3247,
+        "1": 752
+      },
+      "1": {
+        "0": 567,
+        "1": 1214
+      }
+    },
+    "per_label": [
+      {
+        "label": 0,
+        "precision": 0.8513371788148925,
+        "recall": 0.8119529882470617,
+        "f1": 0.8311788045565084,
+        "support": 3999
+      },
+      {
+        "label": 1,
+        "precision": 0.6174974567650051,
+        "recall": 0.6816395283548569,
+        "f1": 0.6479850547104351,
+        "support": 1781
+      }
+    ],
+    "positive_label": {
+      "precision": 0.6174974567650051,
+      "recall": 0.6816395283548569,
+      "f1": 0.6479850547104351,
+      "support": 1781
+    },
+    "macro": {
+      "precision": 0.7344173177899488,
+      "recall": 0.7467962583009593,
+      "f1": 0.7395819296334718,
+      "support": 5780
+    },
+    "weighted": {
+      "precision": 0.7792837973320464,
+      "recall": 0.7717993079584775,
+      "f1": 0.7747310418444225,
+      "support": 5780
+    }
+  },
+  "files": {
+    "responses-test-with-neutral_gemma4e4b.jsonl": {
+      "samples": 6220,
+      "confusion_matrix": {
+        "true_negative": 3425,
+        "false_positive": 891,
+        "false_negative": 628,
+        "true_positive": 1276
+      },
+      "accuracy": 0.7557877813504823,
+      "precision": 0.5888324873096447,
+      "recall": 0.6701680672268907,
+      "f1": 0.6268730041758782,
+      "response_field": "response",
+      "neutral_field": "gemma4_e4b",
+      "aux_neutral_field": "qwen"
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "confusion_matrix": {
+      "true_negative": 3425,
+      "false_positive": 891,
+      "false_negative": 628,
+      "true_positive": 1276
+    },
+    "accuracy": 0.7557877813504823,
+    "precision": 0.5888324873096447,
+    "recall": 0.6701680672268907,
+    "f1": 0.6268730041758782
+  }
+}
