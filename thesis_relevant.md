@@ -39,12 +39,25 @@ Konfusionsmatrix: TN / FP / FN / TP.
 - QwenResidualOnly (**Setup119-qwen**)
 - CompactQueryClassifier (**Setup10**)
 
+Meine Resultate
+
 | Model | Setup | Accuracy | Recall | Precision | F1 |
 | --- | --- | ---: | ---: | ---: | ---: |
 | CompactQueryClassifier | `setup10` | 0.993 | 0.983 | 0.995 | 0.989 |
 | QwenResidualStack | `setup104-qwen` | 0.791 | 0.678 | 0.653 | 0.665 |
 | QwenResidualOnly | `setup119-qwen` | 0.788 | 0.636 | 0.659 | 0.647 |
 | BaseStack | `setup104-base` | 0.737 | 0.657 | 0.560 | 0.605 |
+
+Resultate von der Touché-Konferenz
+
+| Model                  | Accuracy | Recall | Precision |    F1 |
+| ---------------------- | -------: | -----: | --------: | ----: |
+| CompactQueryClassifier |    0.991 |  0.981 |     0.990 | 0.985 |
+| QwenResidualStack      |    0.768 |  0.671 |     0.608 | 0.638 |
+| QwenResidualOnly       |    0.765 |  0.610 |     0.616 | 0.613 |
+| BaseStack              |    0.721 |  0.691 |     0.532 | 0.601 |
+
+
 
 ## Hinweise
 
