@@ -1,0 +1,43 @@
+{
+  "model_source": "models/setup10_1-gemma",
+  "results_dir": "results/setup10_1-gemma",
+  "generated_provider": null,
+  "device": "cuda",
+  "text_field": "response",
+  "input_format": "query_neutral_response",
+  "reference_field": "gemma4_e4b",
+  "reference_label": "GEMMA4-E4B",
+  "aux_reference_field": null,
+  "aux_reference_label": "QWEN",
+  "pad_to_max_length": true,
+  "threshold": 0.5,
+  "files": {
+    "responses-test-with-neutral_gemma4e4b.jsonl": {
+      "samples": 6220,
+      "confusion_matrix": {
+        "true_negative": 4308,
+        "false_positive": 8,
+        "false_negative": 2,
+        "true_positive": 1902
+      },
+      "accuracy": 0.9983922829581994,
+      "precision": 0.9958115183246073,
+      "recall": 0.9989495798319328,
+      "f1": 0.9973780807551127,
+      "generated_field": null
+    }
+  },
+  "overall": {
+    "samples": 6220,
+    "confusion_matrix": {
+      "true_negative": 4308,
+      "false_positive": 8,
+      "false_negative": 2,
+      "true_positive": 1902
+    },
+    "accuracy": 0.9983922829581994,
+    "precision": 0.9958115183246073,
+    "recall": 0.9989495798319328,
+    "f1": 0.9973780807551127
+  }
+}

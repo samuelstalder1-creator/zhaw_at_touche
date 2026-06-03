@@ -1,0 +1,10 @@
+rows: 6220
+matrix: rows=gold_label, cols=response_label
+gold\\pred         0         1
+        0      4312         4
+        1        10      1894
+metrics:
+Accuracy: 0.9977
+Precision: 0.9979
+Recall: 0.9947
+F1: 0.9963
