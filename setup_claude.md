@@ -51,9 +51,6 @@ A pre-trained transformer encoder is fine-tuned end-to-end. The model receives a
 | Max sequence length | 512 tokens |
 | Epochs | 5 |
 | Batch size | 16 |
-| Train data | `data/generated/gemini/responses-train-with-neutral_gemini.jsonl` |
-| Validation data | `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl` |
-| Test data | `data/generated/gemini/responses-test-with-neutral_gemini.jsonl` |
 
 **Architecture.** ALBERT-base-v2 uses cross-layer parameter sharing, which reduces the effective parameter count relative to BERT-base while maintaining the same hidden dimensionality (768). It is lightweight in memory and stable with standard hyperparameters but benefits from a slightly higher learning rate because fewer effective parameters are updated per gradient step.
 
@@ -69,7 +66,7 @@ The neutral rewrite is not part of the input; the model sees only the query and 
 
 ---
 
-### setup10_1_gemini — Longformer + Gemini neutral
+### setup10_1_* — Longformer + neutral rewrite
 
 | Property | Value |
 |---|---|
@@ -79,18 +76,22 @@ The neutral rewrite is not part of the input; the model sees only the query and 
 | Epochs | 1 |
 | Batch size | 16 |
 | Pad to max length | Yes |
-| Neutral field | `gemini25flashlite` |
-| Train data | `data/generated/gemini/responses-train-with-neutral_gemini.jsonl` |
-| Validation data | `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl` |
-| Test data | `data/generated/gemini/responses-test-with-neutral_gemini.jsonl` |
 
 **Architecture.** Longformer-base-4096 replaces BERT's quadratic self-attention with a combination of local sliding-window attention and global attention on selected tokens. This allows longer sequences without the quadratic memory cost of standard transformers. Max length is raised from 512 to 1 024 to accommodate the concatenation of query, neutral rewrite, and response in a single input.
+
+**Variants.**
+
+| Setup | Neutral provider | Neutral field | Reference label | Data split |
+|---|---|---|---|---|
+| `setup10_1_gemini` | Gemini 2.5 Flash Lite | `gemini25flashlite` | `GEMINI` | `data/generated/gemini/` |
+| `setup10_1-gemma` | Gemma 4E4B | `gemma4_e4b` | `GEMMA4-E4B` | `data/generated/gemma4e4b/` |
+| `setup10_1-qwen` | Qwen/Qwen2.5-1.5B-Instruct | `qwen` | `QWEN` | `data/generated/qwen/` |
 
 **Input construction.**
 ```
 USER QUERY: {query}
 
-NEUTRAL REFERENCE (GEMINI): {gemini25flashlite}
+NEUTRAL REFERENCE ({provider_label}): {neutral_field}
 
 RESPONSE TO CLASSIFY: {response}
 
@@ -99,56 +100,6 @@ LABEL THIS AS AD OR NEUTRAL:
 The neutral rewrite appears before the response being classified, giving the model an explicit reference point: it can compare the response to the neutral and attend to what differs.
 
 **Training.** 1 epoch (sequences are substantially longer and the model is larger; 1 epoch avoids overfitting on this dataset size). Padding to max length ensures all sequences in a batch have the same length, which is required for efficient Longformer local-attention computation.
-
----
-
-### setup10_1-gemma — Longformer + Gemma neutral
-
-Identical to setup10_1_gemini in all hyperparameters and architecture. The only differences are:
-
-| Property | Value |
-|---|---|
-| Neutral field | `gemma4_e4b` |
-| Reference label | `GEMMA4-E4B` |
-| Train data | `data/generated/gemma4e4b/responses-train-with-neutral_gemma4e4b.jsonl` |
-| Validation data | `data/generated/gemma4e4b/responses-validation-with-neutral_gemma4e4b.jsonl` |
-| Test data | `data/generated/gemma4e4b/responses-test-with-neutral_gemma4e4b.jsonl` |
-
-**Input construction.**
-```
-USER QUERY: {query}
-
-NEUTRAL REFERENCE (GEMMA4-E4B): {gemma4_e4b}
-
-RESPONSE TO CLASSIFY: {response}
-
-LABEL THIS AS AD OR NEUTRAL:
-```
-
----
-
-### setup10_1-qwen — Longformer + Qwen neutral
-
-Identical to setup10_1_gemini in all hyperparameters and architecture. The only differences are:
-
-| Property | Value |
-|---|---|
-| Neutral field | `qwen` |
-| Reference label | `QWEN` |
-| Train data | `data/generated/qwen/responses-train-with-neutral_qwen.jsonl` |
-| Validation data | `data/generated/qwen/responses-validation-with-neutral_qwen.jsonl` |
-| Test data | `data/generated/qwen/responses-test-with-neutral_qwen.jsonl` |
-
-**Input construction.**
-```
-USER QUERY: {query}
-
-NEUTRAL REFERENCE (QWEN): {qwen}
-
-RESPONSE TO CLASSIFY: {response}
-
-LABEL THIS AS AD OR NEUTRAL:
-```
 
 ---
 
@@ -198,125 +149,54 @@ No neutral rewrite is encoded; this setup is the response-only frozen-encoder ba
 
 ---
 
-### setup104-gemini — Full Embedding Stack (Gemini)
+### setup104-* — Full Embedding Stack
 
 | Property | Value |
 |---|---|
 | Trainer type | `embedding_classifier` |
-| Feature vector | `[response_emb ‖ gemini_emb ‖ (response_emb − gemini_emb)]` — 2 304 dimensions |
-| Neutral field | `gemini25flashlite` |
-| Train data | `data/generated/gemini/responses-train-with-neutral_gemini.jsonl` |
-| Validation data | `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl` |
-| Test data | `data/generated/gemini/responses-test-with-neutral_gemini.jsonl` |
+| Feature vector | `[response_emb ‖ neutral_emb ‖ (response_emb − neutral_emb)]` — 2 304 dimensions |
+
+**Variants.**
+
+| Setup | Touché name | Neutral provider | Neutral field | Data split |
+|---|---|---|---|---|
+| `setup104-gemini` | — | Gemini 2.5 Flash Lite | `gemini25flashlite` | `data/generated/gemini/` |
+| `setup104-gemma` | — | Gemma 4E4B | `gemma4_e4b` | `data/generated/gemma4e4b/` |
+| `setup104-qwen` | `QwenResidualStack` | Qwen/Qwen2.5-1.5B-Instruct | `qwen` | `data/generated/qwen/` |
 
 **Feature construction.**
 ```
-r = encode(response)                      # 768-dim
-n = encode(gemini25flashlite)             # 768-dim
-δ = r − n                                 # 768-dim
-x = concat(r, n, δ)                       # 2304-dim
+r = encode(response)       # 768-dim
+n = encode(neutral_field)  # 768-dim
+δ = r − n                  # 768-dim
+x = concat(r, n, δ)        # 2304-dim
 ```
-The feature vector contains three blocks: the absolute position of the response in embedding space, the absolute position of the Gemini neutral, and the direction from neutral to response. The LR can exploit all three simultaneously: the absolute positions anchor the classification in semantic space, while the delta encodes specifically what the neutral removed.
+The feature vector contains three blocks: the absolute position of the response in embedding space, the absolute position of the provider-specific neutral rewrite, and the direction from neutral to response. The LR can exploit all three simultaneously: the absolute positions anchor the classification in semantic space, while the delta encodes specifically what the neutral removed.
 
 ---
 
-### setup104-gemma — Full Embedding Stack (Gemma)
-
-Identical to setup104-gemini in all architecture and hyperparameters. Differences:
-
-| Property | Value |
-|---|---|
-| Feature vector | `[response_emb ‖ gemma4_e4b_emb ‖ (response_emb − gemma4_e4b_emb)]` — 2 304 dimensions |
-| Neutral field | `gemma4_e4b` |
-| Train / Val / Test | `data/generated/gemma4e4b/` split |
-
----
-
-### setup104-qwen — *QwenResidualStack* (submitted to Touché)
-
-Identical to setup104-gemini in all architecture and hyperparameters. Differences:
-
-| Property | Value |
-|---|---|
-| Feature vector | `[response_emb ‖ qwen_emb ‖ (response_emb − qwen_emb)]` — 2 304 dimensions |
-| Neutral field | `qwen` |
-| Train / Val / Test | `data/generated/qwen/` split |
-
-**Feature construction.**
-```
-r = encode(response)        # 768-dim
-n = encode(qwen)            # 768-dim
-δ = r − n                   # 768-dim
-x = concat(r, n, δ)         # 2304-dim
-```
-
----
-
-### setup119-gemini — Residual-Only (Gemini)
+### setup119-* — Residual-Only
 
 | Property | Value |
 |---|---|
 | Trainer type | `embedding_residual_classifier` |
-| Feature vector | `[response_emb − gemini_emb]` — 768 dimensions |
-| Neutral field | `gemini25flashlite` |
-| Train data | `data/generated/gemini/responses-train-with-neutral_gemini.jsonl` |
-| Validation data | `data/generated/gemini/responses-validation-with-neutral_gemini.jsonl` |
-| Test data | `data/generated/gemini/responses-test-with-neutral_gemini.jsonl` |
+| Feature vector | `[response_emb − neutral_emb]` — 768 dimensions |
+
+**Variants.**
+
+| Setup | Touché name | Neutral provider | Neutral field | Data split |
+|---|---|---|---|---|
+| `setup119-gemini` | — | Gemini 2.5 Flash Lite | `gemini25flashlite` | `data/generated/gemini/` |
+| `setup119-gemma` | — | Gemma 4E4B | `gemma4_e4b` | `data/generated/gemma4e4b/` |
+| `setup119-qwen` | `QwenResidualOnly` | Qwen/Qwen2.5-1.5B-Instruct | `qwen` | `data/generated/qwen/` |
 
 **Feature construction.**
 ```
-r = encode(response)              # 768-dim
-n = encode(gemini25flashlite)     # 768-dim
-δ = r − n                         # 768-dim
-x = δ                             # 768-dim  (delta only)
+r = encode(response)       # 768-dim
+n = encode(neutral_field)  # 768-dim
+δ = r − n                  # 768-dim
+x = δ                      # 768-dim  (delta only)
 ```
 Only the delta vector is passed to the LR. The absolute positions of the response and neutral in embedding space are discarded. The hypothesis is that the delta alone encodes the advertising signal: if the response is an ad, `δ` points in the direction of advertising language in embedding space; if the response is clean, `δ ≈ 0` because the neutral barely changed anything.
 
 ---
-
-### setup119-gemma — Residual-Only (Gemma)
-
-Identical to setup119-gemini in all architecture and hyperparameters. Differences:
-
-| Property | Value |
-|---|---|
-| Feature vector | `[response_emb − gemma4_e4b_emb]` — 768 dimensions |
-| Neutral field | `gemma4_e4b` |
-| Train / Val / Test | `data/generated/gemma4e4b/` split |
-
----
-
-### setup119-qwen — *QwenResidualOnly* (submitted to Touché)
-
-Identical to setup119-gemini in all architecture and hyperparameters. Differences:
-
-| Property | Value |
-|---|---|
-| Feature vector | `[response_emb − qwen_emb]` — 768 dimensions |
-| Neutral field | `qwen` |
-| Train / Val / Test | `data/generated/qwen/` split |
-
-**Feature construction.**
-```
-r = encode(response)   # 768-dim
-n = encode(qwen)       # 768-dim
-x = r − n              # 768-dim
-```
-
----
-
-## Summary table
-
-| Setup | Touché name | Family | Backbone | Input features | Neutral | Train file |
-|---|---|---|---|---|---|---|
-| setup10 | CompactQueryClassifier | Fine-tuned | ALBERT-base-v2 | query + response | — | gemini |
-| setup10_1_gemini | — | Fine-tuned | Longformer-base | query + neutral + response | Gemini | gemini |
-| setup10_1-gemma | — | Fine-tuned | Longformer-base | query + neutral + response | Gemma | gemma4e4b |
-| setup10_1-qwen | — | Fine-tuned | Longformer-base | query + neutral + response | Qwen | qwen |
-| setup104-base | BaseStack | Delta LR | all-mpnet-base-v2 (frozen) | `[r]` 768-dim | — | qwen |
-| setup104-gemini | — | Delta LR | all-mpnet-base-v2 (frozen) | `[r‖n‖δ]` 2304-dim | Gemini | gemini |
-| setup104-gemma | — | Delta LR | all-mpnet-base-v2 (frozen) | `[r‖n‖δ]` 2304-dim | Gemma | gemma4e4b |
-| setup104-qwen | QwenResidualStack | Delta LR | all-mpnet-base-v2 (frozen) | `[r‖n‖δ]` 2304-dim | Qwen | qwen |
-| setup119-gemini | — | Delta LR | all-mpnet-base-v2 (frozen) | `[δ]` 768-dim | Gemini | gemini |
-| setup119-gemma | — | Delta LR | all-mpnet-base-v2 (frozen) | `[δ]` 768-dim | Gemma | gemma4e4b |
-| setup119-qwen | QwenResidualOnly | Delta LR | all-mpnet-base-v2 (frozen) | `[δ]` 768-dim | Qwen | qwen |
