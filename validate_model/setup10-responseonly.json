@@ -1,0 +1,8 @@
+{
+  "description": "Validation preset for the ALBERT-base-v2 setup10-responseonly model. Scores only the response text without the query.",
+  "model_dir": "models/setup10-responseonly",
+  "results_dir": "results/setup10-responseonly",
+  "max_length": 512,
+  "batch_size": 16,
+  "input_format": "response_only"
+}

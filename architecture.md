@@ -31,6 +31,24 @@ The optimizer (AdamW) runs with layer-wise weight decay, optional gradient clipp
 
 Training is configured through `train_model/<setup>.json` and executed via the `classifier` or `cross_encoder` trainer type in `modeling.py`.
 
+### Key fine-tuning hyperparameters
+
+The main fine-tuning runs use AdamW with linear warmup and decay. `batch_size`
+is the per-device mini-batch size; `grad_accum=4` means that optimizer updates
+are applied after four mini-batches, so the effective batch size is 64 examples.
+
+| Setup | Backbone | Input format | Learning rate | Batch size | Grad accum | Effective batch | Epochs | Optimizer | Weight decay | Warmup | LR schedule | Max sequence length |
+|---|---|---|---:|---:|---:|---:|---:|---|---:|---:|---|---:|
+| `setup10` | `albert/albert-base-v2` | query + response | 3e-5 | 16 | 4 | 64 | 5 | AdamW | 0.01 | 0.06 | linear | 512 tokens |
+| `setup10_1-gemini` | `allenai/longformer-base-4096` | query + Gemini neutral + response | 3e-5 | 16 | 4 | 64 | 1 | AdamW | 0.01 | 0.06 | linear | 1024 tokens |
+| `setup10_1-gemma` | `allenai/longformer-base-4096` | query + Gemma neutral + response | 3e-5 | 16 | 4 | 64 | 1 | AdamW | 0.01 | 0.06 | linear | 1024 tokens |
+| `setup10_1-qwen` | `allenai/longformer-base-4096` | query + Qwen neutral + response | 3e-5 | 16 | 4 | 64 | 1 | AdamW | 0.01 | 0.06 | linear | 1024 tokens |
+
+`setup10` stays at 512 tokens because it only concatenates query and response.
+The `setup10_1-*` variants raise the sequence length to 1024 tokens so the
+query, neutral rewrite, and original response fit into the same Longformer
+forward pass.
+
 ### Input formats
 
 The text sequence fed to the tokenizer varies by setup:
